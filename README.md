@@ -13,9 +13,12 @@ para leitura do cidadão.
 
 ## Estado atual
 
-**Etapas 00 a 02 concluídas** — fundação, contratos reais das APIs, domínio e persistência.
-**156 testes verdes** (132 unitários, 14 de integração contra Postgres real, 10 de arquitetura),
-build com 0 avisos. Ainda não há ingestão nem interface — a Etapa 03 comeca a popular o banco.
+**Etapas 00 a 03 concluídas** — fundação, contratos reais das APIs, domínio, persistência e
+ingestão. **221 testes verdes** (170 unitários, 41 de integração e ponta a ponta contra Postgres
+real, 10 de arquitetura), build com 0 avisos.
+
+A coleta funciona da API ao banco, de forma idempotente e com checkpoint. Ainda não há motor
+de regras nem interface.
 
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md).

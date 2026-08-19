@@ -357,6 +357,50 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.ToTable("sociedades", (string)null);
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Ingestao.CheckpointDeIngestao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("ComAlerta")
+                        .HasColumnType("boolean")
+                        .HasColumnName("com_alerta");
+
+                    b.Property<DateTimeOffset>("ConcluidoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("concluido_em");
+
+                    b.Property<int>("DespesasImportadas")
+                        .HasColumnType("integer")
+                        .HasColumnName("despesas_importadas");
+
+                    b.Property<int>("DespesasRejeitadas")
+                        .HasColumnType("integer")
+                        .HasColumnName("despesas_rejeitadas");
+
+                    b.Property<int>("IdExternoParlamentar")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_externo_parlamentar");
+
+                    b.Property<int>("Legislatura")
+                        .HasColumnType("integer")
+                        .HasColumnName("legislatura");
+
+                    b.HasKey("Id")
+                        .HasName("pk_checkpoints_ingestao");
+
+                    b.HasIndex("ComAlerta")
+                        .HasDatabaseName("ix_checkpoints_ingestao_com_alerta");
+
+                    b.HasIndex("IdExternoParlamentar", "Legislatura")
+                        .IsUnique()
+                        .HasDatabaseName("ix_checkpoints_ingestao_parlamentar_legislatura");
+
+                    b.ToTable("checkpoints_ingestao", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Parlamentares.Mandato", b =>
                 {
                     b.Property<Guid>("Id")

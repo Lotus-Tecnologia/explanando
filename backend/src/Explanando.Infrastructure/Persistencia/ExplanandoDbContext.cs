@@ -2,6 +2,7 @@ using Explanando.Domain.Auditoria;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Fornecedores;
+using Explanando.Domain.Ingestao;
 using Explanando.Domain.Parlamentares;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,8 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     public DbSet<ScoreRiscoParlamentar> ScoresRisco => Set<ScoreRiscoParlamentar>();
 
     public DbSet<LimiteCota> LimitesCota => Set<LimiteCota>();
+
+    public DbSet<CheckpointDeIngestao> CheckpointsDeIngestao => Set<CheckpointDeIngestao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
