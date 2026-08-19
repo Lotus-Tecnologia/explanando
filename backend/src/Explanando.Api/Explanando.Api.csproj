@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Explanando.Application\Explanando.Application.csproj" />
     <ProjectReference Include="..\Explanando.Infrastructure\Explanando.Infrastructure.csproj" />
   </ItemGroup>

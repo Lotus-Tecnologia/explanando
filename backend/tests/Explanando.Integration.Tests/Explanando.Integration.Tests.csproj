@@ -7,10 +7,12 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Explanando.Infrastructure\Explanando.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Domain\Explanando.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,140 @@
+using System.Text;
+
+namespace Explanando.Domain.Comum;
+
+/// <summary>
+/// Guarda a fronteira linguistica do ADR-0004.
+///
+/// O produto reporta achados de um motor de regras e deixa a conclusao para o leitor ou
+/// para a autoridade competente. Ele nunca imputa conduta. Deixar essa regra apenas num
+/// documento nao funciona: basta alguem escrever "indicio de fraude" numa descricao de
+/// flag para que a blindagem juridica do produto inteiro seja perdida naquele texto.
+///
+/// Aqui a regra e' executavel, e o dominio recusa emitir texto que a viole.
+/// </summary>
+public static class VocabularioDeCompliance
+{
+    /// <summary>
+    /// Termos proibidos pelo documento de Requisitos de Negocio, §1. Comparados sem
+    /// acento e em minusculas, e sempre como palavra inteira.
+    /// </summary>
+    private static readonly string[] TermosProibidos =
+    [
+        "fraude", "fraudulenta", "fraudulento",
+        "crime", "crimes", "criminoso", "criminosa",
+        "corrupcao", "corrupto", "corrupta",
+        "lavagem",
+        "desvio", "desviou", "desviado",
+        "roubo", "roubou",
+        "propina",
+        "caixa dois",
+    ];
+
+    /// <summary>
+    /// Termos que o mesmo documento define como obrigatorios. Ficam aqui como referencia
+    /// viva para quem for escrever descricao de regra nova.
+    /// </summary>
+    public static IReadOnlyList<string> TermosPreferidos { get; } =
+    [
+        "Inconsistência Financeira",
+        "Inconsistência com a Regra da Câmara",
+        "Atipicidade de Volume Financeiro",
+        "Fator de Risco Elevado",
+        "Alerta de Compliance",
+        "Desvio Padrão",
+    ];
+
+    public static bool ContemTermoProibido(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+        {
+            return false;
+        }
+
+        var normalizado = Normalizar(texto);
+
+        foreach (var proibido in TermosProibidos)
+        {
+            if (ContemPalavraInteira(normalizado, proibido))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Lanca se o texto violar o ADR-0004. Usado nas fronteiras do dominio.</summary>
+    public static void GarantirVocabularioTecnico(string? texto, string nomeDoParametro)
+    {
+        if (ContemTermoProibido(texto))
+        {
+            throw new ArgumentException(
+                "Texto usa vocabulario acusatorio, proibido pelo ADR-0004. O produto reporta "
+                + "inconsistencias de um motor de regras e nao imputa conduta. Use termos como "
+                + $"'{string.Join("', '", TermosPreferidos)}'. Texto recebido: '{texto}'.",
+                nomeDoParametro);
+        }
+    }
+
+    /// <summary>
+    /// Casar por substring cega inviabilizaria a regra: "descricao" contem "cri",
+    /// "discriminado" contem "crim". A comparacao e' por palavra inteira.
+    /// </summary>
+    private static bool ContemPalavraInteira(string textoNormalizado, string termo)
+    {
+        var indice = textoNormalizado.IndexOf(termo, StringComparison.Ordinal);
+
+        while (indice >= 0)
+        {
+            var comecaPalavra = indice == 0 || !char.IsLetter(textoNormalizado[indice - 1]);
+            var fim = indice + termo.Length;
+            var terminaPalavra = fim >= textoNormalizado.Length
+                || !char.IsLetter(textoNormalizado[fim]);
+
+            if (comecaPalavra && terminaPalavra)
+            {
+                return true;
+            }
+
+            indice = textoNormalizado.IndexOf(termo, indice + 1, StringComparison.Ordinal);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Minusculas e sem diacriticos: "Corrupção" e "corrupcao" tem de casar igual.
+    ///
+    /// A dobra e' feita por tabela explicita, e nao por <c>Normalize(FormD)</c>, porque a
+    /// solution roda com <c>InvariantGlobalization=true</c> — e nesse modo a normalizacao
+    /// Unicode e' silenciosamente um no-op ("corrupção" continua com 9 caracteres apos a
+    /// decomposicao). Verificado na Etapa 02.
+    ///
+    /// A tabela tambem e' o comportamento que se quer num motor de regras: identica em
+    /// qualquer maquina, sem depender da versao do ICU instalada.
+    /// </summary>
+    private static string Normalizar(string texto)
+    {
+        var construtor = new StringBuilder(texto.Length);
+
+        foreach (var caractere in texto.ToLowerInvariant())
+        {
+            construtor.Append(SemAcento(caractere));
+        }
+
+        return construtor.ToString();
+    }
+
+    private static char SemAcento(char caractere) => caractere switch
+    {
+        'á' or 'à' or 'ã' or 'â' or 'ä' => 'a',
+        'é' or 'è' or 'ê' or 'ë' => 'e',
+        'í' or 'ì' or 'î' or 'ï' => 'i',
+        'ó' or 'ò' or 'õ' or 'ô' or 'ö' => 'o',
+        'ú' or 'ù' or 'û' or 'ü' => 'u',
+        'ç' => 'c',
+        'ñ' => 'n',
+        _ => caractere,
+    };
+}

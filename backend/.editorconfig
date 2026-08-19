@@ -35,6 +35,17 @@ dotnet_style_readonly_field = true:warning
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
 
 # ============================================================================
+#  Migrations
+# ============================================================================
+#  Codigo gerado pelo `dotnet ef migrations add`. Nao e' escrito a mao e nao deve
+#  ser reescrito a mao — a proxima geracao desfaria qualquer ajuste. Marcar como
+#  gerado desliga os analisadores sem afrouxar nada no codigo que nos escrevemos.
+
+[src/**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+# ============================================================================
 #  Projetos de teste
 # ============================================================================
 #  Nomes de teste em snake_case sao intencionais: o nome do metodo E' a frase

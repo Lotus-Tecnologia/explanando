@@ -28,8 +28,8 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 |---|---|---|---|
 | 00 | Fundação e git | ✅ Concluída | [etapa-00-fundacao.md](etapa-00-fundacao.md) |
 | 01 | Spike de contratos das APIs | ✅ Concluída | [etapa-01-contratos.md](etapa-01-contratos.md) |
-| 02 | Domínio e EF Core | ⏳ Próxima | — |
-| 03 | Ingestão (Câmara + BrasilAPI) | ⬜ Não iniciada | — |
+| 02 | Domínio e EF Core | ✅ Concluída | [etapa-02-dominio-e-efcore.md](etapa-02-dominio-e-efcore.md) |
+| 03 | Ingestão (Câmara + BrasilAPI) | ⏳ Próxima | — |
 | 04 | Motor de regras determinísticas | ⬜ Não iniciada | — |
 | 05 | API pública | ⬜ Não iniciada | — |
 | 06 | Frontend Next.js | ⬜ Não iniciada | — |
