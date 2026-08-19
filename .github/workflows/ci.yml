@@ -1,0 +1,140 @@
+name: CI
+
+# Build e suite completa a cada push na main e em todo pull request.
+#
+# Mudanca apenas de documentacao nao dispara o pipeline: o repositorio tem muito
+# markdown vivo (registro de etapas, ADRs) e rodar Testcontainers para corrigir
+# uma frase queimaria minutos de Actions sem provar nada.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  #  Trava de visibilidade
+  # ---------------------------------------------------------------------------
+  #  O repositorio precisa permanecer privado. O codigo expoe a logica de deteccao
+  #  de inconsistencias e as fixtures com dado real de fornecedores — abri-lo por
+  #  engano seria dificil de desfazer, porque forks e caches sobrevivem ao fechamento.
+  #
+  #  Este job falha o pipeline se a visibilidade mudar, servindo de alarme.
+  visibilidade:
+    name: Repositório continua privado
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar visibilidade
+        run: |
+          if [ "${{ github.event.repository.private }}" != "true" ]; then
+            echo "::error::O repositório está PÚBLICO. Ele deve permanecer privado."
+            exit 1
+          fi
+          echo "Repositório privado, como esperado."
+
+  # ---------------------------------------------------------------------------
+  #  Build e testes
+  # ---------------------------------------------------------------------------
+  build-e-testes:
+    name: Build e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # O cache usa o lock implícito dos Directory.Packages.props: como as versões
+      # são centralizadas, uma mudança neles invalida o cache corretamente.
+      - name: Cache de pacotes NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props', 'backend/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restaurar dependências
+        working-directory: backend
+        run: dotnet restore Explanando.slnx
+
+      # TreatWarningsAsErrors está ligado na solution: aviso aqui reprova o build,
+      # que é o comportamento desejado (ADR-0005).
+      - name: Compilar
+        working-directory: backend
+        run: dotnet build Explanando.slnx --configuration Release --no-restore
+
+      # Os testes de integração sobem Postgres via Testcontainers. O runner
+      # ubuntu-latest já traz Docker, então não é preciso serviço declarado —
+      # e usar Testcontainers aqui mantém o teste idêntico ao que roda local.
+      - name: Executar testes
+        working-directory: backend
+        run: >
+          dotnet test Explanando.slnx
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=resultados.trx"
+          --results-directory ../artefatos-de-teste
+          --collect:"XPlat Code Coverage"
+
+      - name: Publicar resultados de teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-de-teste
+          path: artefatos-de-teste
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  #  Migrations
+  # ---------------------------------------------------------------------------
+  #  Modelo alterado sem migration correspondente é um erro que só aparece no
+  #  deploy. Aqui aparece no pull request.
+  migrations:
+    name: Modelo e migrations em sincronia
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar ferramentas locais
+        working-directory: backend
+        run: dotnet tool restore
+
+      # O comando sai com 0 quando modelo e migrations estão em sincronia e com
+      # código diferente de zero quando há mudança pendente — então basta deixá-lo
+      # falhar o passo. Verificado localmente antes de escrever isto.
+      - name: Verificar se há mudança de modelo sem migration
+        working-directory: backend
+        run: |
+          if ! dotnet ef migrations has-pending-model-changes \
+                 --project src/Explanando.Infrastructure \
+                 --startup-project src/Explanando.Api; then
+            echo "::error::O modelo mudou sem migration correspondente. Rode 'dotnet ef migrations add <Nome>'."
+            exit 1
+          fi
