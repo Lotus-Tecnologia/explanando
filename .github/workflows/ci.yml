@@ -104,37 +104,37 @@ jobs:
           path: artefatos-de-teste
           retention-days: 14
 
-  # ---------------------------------------------------------------------------
-  #  Migrations
-  # ---------------------------------------------------------------------------
-  #  Modelo alterado sem migration correspondente é um erro que só aparece no
-  #  deploy. Aqui aparece no pull request.
-  migrations:
-    name: Modelo e migrations em sincronia
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Instalar .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
+      # Modelo alterado sem migration correspondente é um erro que só apareceria no
+      # deploy. Aqui aparece no pull request.
+      #
+      # Vive dentro deste job, e não num job próprio, para reaproveitar o restore e o
+      # build que já aconteceram — em repositório privado os minutos de Actions são
+      # cota, e um job separado repetiria os dois passos mais caros do pipeline.
       - name: Restaurar ferramentas locais
         working-directory: backend
         run: dotnet tool restore
 
-      # O comando sai com 0 quando modelo e migrations estão em sincronia e com
-      # código diferente de zero quando há mudança pendente — então basta deixá-lo
-      # falhar o passo. Verificado localmente antes de escrever isto.
+      # `has-pending-model-changes` sai com 0 quando está tudo em sincronia. Mas ele
+      # também sai diferente de zero por qualquer outra falha (assets ausentes, erro de
+      # build), e culpar o modelo nesses casos manda o desenvolvedor investigar a coisa
+      # errada. A saída é inspecionada para distinguir os dois casos.
       - name: Verificar se há mudança de modelo sem migration
         working-directory: backend
         run: |
-          if ! dotnet ef migrations has-pending-model-changes \
-                 --project src/Explanando.Infrastructure \
-                 --startup-project src/Explanando.Api; then
+          set +e
+          saida=$(dotnet ef migrations has-pending-model-changes \
+                    --project src/Explanando.Infrastructure \
+                    --startup-project src/Explanando.Api \
+                    --no-build --configuration Release 2>&1)
+          codigo=$?
+          set -e
+
+          echo "$saida"
+          [ "$codigo" -eq 0 ] && exit 0
+
+          if echo "$saida" | grep -qi "changes have been made to the model"; then
             echo "::error::O modelo mudou sem migration correspondente. Rode 'dotnet ef migrations add <Nome>'."
-            exit 1
+          else
+            echo "::error::A verificação de migrations falhou por outro motivo — veja a saída acima."
           fi
+          exit 1
