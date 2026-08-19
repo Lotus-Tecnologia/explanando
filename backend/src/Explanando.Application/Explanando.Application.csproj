@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Explanando.Domain\Explanando.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

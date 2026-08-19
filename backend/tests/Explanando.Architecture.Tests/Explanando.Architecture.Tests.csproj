@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup Label="Infra de teste">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Explanando.Domain\Explanando.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Application\Explanando.Application.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Infrastructure\Explanando.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Api\Explanando.Api.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Worker\Explanando.Worker.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+
+</Project>

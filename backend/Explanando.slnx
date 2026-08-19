@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Explanando.Api/Explanando.Api.csproj" />
+    <Project Path="src/Explanando.Application/Explanando.Application.csproj" />
+    <Project Path="src/Explanando.Domain/Explanando.Domain.csproj" />
+    <Project Path="src/Explanando.Infrastructure/Explanando.Infrastructure.csproj" />
+    <Project Path="src/Explanando.Worker/Explanando.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Explanando.Application.Tests/Explanando.Application.Tests.csproj" />
+    <Project Path="tests/Explanando.Architecture.Tests/Explanando.Architecture.Tests.csproj" />
+    <Project Path="tests/Explanando.Domain.Tests/Explanando.Domain.Tests.csproj" />
+    <Project Path="tests/Explanando.E2E.Tests/Explanando.E2E.Tests.csproj" />
+    <Project Path="tests/Explanando.Integration.Tests/Explanando.Integration.Tests.csproj" />
+  </Folder>
+</Solution>

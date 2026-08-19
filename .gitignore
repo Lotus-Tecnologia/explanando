@@ -1,0 +1,50 @@
+# ---------- .NET ----------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.trx
+*.received.*
+
+# ---------- Segredos ----------
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.*
+!.env.example
+*.pfx
+secrets.json
+
+# ---------- Node / Next.js ----------
+node_modules/
+.next/
+out/
+.vercel
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---------- Ferramentas ----------
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# ---------- SO ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---------- Dados locais ----------
+docker/volumes/
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,72 @@
+﻿# ============================================================================
+#  Explanando - infraestrutura de desenvolvimento local
+# ============================================================================
+#  Sobe os equivalentes locais dos servicos gerenciados do V1, para que o
+#  desenvolvimento nao dependa de nenhuma conta na nuvem:
+#
+#      Neon.tech (Postgres)  ->  postgres
+#      Upstash (Redis)       ->  redis
+#      AWS SQS               ->  localstack
+#
+#  Uso:  docker compose up -d
+#        docker compose down          (mantem os dados)
+#        docker compose down -v       (zera os dados)
+# ============================================================================
+
+name: explanando
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: explanando-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: explanando
+      POSTGRES_PASSWORD: explanando_dev
+      POSTGRES_DB: explanando
+      # Collation deterministica: o motor de regras compara texto (CNAE, razao
+      # social) e nao pode mudar de resultado conforme o locale da maquina.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U explanando -d explanando"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: explanando-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  localstack:
+    image: localstack/localstack:3
+    container_name: explanando-localstack
+    restart: unless-stopped
+    environment:
+      SERVICES: sqs
+      DEBUG: "0"
+      AWS_DEFAULT_REGION: sa-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./docker/localstack-init:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal sqs list-queues || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-dados:

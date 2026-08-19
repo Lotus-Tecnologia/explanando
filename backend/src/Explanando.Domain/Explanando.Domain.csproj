@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    CAMADA DE DOMINIO - C# puro.
+    Nao pode referenciar NENHUM projeto nem NENHUM pacote alem da BCL.
+    Essa regra e' verificada por Explanando.Architecture.Tests e quebra o build se violada.
+  -->
+
+</Project>
