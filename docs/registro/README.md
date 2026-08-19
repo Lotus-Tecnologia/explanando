@@ -27,8 +27,8 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | # | Etapa | Situação | Registro |
 |---|---|---|---|
 | 00 | Fundação e git | ✅ Concluída | [etapa-00-fundacao.md](etapa-00-fundacao.md) |
-| 01 | Spike de contratos das APIs | ⏳ Em andamento | — |
-| 02 | Domínio e EF Core | ⬜ Não iniciada | — |
+| 01 | Spike de contratos das APIs | ✅ Concluída | [etapa-01-contratos.md](etapa-01-contratos.md) |
+| 02 | Domínio e EF Core | ⏳ Próxima | — |
 | 03 | Ingestão (Câmara + BrasilAPI) | ⬜ Não iniciada | — |
 | 04 | Motor de regras determinísticas | ⬜ Não iniciada | — |
 | 05 | API pública | ⬜ Não iniciada | — |

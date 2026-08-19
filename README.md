@@ -13,8 +13,10 @@ para leitura do cidadão.
 
 ## Estado atual
 
-**Etapa 0 (Fundação) concluída.** Ainda não há ingestão de dados nem interface.
-O andamento detalhado vive em [`docs/registro/`](docs/registro/README.md).
+**Etapas 00 (Fundação) e 01 (Contratos) concluídas.** Ainda não há ingestão de dados nem
+interface. Os contratos reais das APIs externas estão capturados e analisados em
+[`docs/contratos/`](docs/contratos/README.md); o andamento detalhado, em
+[`docs/registro/`](docs/registro/README.md).
 
 ## Como rodar
 
