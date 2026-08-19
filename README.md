@@ -14,11 +14,14 @@ para leitura do cidadão.
 ## Estado atual
 
 **Etapas 00 a 03 concluídas** — fundação, contratos reais das APIs, domínio, persistência e
-ingestão. **221 testes verdes** (170 unitários, 41 de integração e ponta a ponta contra Postgres
+ingestão. **250 testes verdes** (192 unitários, 48 de integração e ponta a ponta contra Postgres
 real, 10 de arquitetura), build com 0 avisos.
 
-A coleta funciona da API ao banco, de forma idempotente e com checkpoint. Ainda não há motor
-de regras nem interface.
+A coleta funciona da API ao banco, de forma idempotente e com checkpoint. As duas tabelas
+curadas que o motor precisa (CNAE × tipo de despesa e limites da CEAP por UF) já existem.
+Ainda não há motor de regras nem interface.
+
+CI no GitHub Actions roda build, suíte completa e verificação de migrations a cada push.
 
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md).
