@@ -20,4 +20,25 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <!--
+    Saida de build fora da pasta sincronizada.
+
+    O repositorio vive dentro do OneDrive, e o Smart App Control do Windows bloqueia o
+    carregamento de assembly nao assinado que esteja ali:
+
+        System.IO.FileLoadException: Uma politica de Controle de Aplicativo bloqueou
+        este arquivo. (0x800711C7)
+
+    Isso derruba qualquer `dotnet test`. Verificado na Etapa 03: a mesma suite passa de
+    132 falhas para 132 aprovados so' mudando a saida para fora do OneDrive.
+
+    Manter bin/obj fora de pasta sincronizada e' boa pratica de qualquer forma — evita o
+    OneDrive sincronizar milhares de arquivos intermediarios a cada compilacao.
+
+    A condicao existe para o CI: la o caminho nao contem "OneDrive" e o layout padrao vale.
+  -->
+  <PropertyGroup Condition="'$(ArtifactsPath)' == '' AND $(MSBuildThisFileDirectory.Contains('OneDrive'))">
+    <ArtifactsPath>$(LOCALAPPDATA)\explanando\artifacts</ArtifactsPath>
+  </PropertyGroup>
+
 </Project>

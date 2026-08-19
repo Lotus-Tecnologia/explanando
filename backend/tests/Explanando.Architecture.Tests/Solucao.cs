@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 
 namespace Explanando.Architecture.Tests;
@@ -22,17 +23,39 @@ internal static class Solucao
         ?? throw new InvalidOperationException(
             $"Projeto '{nome}' nao encontrado. Conhecidos: {string.Join(", ", Projetos.Select(p => p.Nome))}.");
 
-    private static DirectoryInfo LocalizarRaiz()
+    /// <summary>
+    /// Ancora no caminho <b>do codigo-fonte</b>, e nao no diretorio de saida.
+    ///
+    /// A saida de build vive fora do repositorio (ver a nota sobre ArtifactsPath em
+    /// Directory.Build.props), entao subir a partir de <c>AppContext.BaseDirectory</c>
+    /// nunca encontraria a solution. <c>[CallerFilePath]</c> e' resolvido em tempo de
+    /// compilacao e aponta para este proprio arquivo, dentro do repositorio.
+    /// </summary>
+    private static DirectoryInfo LocalizarRaiz([CallerFilePath] string arquivoDesteCodigo = "")
     {
-        var diretorio = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (diretorio is not null && !diretorio.EnumerateFiles(ArquivoDeSolucao).Any())
+        foreach (var ponto in new[] { Path.GetDirectoryName(arquivoDesteCodigo), AppContext.BaseDirectory })
         {
-            diretorio = diretorio.Parent;
+            if (string.IsNullOrEmpty(ponto) || !Directory.Exists(ponto))
+            {
+                continue;
+            }
+
+            var diretorio = new DirectoryInfo(ponto);
+
+            while (diretorio is not null && !diretorio.EnumerateFiles(ArquivoDeSolucao).Any())
+            {
+                diretorio = diretorio.Parent;
+            }
+
+            if (diretorio is not null)
+            {
+                return diretorio;
+            }
         }
 
-        return diretorio ?? throw new InvalidOperationException(
-            $"Nao encontrei '{ArquivoDeSolucao}' subindo a partir de '{AppContext.BaseDirectory}'.");
+        throw new InvalidOperationException(
+            $"Nao encontrei '{ArquivoDeSolucao}' a partir de '{arquivoDesteCodigo}' "
+            + $"nem de '{AppContext.BaseDirectory}'.");
     }
 
     private static List<Projeto> CarregarProjetos()
