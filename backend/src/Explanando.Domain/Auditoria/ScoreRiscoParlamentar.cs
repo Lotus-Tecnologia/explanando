@@ -49,6 +49,39 @@ public sealed class ScoreRiscoParlamentar : Entidade
     /// <summary>Quantas flags de gravidade alta. Contexto na pagina, nunca ordenacao.</summary>
     public int TotalFlagsVermelhas { get; private set; }
 
+    public int TotalFlagsMedias { get; private set; }
+
+    public int TotalFlagsBaixas { get; private set; }
+
+    // ---------------------------------------------------------------
+    //  Composicao do indice, por gravidade
+    // ---------------------------------------------------------------
+    //  O indice sozinho engana. Na calibragem real, o primeiro colocado em risco tinha
+    //  ZERO flags de gravidade alta — o numero dele vinha de muitas flags medias. Isso e'
+    //  honesto, mas um comprador B2B que veja so' o total pode ler gravidade que nao existe.
+    //  A API expoe a composicao junto do total, sempre.
+
+    public decimal PesoFlagsAltas { get; private set; }
+
+    public decimal PesoFlagsMedias { get; private set; }
+
+    public decimal PesoFlagsBaixas { get; private set; }
+
+    /// <summary>Parcela do indice que vem de flags de gravidade alta, em pontos por 100.</summary>
+    public decimal IndiceDeAltas => PorCemDespesas(PesoFlagsAltas);
+
+    public decimal IndiceDeMedias => PorCemDespesas(PesoFlagsMedias);
+
+    public decimal IndiceDeBaixas => PorCemDespesas(PesoFlagsBaixas);
+
+    /// <summary>
+    /// Verdadeiro quando o indice nao tem nenhuma contribuicao de gravidade alta.
+    ///
+    /// E' o alerta de leitura: sem isto, um indice alto sugere gravidade que pode nao
+    /// existir. Aconteceu na base real e nao e' caso de borda.
+    /// </summary>
+    public bool IndiceSemGravidadeAlta => PesoFlagsAltas == 0m && PesoDasFlags > 0m;
+
     /// <summary>
     /// <b>O número do B2B.</b> Densidade de indicadores, em pontos por 100 despesas
     /// avaliadas.
@@ -101,32 +134,57 @@ public sealed class ScoreRiscoParlamentar : Entidade
             volume += despesa.ValorParaScore;
         }
 
-        var peso = 0m;
-        var vermelhas = 0;
+        var pesoAltas = 0m;
+        var pesoMedias = 0m;
+        var pesoBaixas = 0m;
+        var altas = 0;
+        var medias = 0;
+        var baixas = 0;
 
         foreach (var flag in flags)
         {
-            peso += flag.Peso;
-
-            if (flag.EhVermelha)
+            switch (flag.Gravidade)
             {
-                vermelhas++;
+                case Gravidade.Alta:
+                    pesoAltas += flag.Peso;
+                    altas++;
+                    break;
+                case Gravidade.Media:
+                    pesoMedias += flag.Peso;
+                    medias++;
+                    break;
+                default:
+                    pesoBaixas += flag.Peso;
+                    baixas++;
+                    break;
             }
         }
+
+        var peso = pesoAltas + pesoMedias + pesoBaixas;
 
         VolumeTotalGasto = volume;
         DespesasAvaliadas = despesas.Count;
         PesoDasFlags = peso;
-        TotalFlagsVermelhas = vermelhas;
 
-        // Pontos por 100 despesas. Sem despesa nao ha denominador — e dividir por zero
-        // seria o jeito mais bobo de derrubar a varredura.
-        IndiceDeRisco = despesas.Count == 0
-            ? 0m
-            : peso / despesas.Count * 100m;
+        TotalFlagsVermelhas = altas;
+        TotalFlagsMedias = medias;
+        TotalFlagsBaixas = baixas;
+
+        PesoFlagsAltas = pesoAltas;
+        PesoFlagsMedias = pesoMedias;
+        PesoFlagsBaixas = pesoBaixas;
+
+        IndiceDeRisco = PorCemDespesas(peso);
 
         AmostraSuficiente = despesas.Count >= pisoAmostral && despesas.Count > 0;
 
         DataUltimaVarredura = momento;
     }
+
+    /// <summary>
+    /// Densidade em pontos por 100 despesas. Sem despesa nao ha denominador — e dividir
+    /// por zero seria o jeito mais bobo de derrubar a varredura.
+    /// </summary>
+    private decimal PorCemDespesas(decimal peso) =>
+        DespesasAvaliadas == 0 ? 0m : peso / DespesasAvaliadas * 100m;
 }

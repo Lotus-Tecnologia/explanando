@@ -135,6 +135,70 @@ public sealed class ScoreRiscoParlamentarTests
     }
 
     // ------------------------------------------------------------------
+    //  Composição do índice — para não sugerir gravidade que não existe
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Indice_se_decompoe_por_gravidade()
+    {
+        // 1 alta (3) + 2 médias (2 cada = 4) + 1 baixa (1) = 8, sobre 200 despesas.
+        var score = Recalculado(200,
+            [Flag(Gravidade.Alta), Flag(Gravidade.Media), Flag(Gravidade.Media), Flag(Gravidade.Baixa)]);
+
+        score.IndiceDeRisco.ShouldBe(4m);
+        score.IndiceDeAltas.ShouldBe(1.5m);
+        score.IndiceDeMedias.ShouldBe(2m);
+        score.IndiceDeBaixas.ShouldBe(0.5m);
+    }
+
+    [Fact]
+    public void As_partes_somam_o_total()
+    {
+        var score = Recalculado(347,
+            [Flag(Gravidade.Alta), Flag(Gravidade.Media, 0.85m), Flag(Gravidade.Baixa)]);
+
+        (score.IndiceDeAltas + score.IndiceDeMedias + score.IndiceDeBaixas)
+            .ShouldBe(score.IndiceDeRisco, tolerance: 0.0001m);
+    }
+
+    [Fact]
+    public void Conta_as_flags_de_cada_gravidade()
+    {
+        var score = Recalculado(200,
+            [Flag(Gravidade.Alta), Flag(Gravidade.Media), Flag(Gravidade.Media), Flag(Gravidade.Baixa)]);
+
+        score.TotalFlagsVermelhas.ShouldBe(1);
+        score.TotalFlagsMedias.ShouldBe(2);
+        score.TotalFlagsBaixas.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Marca_indice_sem_gravidade_alta()
+    {
+        // Aconteceu na base real: o primeiro colocado em risco tinha ZERO flags altas.
+        // O número é honesto, mas quem lê só o total pode inferir gravidade que não existe.
+        var soMedias = Recalculado(200, [Flag(Gravidade.Media), Flag(Gravidade.Media)]);
+
+        soMedias.IndiceDeRisco.ShouldBeGreaterThan(0m);
+        soMedias.TotalFlagsVermelhas.ShouldBe(0);
+        soMedias.IndiceSemGravidadeAlta.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Indice_com_alguma_flag_alta_nao_recebe_o_alerta_de_leitura()
+    {
+        Recalculado(200, [Flag(Gravidade.Alta), Flag(Gravidade.Media)])
+            .IndiceSemGravidadeAlta.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Parlamentar_limpo_nao_recebe_o_alerta_de_leitura()
+    {
+        // Sem flag nenhuma não há o que interpretar mal — o alerta seria ruído.
+        Recalculado(200, []).IndiceSemGravidadeAlta.ShouldBeFalse();
+    }
+
+    // ------------------------------------------------------------------
     //  Piso amostral — a armadilha da normalização
     // ------------------------------------------------------------------
 

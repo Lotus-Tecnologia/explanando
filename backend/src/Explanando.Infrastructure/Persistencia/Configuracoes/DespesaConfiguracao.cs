@@ -173,6 +173,19 @@ internal sealed class ScoreRiscoParlamentarConfiguracao
             .IsRequired();
 
         builder.Property(score => score.TotalFlagsVermelhas).IsRequired();
+        builder.Property(score => score.TotalFlagsMedias).IsRequired();
+        builder.Property(score => score.TotalFlagsBaixas).IsRequired();
+
+        // Composicao do indice por gravidade (ADR-0009): a API B2B expoe o total sempre
+        // acompanhado das partes, para nao sugerir gravidade que nao existe.
+        builder.Property(score => score.PesoFlagsAltas).HasColumnType("numeric(10,2)").IsRequired();
+        builder.Property(score => score.PesoFlagsMedias).HasColumnType("numeric(10,2)").IsRequired();
+        builder.Property(score => score.PesoFlagsBaixas).HasColumnType("numeric(10,2)").IsRequired();
+
+        builder.Ignore(score => score.IndiceDeAltas);
+        builder.Ignore(score => score.IndiceDeMedias);
+        builder.Ignore(score => score.IndiceDeBaixas);
+        builder.Ignore(score => score.IndiceSemGravidadeAlta);
 
         // O numero do B2B: pontos por 100 despesas. Quatro casas porque a densidade e'
         // pequena — arredondar para duas empataria parlamentares distintos.

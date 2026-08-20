@@ -103,6 +103,26 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("peso_das_flags");
 
+                    b.Property<decimal>("PesoFlagsAltas")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("peso_flags_altas");
+
+                    b.Property<decimal>("PesoFlagsBaixas")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("peso_flags_baixas");
+
+                    b.Property<decimal>("PesoFlagsMedias")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("peso_flags_medias");
+
+                    b.Property<int>("TotalFlagsBaixas")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_flags_baixas");
+
+                    b.Property<int>("TotalFlagsMedias")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_flags_medias");
+
                     b.Property<int>("TotalFlagsVermelhas")
                         .HasColumnType("integer")
                         .HasColumnName("total_flags_vermelhas");
