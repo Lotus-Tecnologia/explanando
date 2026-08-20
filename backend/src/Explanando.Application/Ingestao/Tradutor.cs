@@ -53,6 +53,7 @@ public static class Tradutor
             NumeroDocumento = string.IsNullOrWhiteSpace(despesa.NumeroDocumento)
                 ? NumeroDocumentoAusente
                 : despesa.NumeroDocumento,
+            CodigoTipoDocumento = despesa.CodigoTipoDocumento,
             DataDocumento = despesa.DataDocumento,
             ValorDocumento = despesa.ValorDocumento,
             ValorLiquido = despesa.ValorLiquido,

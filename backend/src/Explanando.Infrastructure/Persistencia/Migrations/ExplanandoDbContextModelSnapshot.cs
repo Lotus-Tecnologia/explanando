@@ -160,6 +160,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("codigo_lote");
 
+                    b.Property<int>("CodigoTipoDocumento")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_tipo_documento");
+
                     b.Property<int>("Competencia")
                         .HasColumnType("integer")
                         .HasColumnName("competencia");

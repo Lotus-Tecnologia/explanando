@@ -1,6 +1,6 @@
 # Etapa 04 — Motor de regras determinísticas
 
-**Início:** 2026-08-19 · **Situação:** ⏳ Em andamento
+**Início:** 2026-08-19 · **Conclusão:** 2026-08-19 · **Situação:** ✅ Concluída
 
 ---
 
@@ -25,7 +25,7 @@ positivo é uma imputação indevida numa página pública indexada, com nome e 
 
 Com trava no CI que falha o pipeline se a visibilidade mudar.
 
-## 3. Executado até agora
+## 3. Executado
 
 ### As duas tabelas curadas
 
@@ -46,10 +46,61 @@ Build, suíte completa com Testcontainers, verificação de modelo × migrations
 visibilidade. Mudança só em `docs/` não dispara o pipeline, para não consumir cota de Actions
 à toa.
 
+### As 11 regras e o motor
+
+```
+Domain/Regras/
+  ParametrosDoMotor.cs        todos os limiares, num lugar só
+  CalendarioLegislativo.cs    recesso pelo art. 57 da Constituição
+  ContextoDeAvaliacao.cs      + IRegraAnomalia
+  RegrasDeFornecedor.cs       REG_KYB_001 a 005
+  RegrasDeTransacao.cs        REG_TX_001 a 004
+  RegrasGeograficas.cs        REG_GEO_002 e 003
+  MotorDeRegras.cs            orquestra e isola falhas
+```
+
+**Os limiares ficam todos em `ParametrosDoMotor`**, num arquivo só, porque são a parte mais
+arbitrária do motor: nenhum vem de lei ou de dado publicado. Espalhados pelas regras, ninguém
+conseguiria auditar o conjunto nem responder por que noventa dias e não sessenta. A única
+exceção é o teto do MEI, que vem de lei — e está marcado como tal.
+
+**`CalendarioLegislativo` não é calibragem.** O art. 57 da Constituição fixa a sessão
+legislativa de 2 de fevereiro a 17 de julho e de 1º de agosto a 22 de dezembro; recesso é o
+complemento. Por isso `REG_GEO_003` saiu da lista de pendências sem precisar de curadoria.
+
+**`REG_GEO_002` só olha despesa presencial.** Contratar consultoria de empresa de outro estado
+é rotina; abastecer um veículo lá, não. Sem esse recorte, a regra marcaria praticamente todo
+parlamentar que contrata serviço digital fora do estado.
+
+**`REG_KYB_005` só considera documento fiscal**, resolvendo a pendência que a Etapa 03
+levantou: bilhete aéreo tem numeração de 13 dígitos e recibo não segue série sequencial do
+emitente.
+
+### Varredura e persistência
+
+`ServicoDeVarredura` monta o contexto inteiro em memória antes de avaliar — o motor não toca
+banco nem rede, o que garante que uma regra nova não introduza consulta N+1 sem ninguém
+perceber.
+
+A varredura **recalcula do zero**: apaga as flags da passada anterior antes de gravar. Somar
+dobraria o score de um parlamentar só por rodar a varredura duas vezes, inflando o ranking
+público sem nenhum gasto novo ter existido. E uma regra afrouxada precisa conseguir *remover*
+um achado anterior, não só adicionar.
+
 ## 4. Testes
 
-**250 testes verdes**, e o pipeline passa no CI — inclusive os testes de integração, que
+**318 testes verdes**, e o pipeline passa no CI — inclusive os testes de integração, que
 sobem Postgres em contêiner no runner.
+
+Cada regra tem dois tipos de teste: um que prova que ela **fala** no caso que existe para
+pegar, e vários que provam que ela **se cala** onde não tem base — que é a parte que importa
+sob a postura permissiva. O caso mais importante do motor é o silêncio: há um teste dedicado a
+garantir que um parlamentar sem nada de errado não recebe flag nenhuma das 11 regras.
+
+Dois testes estruturais valem menção: um garante que **toda flag emitida** passa pelo
+`VocabularioDeCompliance` (uma regra que escrevesse vocabulário acusatório explodiria no teste
+em vez de chegar à tela), e outro prova que **uma regra com defeito não derruba as outras
+dez**.
 
 A tabela de limites é testada **como dado**, não só como mecanismo: faixa plausível de valores
 (guarda contra erro de ordem de grandeza), cobertura das 27 UFs sem repetição, e coerência
@@ -91,7 +142,40 @@ Corrigido inspecionando a saída do comando para distinguir os dois casos. A ver
 mudou de job próprio para dentro do job de build, reaproveitando restore e build: em
 repositório privado os minutos de Actions são cota.
 
-### 5.4 A chave da tabela CNAE tinha ponto final e nunca seria encontrada
+### 5.4 O vocabulário obrigatório continha um termo proibido
+
+"Desvio Padrão" está entre os termos **obrigatórios** do documento de Negócios. "Desvio" está
+entre os **proibidos**, por imputar conduta. A checagem por palavra inteira bloqueava o termo
+que o próprio documento exige.
+
+Resolvido com uma lista de expressões técnicas permitidas, retiradas do texto antes da busca
+pelos termos proibidos — e com teste garantindo que a exceção não libera "desvio" sozinho.
+
+### 5.5 Documentei um comportamento que não tinha implementado
+
+O cabeçalho do `MotorDeRegras` dizia que "uma regra com defeito não derruba as outras", mas o
+código não tinha `try/catch` nenhum. Percebido ao escrever o teste correspondente.
+
+Implementado de verdade, com um detalhe que só aparece na prática: as regras usam iteradores
+preguiçosos, então o `ToList()` precisa ficar **dentro** do `try` — fora dele, a exceção só
+apareceria mais adiante, já sem alcance do `catch`.
+
+### 5.6 Um teste se contaminou pelo banco compartilhado
+
+`VarreduraPontaAPontaTests` semeava um fornecedor com CNPJ fixo e situação "Baixada". Só que
+outros testes da mesma coleção já haviam gravado esse mesmo CNPJ com situação "Ativa" — e o
+cenário acabava reutilizando o fornecedor errado, fazendo `REG_KYB_002` não disparar.
+
+O banco é compartilhado pela coleção de propósito (subir um contêiner por teste seria lento
+demais), então o dado de cada teste precisa ser único. Passou a gerar CNPJ válido por execução.
+
+### 5.7 As descrições saíram sem acento
+
+As descrições das flags são **texto público** — aparecem na página do parlamentar. Escrevi-as
+sem acentuação por hábito de código, e um teste que procurava "média" pegou. Corrigidas para
+português correto; a checagem de vocabulário normaliza acentos, então continuam funcionando.
+
+### 5.8 A chave da tabela CNAE tinha ponto final e nunca seria encontrada
 
 `Normalizar` remove ponto final do tipo de despesa, mas uma das 24 chaves foi escrita com ele.
 A entrada existia e era inalcançável — `REG_KYB_001` se absteria em silêncio para
@@ -102,18 +186,22 @@ coberto.
 
 | Pendência | Impacto | Observação |
 |---|---|---|
-| As 12 regras `REG_*` ainda não existem | — | É o corpo desta etapa |
-| `REG_KYB_005` precisa filtrar por tipo de documento | Alto | Achado da Etapa 03: bilhete aéreo tem 13 dígitos e não é nota sequencial |
+| `REG_NET_004` (concentração partidária) não implementada | Médio | Única das 12 que cruza parlamentares; o contexto atual é por parlamentar e ela precisa de uma passada global |
+| Calibragem dos limiares nunca foi confrontada com dado real | Alto | Os valores de `ParametrosDoMotor` são estimativas; só uma coleta real dirá se produzem sinal ou ruído |
 | Limites da CEAP de 2023 a 2025 | Médio | `REG_TX_002` só alcança 2026 até que sejam levantados nos Atos da Mesa |
 | Confirmar a vigência assumida (2026-01-01) | Baixo | A suposição erra para menos; ver 5.2 |
-| Calendário de recesso legislativo | Médio | Necessário para `REG_GEO_003` |
 | Medir e exibir a taxa de abstenção do motor | Médio | Se `REG_KYB_001` se abstiver em 80% das despesas, a tabela está pobre e isso tem de ser visível |
 | Nenhuma coleta real executada contra os 513 deputados | Médio | Depois do motor, para não popular o banco duas vezes |
 
-## 7. A seguir
+## 7. Próxima etapa
 
-Implementar as regras em ordem de valor: primeiro as que já têm todo o dado
-(`REG_KYB_002/003`, `REG_TX_001/003/004`, `REG_GEO_002`), depois as que dependem das tabelas
-recém-curadas (`REG_KYB_001`, `REG_TX_002`), e por fim `REG_KYB_004` e `REG_NET_004`.
+**Etapa 05 — API pública.**
 
-Cada regra entra por TDD, com casos construídos a partir de despesas reais das fixtures.
+Com o motor de pé, o próximo passo é expor o resultado: ranking por score, perfil do
+parlamentar e listagem de despesas com as inconsistências. CQRS, cache no Redis para as
+consultas quentes, e a ofuscação de dado pessoal na borda de saída.
+
+Antes disso, porém, vale **rodar a coleta real** contra os 513 deputados e passar o motor
+sobre a base. É a única forma de saber se os limiares de `ParametrosDoMotor` produzem sinal ou
+ruído — e a taxa de abstenção por regra, que o motor já reporta, é a métrica que responde isso.
+Calibrar contra dado inventado não vale nada.

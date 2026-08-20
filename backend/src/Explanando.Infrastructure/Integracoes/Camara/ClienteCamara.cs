@@ -130,6 +130,7 @@ public sealed class ClienteCamara(HttpClient http) : IFonteDeParlamentares
         TipoDespesa = despesa.TipoDespesa ?? string.Empty,
         CodigoDocumento = despesa.CodDocumento ?? string.Empty,
         NumeroDocumento = despesa.NumDocumento,
+        CodigoTipoDocumento = despesa.CodTipoDocumento,
 
         // Fixa em UTC em vez de deixar o parser adotar o fuso da maquina. A data entra no
         // HashUnico da despesa; um offset que varie por servidor duplicaria a mesma nota.

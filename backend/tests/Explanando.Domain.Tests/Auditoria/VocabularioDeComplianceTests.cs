@@ -52,6 +52,26 @@ public sealed class VocabularioDeComplianceTests
     }
 
     [Theory]
+    [InlineData("Valor acima de dois desvios padrão da série histórica")]
+    [InlineData("Desvio Padrão elevado no período")]
+    [InlineData("desvio padrao de 3,2 no trimestre")]
+    public void Desvio_padrao_e_permitido_apesar_de_conter_termo_proibido(string texto)
+    {
+        // "desvio" é proibido por imputar conduta, mas "Desvio Padrão" consta entre os
+        // termos OBRIGATÓRIOS do mesmo documento de Negócios. Sem esta exceção, o
+        // vocabulário recomendado seria recusado pelo próprio domínio.
+        VocabularioDeCompliance.ContemTermoProibido(texto).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void A_excecao_do_desvio_padrao_nao_libera_desvio_sozinho()
+    {
+        VocabularioDeCompliance.ContemTermoProibido("houve desvio de verba").ShouldBeTrue();
+        VocabularioDeCompliance.ContemTermoProibido("desvio padrão alto, e também desvio de recursos")
+            .ShouldBeTrue();
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     public void Texto_vazio_nao_viola_nada(string? vazio)

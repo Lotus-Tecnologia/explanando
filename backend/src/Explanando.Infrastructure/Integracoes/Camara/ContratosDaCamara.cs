@@ -109,6 +109,9 @@ internal sealed record DespesaJson
     [JsonPropertyName("numDocumento")]
     public string? NumDocumento { get; init; }
 
+    [JsonPropertyName("codTipoDocumento")]
+    public int CodTipoDocumento { get; init; }
+
     /// <summary>
     /// Chega como "2026-07-06T00:00:00", sem fuso. E' lido como <see cref="DateTime"/> e
     /// fixado em UTC no cliente — deixar o parser assumir o fuso da maquina faria a mesma

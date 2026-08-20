@@ -1,4 +1,6 @@
+using Explanando.Application.Auditoria;
 using Explanando.Application.Ingestao;
+using Explanando.Domain.Regras;
 using Explanando.Infrastructure.Integracoes;
 using Explanando.Infrastructure.Persistencia;
 using Explanando.Infrastructure.Persistencia.Repositorios;
@@ -23,8 +25,13 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<IRepositorioDeCheckpoints, RepositorioDeCheckpoints>();
         servicos.AddSingleton<IRelogio, RelogioDoSistema>();
 
+        servicos.AddScoped<IRepositorioDeVarredura, RepositorioDeVarredura>();
+        servicos.AddSingleton<IRelogioDaVarredura, RelogioDaVarreduraDoSistema>();
+        servicos.AddSingleton(MotorDeRegras.Padrao());
+
         servicos.AddScoped<ServicoDeIngestao>();
         servicos.AddScoped<ServicoDeColeta>();
+        servicos.AddScoped<ServicoDeVarredura>();
 
         return servicos;
     }

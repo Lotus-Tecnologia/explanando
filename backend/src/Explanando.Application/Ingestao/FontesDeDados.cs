@@ -31,6 +31,10 @@ public sealed record DespesaDaFonte
     public required string TipoDespesa { get; init; }
     public required string CodigoDocumento { get; init; }
     public string? NumeroDocumento { get; init; }
+
+    /// <summary>`codTipoDocumento`: 0 = Nota Fiscal, 4 = NF-e, demais = recibo/bilhete.</summary>
+    public int CodigoTipoDocumento { get; init; }
+
     public required DateTimeOffset DataDocumento { get; init; }
     public required decimal ValorDocumento { get; init; }
     public required decimal ValorLiquido { get; init; }

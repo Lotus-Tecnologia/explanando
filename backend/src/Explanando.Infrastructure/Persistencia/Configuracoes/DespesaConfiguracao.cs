@@ -42,6 +42,7 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
 
         // Base de REG_KYB_005 (nota inicial). Ausente da especificacao original.
         builder.Property(despesa => despesa.NumeroDocumento).HasMaxLength(50).IsRequired();
+        builder.Property(despesa => despesa.CodigoTipoDocumento).IsRequired();
 
         builder
             .Property(despesa => despesa.DataDocumento)
@@ -60,6 +61,7 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
         builder.Property(despesa => despesa.HashUnico).HasColumnType("char(64)").IsRequired();
 
         builder.Ignore(despesa => despesa.TemGlosa);
+        builder.Ignore(despesa => despesa.EhDocumentoFiscal);
         builder.Ignore(despesa => despesa.ValorParaScore);
 
         // A garantia de idempotencia da ingestao. Sem este indice, reprocessar um mes

@@ -20,6 +20,13 @@ public sealed record NovaDespesa
     /// <summary>`numDocumento` — o numero impresso na nota. Base de REG_KYB_005.</summary>
     public required string NumeroDocumento { get; init; }
 
+    /// <summary>
+    /// `codTipoDocumento`: 0 = Nota Fiscal, 4 = Nota Fiscal Eletronica, demais valores
+    /// sao recibo, bilhete aereo e afins. REG_KYB_005 procura numeracao sequencial baixa
+    /// e so' faz sentido sobre documento fiscal — bilhete aereo tem numero de 13 digitos.
+    /// </summary>
+    public int CodigoTipoDocumento { get; init; }
+
     public required DateTimeOffset DataDocumento { get; init; }
     public required decimal ValorDocumento { get; init; }
     public required decimal ValorLiquido { get; init; }
@@ -69,6 +76,9 @@ public sealed class Despesa : Entidade
 
     public string NumeroDocumento { get; private set; }
 
+    /// <summary>0 = Nota Fiscal, 4 = Nota Fiscal Eletronica. Ver <see cref="EhDocumentoFiscal"/>.</summary>
+    public int CodigoTipoDocumento { get; private set; }
+
     public DateTimeOffset DataDocumento { get; private set; }
 
     /// <summary>Valor pedido na nota.</summary>
@@ -90,6 +100,13 @@ public sealed class Despesa : Entidade
     public string HashUnico { get; private set; }
 
     public bool TemGlosa => ValorGlosa > 0m;
+
+    /// <summary>
+    /// Se o documento e' nota fiscal (comum ou eletronica). Recibo, bilhete aereo e
+    /// declaracao tem numeracao que nao segue serie sequencial do emitente, entao
+    /// REG_KYB_005 precisa ignora-los.
+    /// </summary>
+    public bool EhDocumentoFiscal => CodigoTipoDocumento is 0 or 4;
 
     /// <summary>
     /// Base do score de risco. Usa o liquido, nao o documento: contar o valor pedido
@@ -124,6 +141,7 @@ public sealed class Despesa : Entidade
             TipoDespesa = dados.TipoDespesa.Trim(),
             CodigoDocumento = dados.CodigoDocumento.Trim(),
             NumeroDocumento = dados.NumeroDocumento.Trim(),
+            CodigoTipoDocumento = dados.CodigoTipoDocumento,
             DataDocumento = dados.DataDocumento,
             ValorDocumento = dados.ValorDocumento,
             ValorLiquido = dados.ValorLiquido,

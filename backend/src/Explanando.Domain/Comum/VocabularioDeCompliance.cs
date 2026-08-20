@@ -44,6 +44,16 @@ public static class VocabularioDeCompliance
         "Desvio Padrão",
     ];
 
+    /// <summary>
+    /// Expressoes que contem um termo proibido mas sao <b>obrigatorias</b> pelo mesmo
+    /// documento de Negocios.
+    ///
+    /// "Desvio Padrao" e' o caso: "desvio" esta na lista de proibidos por imputar conduta,
+    /// mas "desvio padrao" e' termo estatistico e consta entre os termos preferidos. Sem
+    /// esta excecao, o proprio vocabulario recomendado seria recusado pelo dominio.
+    /// </summary>
+    private static readonly string[] ExpressoesPermitidas = ["desvio padrao"];
+
     public static bool ContemTermoProibido(string? texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -52,6 +62,13 @@ public static class VocabularioDeCompliance
         }
 
         var normalizado = Normalizar(texto);
+
+        // Remove as expressoes tecnicas permitidas antes de procurar os termos proibidos,
+        // para que o "desvio" de "desvio padrao" nao seja contado.
+        foreach (var permitida in ExpressoesPermitidas)
+        {
+            normalizado = normalizado.Replace(permitida, " ", StringComparison.Ordinal);
+        }
 
         foreach (var proibido in TermosProibidos)
         {
