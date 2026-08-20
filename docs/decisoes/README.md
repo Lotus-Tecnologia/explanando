@@ -17,3 +17,9 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0007](ADR-0007-postura-permissiva-do-motor.md) | Motor permissivo: na dúvida, silêncio | 2026-08-19 | Aceita |
 | [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Aceita |
 | [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
+
+## Questões abertas
+
+[**questoes-abertas-de-negocio.md**](questoes-abertas-de-negocio.md) — fila de decisões de
+produto que a implementação e a calibragem real levantaram e que ainda não têm ADR. Três
+delas definem o contrato da API e precisam ser respondidas antes da Etapa 05.
