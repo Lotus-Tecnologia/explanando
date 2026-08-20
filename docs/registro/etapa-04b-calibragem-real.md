@@ -152,7 +152,7 @@ Nenhuma imputa conduta, todas atribuem o achado a uma regra nomeada.
 
 | Pendência | Impacto | Observação |
 |---|---|---|
-| ~~Score favorece quem tem mais despesas~~ | ✅ Resolvido | Ver seção 7 e [ADR-0009](../decisoes/ADR-0009-dois-numeros-nao-um.md) |
+| ~~Score favorece quem tem mais despesas~~ | ✅ Resolvido | Ver seção 6 e [ADR-0009](../decisoes/ADR-0009-dois-numeros-nao-um.md) |
 | `REG_TX_002` só alcança 2026 | Médio | Levantar limites de 2023–2025 nos Atos da Mesa |
 | `optante_pelo_mei` nulo em 65% dos fornecedores | Médio | Limitação da fonte; `REG_KYB_004` fica cega nesses casos |
 | `REG_GEO_003` com 2 flags em 28 mil despesas | Baixo | Limiar de R$ 1.000 pode estar alto para alimentação |
