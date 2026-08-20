@@ -41,6 +41,16 @@ public sealed record ResultadoDaIngestao
     public int DespesasNovas { get; init; }
     public int DespesasJaConhecidas { get; init; }
     public int FornecedoresNovos { get; init; }
+
+    /// <summary>
+    /// Fornecedores que ficaram sem enriquecimento porque a fonte de cadastro falhou.
+    ///
+    /// Precisa ser visivel: sem cadastro, as regras de KYB se abstem sobre aquelas despesas.
+    /// Um numero alto aqui nao significa "nada encontrado" — significa "nao deu para olhar",
+    /// e as duas coisas parecem iguais no resultado final se ninguem contar.
+    /// </summary>
+    public int FornecedoresNaoEnriquecidos { get; init; }
+
     public IReadOnlyList<DespesaRejeitada> Rejeitadas { get; init; } = [];
     public IReadOnlyList<string> AlertasDeSanidade { get; init; } = [];
 
@@ -87,6 +97,7 @@ public sealed class ServicoDeIngestao(
         var novas = 0;
         var repetidas = 0;
         var fornecedoresNovos = 0;
+        var naoEnriquecidos = 0;
         var vindasDaFonte = 0;
 
         await foreach (var bruta in fonteDeParlamentares
@@ -114,12 +125,17 @@ public sealed class ServicoDeIngestao(
                 continue;
             }
 
-            var (fornecedorId, criouFornecedor) = await ResolverFornecedorAsync(
+            var (fornecedorId, criouFornecedor, falhouEnriquecimento) = await ResolverFornecedorAsync(
                 despesa.DocumentoFornecedor, fornecedoresResolvidos, cancelamento).ConfigureAwait(false);
 
             if (criouFornecedor)
             {
                 fornecedoresNovos++;
+            }
+
+            if (falhouEnriquecimento)
+            {
+                naoEnriquecidos++;
             }
 
             if (fornecedorId is { } id)
@@ -147,6 +163,7 @@ public sealed class ServicoDeIngestao(
             DespesasNovas = novas,
             DespesasJaConhecidas = repetidas,
             FornecedoresNovos = fornecedoresNovos,
+            FornecedoresNaoEnriquecidos = naoEnriquecidos,
             Rejeitadas = rejeitadas,
             AlertasDeSanidade = alertas,
         };
@@ -174,20 +191,31 @@ public sealed class ServicoDeIngestao(
     /// <summary>
     /// Devolve o id do fornecedor, ou nulo quando o documento nao identifica ninguem
     /// (sentinela, vazio ou invalido). Nulo aqui nao impede a despesa de ser gravada.
+    ///
+    /// <para><b>Falha da fonte de cadastro nao derruba o deputado.</b> Na primeira coleta
+    /// real, uma consulta de CNPJ que esgotou as tentativas por rate-limit propagava a
+    /// excecao e abortava a ingestao inteira daquele parlamentar — mil despesas ja gravadas
+    /// ficavam sem checkpoint, e a proxima passada recomecava do zero. Uma falha transitoria
+    /// ao enriquecer <b>um</b> fornecedor nao pode custar as outras 1.199 despesas.</para>
+    ///
+    /// <para>O caso degradado e' o mesmo de "CNPJ desconhecido pela fonte": a despesa e'
+    /// gravada sem vinculo e as regras de KYB se abstem sobre ela. A diferenca e' que este
+    /// caso e' <b>contado a parte</b>, porque "nao deu para olhar" nao pode se confundir com
+    /// "olhei e nao achei nada".</para>
     /// </summary>
-    private async Task<(Guid? Id, bool Criou)> ResolverFornecedorAsync(
+    private async Task<(Guid? Id, bool Criou, bool FalhouEnriquecimento)> ResolverFornecedorAsync(
         CpfCnpj documento,
         Dictionary<string, Guid?> cache,
         CancellationToken cancelamento)
     {
         if (!documento.PodeSerEnriquecido)
         {
-            return (null, false);
+            return (null, false, false);
         }
 
         if (cache.TryGetValue(documento.Numero, out var doCache))
         {
-            return (doCache, false);
+            return (doCache, false, false);
         }
 
         var existente = await repositorio.ObterFornecedorAsync(documento, cancelamento)
@@ -196,18 +224,28 @@ public sealed class ServicoDeIngestao(
         if (existente is not null)
         {
             cache[documento.Numero] = existente.Id;
-            return (existente.Id, false);
+            return (existente.Id, false, false);
         }
 
-        var empresa = await fonteDeCadastro.ConsultarAsync(documento.Numero, cancelamento)
-            .ConfigureAwait(false);
+        EmpresaDaFonte? empresa;
+
+        try
+        {
+            empresa = await fonteDeCadastro.ConsultarAsync(documento.Numero, cancelamento)
+                .ConfigureAwait(false);
+        }
+        catch (Exception erro) when (erro is not OperationCanceledException)
+        {
+            // Nao cacheia: a proxima passada tenta de novo este CNPJ.
+            return (null, false, true);
+        }
 
         if (empresa is null)
         {
             // Fonte nao conhece o CNPJ. A despesa continua valendo, so' fica sem
             // enriquecimento — e sem enriquecimento as regras de KYB simplesmente se abstem.
             cache[documento.Numero] = null;
-            return (null, false);
+            return (null, false, false);
         }
 
         var fornecedor = Fornecedor.Criar(Tradutor.ParaNovoFornecedor(empresa));
@@ -226,6 +264,6 @@ public sealed class ServicoDeIngestao(
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
 
         cache[documento.Numero] = fornecedor.Id;
-        return (fornecedor.Id, true);
+        return (fornecedor.Id, true, false);
     }
 }

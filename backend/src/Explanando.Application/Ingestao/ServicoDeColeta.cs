@@ -33,6 +33,9 @@ public sealed record ResultadoDaColeta
     public int DeputadosPulados { get; init; }
     public int DespesasNovas { get; init; }
     public int DespesasRejeitadas { get; init; }
+
+    /// <summary>Consultas de cadastro que falharam. Ver ResultadoDaIngestao.</summary>
+    public int FornecedoresNaoEnriquecidos { get; init; }
     public IReadOnlyList<string> Alertas { get; init; } = [];
     public IReadOnlyList<string> Falhas { get; init; } = [];
 
@@ -90,6 +93,7 @@ public sealed class ServicoDeColeta(
         var tentados = 0;
         var novas = 0;
         var rejeitadas = 0;
+        var naoEnriquecidos = 0;
         var motivos = new Dictionary<string, int>(StringComparer.Ordinal);
 
         await foreach (var deputado in fonte.ListarDeputadosAsync(cancelamento).ConfigureAwait(false))
@@ -132,6 +136,7 @@ public sealed class ServicoDeColeta(
             visitados++;
             novas += resultado.DespesasNovas;
             rejeitadas += resultado.Rejeitadas.Count;
+            naoEnriquecidos += resultado.FornecedoresNaoEnriquecidos;
             alertas.AddRange(resultado.AlertasDeSanidade);
 
             foreach (var rejeicao in resultado.Rejeitadas)
@@ -151,6 +156,7 @@ public sealed class ServicoDeColeta(
             DeputadosPulados = pulados,
             DespesasNovas = novas,
             DespesasRejeitadas = rejeitadas,
+            FornecedoresNaoEnriquecidos = naoEnriquecidos,
             Alertas = alertas,
             Falhas = falhas,
             MotivosDeRejeicao = [.. motivos

@@ -28,11 +28,13 @@ public static class ServicosDeIntegracao
     /// <summary>
     /// Intervalo minimo entre consultas a BrasilAPI.
     ///
-    /// Calibrado pela primeira coleta real: dois deputados produziram 166 respostas 429.
-    /// A medicao da Etapa 01, que nao viu nenhum, usou oito requisicoes — poucas demais
-    /// para revelar um limite medido por janela de tempo.
+    /// Calibrado em duas rodadas reais. Sem limitador, dois deputados produziram 166
+    /// respostas 429 — a medicao da Etapa 01, que nao viu nenhuma, usou oito requisicoes,
+    /// poucas demais para revelar um limite medido por janela de tempo. Com 400ms, tres
+    /// deputados ainda geraram 8 retries. Em 600ms o custo e' tempo, e o tempo aqui e'
+    /// barato: o enriquecimento e' cacheado no banco e so' paga uma vez por CNPJ.
     /// </summary>
-    public static TimeSpan IntervaloEntreConsultasDeCnpj { get; } = TimeSpan.FromMilliseconds(400);
+    public static TimeSpan IntervaloEntreConsultasDeCnpj { get; } = TimeSpan.FromMilliseconds(600);
 
     public static IServiceCollection AdicionarIntegracoes(this IServiceCollection servicos)
     {

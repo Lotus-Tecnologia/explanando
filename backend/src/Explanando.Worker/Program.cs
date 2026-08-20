@@ -63,6 +63,7 @@ switch (comando)
                 Deputados pulados   : {resultado.DeputadosPulados}
                 Despesas novas      : {resultado.DespesasNovas}
                 Despesas rejeitadas : {resultado.DespesasRejeitadas}
+                CNPJ sem consulta   : {resultado.FornecedoresNaoEnriquecidos}
                 Alertas de sanidade : {resultado.Alertas.Count}
                 Falhas              : {resultado.Falhas.Count}
                 Tempo               : {relogio.Elapsed:hh\:mm\:ss}

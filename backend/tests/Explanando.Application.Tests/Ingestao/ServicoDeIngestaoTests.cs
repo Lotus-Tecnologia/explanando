@@ -176,6 +176,57 @@ public sealed class ServicoDeIngestaoTests
         resultado.Rejeitadas[0].Motivo.ShouldContain("glosa");
     }
 
+    [Fact]
+    public async Task Falha_na_fonte_de_cadastro_nao_derruba_a_coleta_do_deputado()
+    {
+        // Aconteceu na primeira coleta real: uma consulta de CNPJ que esgotou as tentativas
+        // por rate-limit abortava a ingestao inteira do parlamentar. Mil despesas ja
+        // gravadas ficavam sem checkpoint e a proxima passada recomecava do zero.
+        var repositorio = new RepositorioFalso();
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), Despesa("2")]),
+            new CadastroFalso { Explode = true },
+            repositorio);
+
+        var resultado = await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        resultado.DespesasNovas.ShouldBe(2, "as despesas continuam sendo gravadas");
+        resultado.FornecedoresNaoEnriquecidos.ShouldBe(2);
+        repositorio.Despesas.ShouldAllBe(d => d.FornecedorId == null);
+    }
+
+    [Fact]
+    public async Task Falha_de_enriquecimento_nao_e_cacheada()
+    {
+        // "Nao deu para consultar" e' diferente de "consultei e nao existe". Cachear a
+        // falha faria a proxima passada herdar o buraco em vez de tentar de novo.
+        var cadastro = new CadastroFalso { Explode = true };
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), Despesa("2"), Despesa("3")]),
+            cadastro,
+            new RepositorioFalso());
+
+        await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        cadastro.Consultas.Count.ShouldBe(3, "tentou de novo a cada despesa, sem cachear a falha");
+    }
+
+    [Fact]
+    public async Task Cnpj_ausente_do_cadastro_nao_conta_como_falha_de_enriquecimento()
+    {
+        // Um numero alto de "nao enriquecidos" e' sinal de problema de infraestrutura.
+        // Misturar com "a fonte nao conhece o CNPJ", que e' rotina, apagaria esse sinal.
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1")]),
+            new CadastroFalso { Responde = false },
+            new RepositorioFalso());
+
+        var resultado = await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        resultado.DespesasNovas.ShouldBe(1);
+        resultado.FornecedoresNaoEnriquecidos.ShouldBe(0);
+    }
+
     // ------------------------------------------------------------------
     //  O alarme de sanidade da Etapa 01
     // ------------------------------------------------------------------
@@ -258,11 +309,19 @@ public sealed class ServicoDeIngestaoTests
     {
         public bool Responde { get; init; } = true;
 
+        /// <summary>Simula falha transitoria da fonte, como o 429 da coleta real.</summary>
+        public bool Explode { get; init; }
+
         public List<string> Consultas { get; } = [];
 
         public Task<EmpresaDaFonte?> ConsultarAsync(string cnpj, CancellationToken cancelamento = default)
         {
             Consultas.Add(cnpj);
+
+            if (Explode)
+            {
+                throw new HttpRequestException("429 simulado.");
+            }
 
             if (!Responde)
             {
