@@ -1,9 +1,12 @@
 using Explanando.Domain.Auditoria;
+using Explanando.Domain.Contestacoes;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Fornecedores;
 using Explanando.Domain.Ingestao;
 using Explanando.Domain.Parlamentares;
+using Explanando.Domain.Usuarios;
+using Explanando.Domain.Varreduras;
 using Microsoft.EntityFrameworkCore;
 
 namespace Explanando.Infrastructure.Persistencia;
@@ -36,6 +39,16 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     public DbSet<LimiteCota> LimitesCota => Set<LimiteCota>();
 
     public DbSet<CheckpointDeIngestao> CheckpointsDeIngestao => Set<CheckpointDeIngestao>();
+
+    public DbSet<HistoricoScore> HistoricoScores => Set<HistoricoScore>();
+
+    public DbSet<ContestacaoDespesa> Contestacoes => Set<ContestacaoDespesa>();
+
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+
+    public DbSet<Favorito> Favoritos => Set<Favorito>();
+
+    public DbSet<SolicitacaoVarredura> SolicitacoesVarredura => Set<SolicitacaoVarredura>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

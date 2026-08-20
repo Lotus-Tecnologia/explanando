@@ -177,6 +177,61 @@ public sealed class MotorDeRegrasTests
         resultado.TaxaDeDespesasSinalizadas.ShouldBe(0.5m);
     }
 
+    // ------------------------------------------------------------------
+    //  Versao do motor: separar "mudou o parlamentar" de "mudou o software"
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Carimba_a_versao_do_motor_em_toda_flag_emitida()
+    {
+        // Sem este carimbo, a recalibragem da tabela CNAE (que levou REG_KYB_001 de 1.477
+        // para 297 flags de uma vez) teria disparado alerta para todo mundo que favoritou
+        // um parlamentar — sobre uma mudanca que nao teve nada a ver com ele.
+        var contexto = new CenarioDeAvaliacao()
+            .ParlamentarDe("AP")
+            .ComFornecedor(situacao: SituacaoCadastral.Baixada, dataSituacao: new DateOnly(2020, 1, 1))
+            .ComDespesa(1_000m)
+            .Construir();
+
+        var resultado = MotorDeRegras.Padrao().Avaliar(contexto);
+
+        resultado.Flags.ShouldNotBeEmpty();
+        resultado.Flags.ShouldAllBe(flag => flag.VersaoDoMotor == MotorDeRegras.VersaoAtual);
+    }
+
+    [Fact]
+    public void Resultado_declara_a_versao_que_o_produziu()
+    {
+        var contexto = new CenarioDeAvaliacao().ComDespesa(100m).Construir();
+
+        MotorDeRegras.Padrao().Avaliar(contexto).VersaoDoMotor.ShouldBe(MotorDeRegras.VersaoAtual);
+    }
+
+    [Fact]
+    public void Versao_pode_ser_fixada_na_instancia()
+    {
+        // O reprocessamento historico precisa poder rodar com a versao de origem; sem isso
+        // nao ha como recompor um grafico antigo.
+        var contexto = new CenarioDeAvaliacao()
+            .ComFornecedor(situacao: SituacaoCadastral.Baixada, dataSituacao: new DateOnly(2020, 1, 1))
+            .ComDespesa(1_000m)
+            .Construir();
+
+        var motor = new MotorDeRegras([new RegraSituacaoCadastralIrregular()], versao: 7);
+
+        var resultado = motor.Avaliar(contexto);
+
+        resultado.VersaoDoMotor.ShouldBe(7);
+        resultado.Flags.ShouldAllBe(flag => flag.VersaoDoMotor == 7);
+    }
+
+    [Fact]
+    public void Versao_atual_e_maior_que_zero()
+    {
+        // FlagAnomalia recusa versao nao positiva; a constante e o contrato tem de casar.
+        MotorDeRegras.VersaoAtual.ShouldBeGreaterThan(0);
+    }
+
     /// <summary>Dublê que estoura, para provar o isolamento de falhas do motor.</summary>
     private sealed class RegraQuebrada : IRegraAnomalia
     {

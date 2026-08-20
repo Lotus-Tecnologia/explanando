@@ -27,6 +27,34 @@ public sealed class FlagAnomaliaTests
         Flag(gravidade: Gravidade.Baixa).EhVermelha.ShouldBeFalse();
     }
 
+    [Fact]
+    public void Nasce_sem_versao_de_motor_ate_o_motor_carimbar()
+    {
+        // A flag e' construida pela regra, que nao conhece a versao; quem carimba e' o
+        // motor, ao recolher o resultado.
+        Flag().VersaoDoMotor.ShouldBe(0);
+    }
+
+    [Fact]
+    public void Aceita_o_carimbo_de_versao_do_motor()
+    {
+        var flag = Flag();
+
+        flag.RegistrarVersaoDoMotor(2);
+
+        flag.VersaoDoMotor.ShouldBe(2);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Recusa_versao_de_motor_nao_positiva(int versao)
+    {
+        // Zero e' o estado "ainda nao carimbada"; grava-lo de propósito apagaria a
+        // distincao entre flag nova e flag sem procedencia.
+        Should.Throw<ArgumentOutOfRangeException>(() => Flag().RegistrarVersaoDoMotor(versao));
+    }
+
     // ------------------------------------------------------------------
     //  ADR-0004 aplicado como invariante, nao como recomendacao
     // ------------------------------------------------------------------

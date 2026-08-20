@@ -23,6 +23,9 @@ public sealed record ResultadoDaAvaliacao
     /// </summary>
     public IReadOnlyList<FalhaDeRegra> Falhas { get; init; } = [];
 
+    /// <summary>Versao do motor que produziu este resultado. Ver MotorDeRegras.VersaoAtual.</summary>
+    public int VersaoDoMotor { get; init; }
+
     public int TotalDeDespesasAvaliadas { get; init; }
 
     /// <summary>
@@ -47,8 +50,32 @@ public sealed record ResultadoDaAvaliacao
 /// capturada e registrada, e as demais continuam. O oposto significaria que um erro em
 /// REG_GEO_003 apagaria os achados de todas as outras dez.</para>
 /// </summary>
-public sealed class MotorDeRegras(IReadOnlyList<IRegraAnomalia> regras)
+public sealed class MotorDeRegras(
+    IReadOnlyList<IRegraAnomalia> regras,
+    int versao = MotorDeRegras.VersaoAtual)
 {
+    /// <summary>
+    /// Versao do conjunto de regras e da calibragem.
+    ///
+    /// <para><b>Precisa ser incrementada a cada mudanca que altere o resultado</b> — regra
+    /// nova, limiar ajustado, tabela CNAE editada. Sem isso, um degrau no historico fica
+    /// indistinguivel entre "o parlamentar mudou" e "o software mudou", e a notificacao ao
+    /// usuario que favoritou dispara por motivo errado.</para>
+    ///
+    /// <para>Nao e' hipotese: a recalibragem de 2026-08-20 levou REG_KYB_001 de 1.477 para
+    /// 297 flags de uma vez. Em producao, todo favoritante teria recebido alerta sobre uma
+    /// mudanca que nao teve nada a ver com o politico.</para>
+    ///
+    /// <list type="bullet">
+    /// <item><b>1</b> — 11 regras, calibragem inicial (Etapa 04).</item>
+    /// <item><b>2</b> — tabela CNAE calibrada contra 28.540 despesas reais (Etapa 04b).</item>
+    /// </list>
+    /// </summary>
+    public const int VersaoAtual = 2;
+
+    /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
+    public int Versao { get; } = versao;
+
     /// <summary>As 11 regras que o dado disponivel sustenta no V1.</summary>
     public static MotorDeRegras Padrao() => new(
     [
@@ -95,6 +122,13 @@ public sealed class MotorDeRegras(IReadOnlyList<IRegraAnomalia> regras)
                 continue;
             }
 
+            // Carimba a versao antes de acumular: e' o que permite a notificacao
+            // distinguir achado por despesa nova de achado por regra alterada.
+            foreach (var flag in doRegra)
+            {
+                flag.RegistrarVersaoDoMotor(Versao);
+            }
+
             flags.AddRange(doRegra);
             porRegra[regra.Codigo] = doRegra.Count;
 
@@ -110,6 +144,7 @@ public sealed class MotorDeRegras(IReadOnlyList<IRegraAnomalia> regras)
             FlagsPorRegra = porRegra,
             RegrasSilenciosas = silenciosas,
             Falhas = falhas,
+            VersaoDoMotor = Versao,
             TotalDeDespesasAvaliadas = contexto.Despesas.Count,
         };
     }

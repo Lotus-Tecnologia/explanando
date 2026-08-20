@@ -45,6 +45,14 @@ public sealed partial class FlagAnomalia : Entidade
 
     public DateTimeOffset DataIdentificacao { get; private set; }
 
+    /// <summary>
+    /// Versao do motor que emitiu esta flag.
+    ///
+    /// E' o que permite a notificacao distinguir achado novo por <b>despesa nova</b> de
+    /// achado novo por <b>regra alterada</b>. So' o primeiro e' noticia sobre o parlamentar.
+    /// </summary>
+    public int VersaoDoMotor { get; private set; }
+
     public bool EhVermelha => Gravidade is Gravidade.Alta;
 
     public bool EhDeterministica => GrauDeConfianca >= 1.0m;
@@ -90,6 +98,13 @@ public sealed partial class FlagAnomalia : Entidade
             GrauDeConfianca = grauDeConfianca,
             DataIdentificacao = DateTimeOffset.UtcNow,
         };
+    }
+
+    /// <summary>Carimba a versao do motor. Chamado pelo motor ao coletar o resultado.</summary>
+    public void RegistrarVersaoDoMotor(int versao)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(versao);
+        VersaoDoMotor = versao;
     }
 
     [GeneratedRegex(@"^REG_[A-Z]{2,3}_\d{3}$", RegexOptions.CultureInvariant)]

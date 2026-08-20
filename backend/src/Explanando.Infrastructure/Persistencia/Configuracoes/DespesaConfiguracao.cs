@@ -125,6 +125,8 @@ internal sealed class FlagAnomaliaConfiguracao : IEntityTypeConfiguration<FlagAn
             .HasColumnType("timestamp with time zone")
             .IsRequired();
 
+        builder.Property(flag => flag.VersaoDoMotor).IsRequired();
+
         builder.Ignore(flag => flag.EhVermelha);
         builder.Ignore(flag => flag.EhDeterministica);
         builder.Ignore(flag => flag.Peso);
