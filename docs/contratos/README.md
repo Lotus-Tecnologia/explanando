@@ -137,6 +137,15 @@ API devolve para rota inexistente. `REG_NET_002` continua sem fonte na API REST.
 
 Latência ~470 ms por consulta, 8 consultas sequenciais sem sinal de bloqueio. 48 campos na raiz.
 
+> [!warning] "Sem sinal de bloqueio" estava errado
+> Oito consultas não revelam um limite medido por janela de tempo. A primeira coleta real, de
+> **dois** deputados, produziu **166 respostas `429`**. A ingestão passou a espaçar as chamadas
+> em 600 ms, o que reduziu para 3 retries em 20 deputados. Ver
+> [etapa-04b-calibragem-real.md](../registro/etapa-04b-calibragem-real.md), seção 3.1.
+>
+> A lição vale para o resto deste documento: **medição com amostra pequena descreve a amostra,
+> não o serviço.**
+
 Campos que destravam regras:
 
 | Campo | Regra |
