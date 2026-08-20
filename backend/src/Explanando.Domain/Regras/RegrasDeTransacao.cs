@@ -20,8 +20,10 @@ public sealed class RegraFracionamento : IRegraAnomalia
 
         var parametros = contexto.Parametros;
 
+        // Estorno fica de fora: a regra conta NOTAS emitidas, e uma devolucao nao e'
+        // uma compra fatiada. Incluir estornos inflaria a contagem sem gasto correspondente.
         var grupos = contexto.Despesas
-            .Where(despesa => !despesa.DocumentoFornecedor.EhVazio)
+            .Where(despesa => !despesa.DocumentoFornecedor.EhVazio && !despesa.EhEstorno)
             .GroupBy(despesa => (despesa.Competencia, despesa.DocumentoFornecedor.Numero));
 
         foreach (var grupo in grupos)

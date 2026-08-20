@@ -102,6 +102,19 @@ public sealed class Despesa : Entidade
     public bool TemGlosa => ValorGlosa > 0m;
 
     /// <summary>
+    /// Estorno: devolucao de valor a cota, lancada como despesa de valor negativo.
+    ///
+    /// <para>Descoberto na primeira coleta real, que recusou 1.223 registros por "valor
+    /// negativo" — 4,3% de tudo. Sao majoritariamente cancelamentos de passagem aerea
+    /// (SIGEPA), com o mesmo formato de uma despesa comum e sinal invertido.</para>
+    ///
+    /// <para>Rejeita-los seria pior que perder registro: <b>inflaria o gasto</b>. Um
+    /// parlamentar que comprou passagem de R$ 1.846 e cancelou apareceria tendo gasto os
+    /// R$ 1.846, e o ranking publico o colocaria acima de quem realmente gastou aquilo.</para>
+    /// </summary>
+    public bool EhEstorno => ValorLiquido < 0m;
+
+    /// <summary>
     /// Se o documento e' nota fiscal (comum ou eletronica). Recibo, bilhete aereo e
     /// declaracao tem numeracao que nao segue serie sequencial do emitente, entao
     /// REG_KYB_005 precisa ignora-los.
@@ -117,13 +130,19 @@ public sealed class Despesa : Entidade
     public static Despesa Criar(NovaDespesa dados)
     {
         ArgumentNullException.ThrowIfNull(dados);
-        ArgumentOutOfRangeException.ThrowIfNegative(dados.ValorDocumento);
-        ArgumentOutOfRangeException.ThrowIfNegative(dados.ValorLiquido);
+
+        // Valor negativo e' estorno e e' dado legitimo — ver EhEstorno. So' a glosa
+        // permanece obrigatoriamente nao negativa: ela e' um corte, nao um lancamento.
         ArgumentOutOfRangeException.ThrowIfNegative(dados.ValorGlosa);
 
         var glosaEsperada = dados.ValorDocumento - dados.ValorLiquido;
 
-        if (dados.ValorGlosa != 0m && Math.Abs(glosaEsperada - dados.ValorGlosa) > 0.01m)
+        // A consistencia da glosa so' vale para lancamento comum. Num estorno os dois
+        // valores sao negativos e a aritmetica de corte nao se aplica.
+        var ehLancamentoComum = dados.ValorDocumento >= 0m && dados.ValorLiquido >= 0m;
+
+        if (ehLancamentoComum && dados.ValorGlosa != 0m
+            && Math.Abs(glosaEsperada - dados.ValorGlosa) > 0.01m)
         {
             throw new ArgumentException(
                 $"Valor de glosa inconsistente: documento {dados.ValorDocumento} menos liquido "

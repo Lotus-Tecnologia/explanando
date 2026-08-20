@@ -157,6 +157,73 @@ public sealed class CompatibilidadeCnaeTests
     }
 
     // ------------------------------------------------------------------
+    //  Calibragem contra 28.540 despesas reais
+    // ------------------------------------------------------------------
+    //  Cada caso abaixo é um CNAE que a versão anterior da tabela marcava
+    //  indevidamente, com a contagem que ele produziu na base real.
+
+    [Fact]
+    public void Pagamento_a_orgao_publico_nunca_e_desencontro()
+    {
+        // O "Município de Belo Horizonte" (CNAE 8411-6/00) gerou 386 flags de manutenção
+        // de escritório. Era IPTU do imóvel. Pagar prefeitura é imposto ou taxa, não
+        // contratação de fornecedor — e isso vale para qualquer tipo de despesa.
+        foreach (var tipo in new[] { Combustivel, Consultoria, Seguranca })
+        {
+            CompatibilidadeCnae.Avaliar(tipo, ["8411600"])
+                .ShouldBe(ResultadoDeCompatibilidade.Compativel, tipo);
+        }
+    }
+
+    [Fact]
+    public void Uber_e_compativel_com_despesa_de_taxi()
+    {
+        // A maior descoberta da calibragem: a Uber tem CNAE 7490-1/04 (intermediação e
+        // agenciamento), não transporte. Ela sozinha respondia por 439 das 458 flags
+        // deste tipo de despesa.
+        CompatibilidadeCnae.Avaliar("SERVIÇO DE TÁXI, PEDÁGIO E ESTACIONAMENTO", ["7490104"])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel);
+    }
+
+    [Fact]
+    public void Sindicato_de_taxistas_e_compativel_com_despesa_de_taxi()
+    {
+        CompatibilidadeCnae.Avaliar("SERVIÇO DE TÁXI, PEDÁGIO E ESTACIONAMENTO", ["9420100"])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel);
+    }
+
+    [Theory]
+    [InlineData("6311900", "hospedagem em nuvem")]
+    [InlineData("6204000", "software (Adobe)")]
+    [InlineData("7733100", "locação de equipamento")]
+    [InlineData("6541300", "seguro")]
+    [InlineData("8219999", "serviços administrativos")]
+    [InlineData("4711301", "supermercado")]
+    public void Manutencao_de_escritorio_aceita_o_que_um_escritorio_de_fato_consome(
+        string cnae, string caso)
+    {
+        // Todos apareceram como fornecedores reais deste tipo de despesa e eram marcados
+        // pela versão anterior da tabela. O rótulo engana: "manutenção de escritório"
+        // cobre nuvem, software, seguro e locação de equipamento.
+        CompatibilidadeCnae.Avaliar(
+            "MANUTENÇÃO DE ESCRITÓRIO DE APOIO À ATIVIDADE PARLAMENTAR", [cnae])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel, caso);
+    }
+
+    [Fact]
+    public void A_tabela_mais_ampla_nao_apagou_o_desencontro_evidente()
+    {
+        // Alargar a tabela não pode calar a regra. Estes continuaram sendo marcados na
+        // base real, e devem continuar: imobiliária e churrascaria vendendo combustível.
+        CompatibilidadeCnae.Avaliar(Combustivel, ["6810202"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel, "imobiliária");
+        CompatibilidadeCnae.Avaliar(Combustivel, ["5611201"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel, "churrascaria");
+        CompatibilidadeCnae.Avaliar(Consultoria, ["4723700"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel, "comércio de bebidas");
+    }
+
+    // ------------------------------------------------------------------
     //  Proteção contra tabela restritiva demais
     // ------------------------------------------------------------------
 

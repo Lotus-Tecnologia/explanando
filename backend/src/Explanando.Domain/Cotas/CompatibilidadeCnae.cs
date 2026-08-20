@@ -42,16 +42,39 @@ public enum ResultadoDeCompatibilidade
 public static class CompatibilidadeCnae
 {
     /// <summary>
+    /// Ramos que nunca caracterizam desencontro, seja qual for o tipo de despesa.
+    ///
+    /// <b>84 — administracao publica.</b> Pagamento a prefeitura ou orgao publico e' imposto,
+    /// taxa ou tarifa, nao contratacao de fornecedor. Na calibragem contra dado real, o
+    /// "Municipio de Belo Horizonte" sozinho gerou 386 flags de manutencao de escritorio —
+    /// todas eram IPTU do imovel.
+    /// </summary>
+    private static readonly string[] SempreAceitos = ["84"];
+
+    /// <summary>
     /// Chave normalizada (sem acento, minuscula, sem pontuacao final) -> prefixos de CNAE
     /// aceitos. Ver <see cref="Normalizar"/>.
+    ///
+    /// <para>As listas foram <b>calibradas contra 28.540 despesas reais</b>. A versao
+    /// anterior, escrita sem dado, marcava 5,2% de todas as despesas — alto demais para uma
+    /// regra que deveria falar so' no desencontro evidente.</para>
     /// </summary>
     private static readonly Dictionary<string, string[]> Tabela = new(StringComparer.Ordinal)
     {
-        // 1 — aluguel, energia, agua, limpeza, telecom, reforma e material de construcao.
-        // Deliberadamente amplo: "manutencao de escritorio" cobre quase tudo que um
-        // imovel consome.
+        // 1 — o rotulo engana: na pratica este tipo cobre quase tudo que um escritorio
+        // consome. A calibragem real mostrou nuvem, software, seguro, locacao de
+        // equipamento, servicos administrativos e supermercado — todos legitimos, e todos
+        // marcados pela versao anterior da tabela.
         ["manutencao de escritorio de apoio a atividade parlamentar"] =
-            ["68", "35", "36", "37", "38", "81", "61", "43", "41", "474", "475", "477"],
+            [
+                "68", "35", "36", "37", "38", "81", "61", "43", "41",  // imovel e utilidades
+                "62", "63",                                            // software, nuvem, provedor
+                "64", "65", "66",                                      // servicos financeiros e seguro
+                "77",                                                  // locacao de maquinas e equipamentos
+                "82",                                                  // servicos administrativos
+                "47",                                                  // varejo em geral
+                "95",                                                  // reparacao e manutencao
+            ],
 
         // 2 — hospedagem, alimentacao, transporte terrestre e agencias de viagem.
         ["locomocao, alimentacao e hospedagem"] = ["55", "56", "49", "79"],
@@ -112,8 +135,12 @@ public static class CompatibilidadeCnae
         // 121 — navegacao e apoio aquaviario.
         ["locacao ou fretamento de embarcacoes"] = ["50", "7719", "523"],
 
-        // 122 — taxi, aplicativos, estacionamento e concessionarias de rodovia.
-        ["servico de taxi, pedagio e estacionamento"] = ["492", "522"],
+        // 122 — a maior descoberta da calibragem: a Uber tem CNAE 7490-1/04
+        // (intermediacao e agenciamento), nao transporte. Ela sozinha respondia por 439 das
+        // 458 flags deste tipo. Sindicatos e associacoes de taxistas (94) tambem aparecem
+        // como emitentes.
+        ["servico de taxi, pedagio e estacionamento"] =
+            ["492", "522", "5229", "7490", "94", "5320"],
 
         // 123 — rodoviario interestadual, aquaviario e agencias.
         ["passagens terrestres, maritimas ou fluviais"] = ["492", "50", "79"],
@@ -162,6 +189,14 @@ public static class CompatibilidadeCnae
             }
 
             houveCnaeLegivel = true;
+
+            foreach (var prefixo in SempreAceitos)
+            {
+                if (cnae.StartsWith(prefixo, StringComparison.Ordinal))
+                {
+                    return ResultadoDeCompatibilidade.Compativel;
+                }
+            }
 
             foreach (var prefixo in prefixos)
             {

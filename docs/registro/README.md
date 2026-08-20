@@ -31,6 +31,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 02 | Domínio e EF Core | ✅ Concluída | [etapa-02-dominio-e-efcore.md](etapa-02-dominio-e-efcore.md) |
 | 03 | Ingestão (Câmara + BrasilAPI) | ✅ Concluída | [etapa-03-ingestao.md](etapa-03-ingestao.md) |
 | 04 | Motor de regras determinísticas | ✅ Concluída | [etapa-04-motor-de-regras.md](etapa-04-motor-de-regras.md) |
+| 04b | Calibragem contra dado real | ✅ Concluída | [etapa-04b-calibragem-real.md](etapa-04b-calibragem-real.md) |
 | 05 | API pública | ⏳ Próxima | — |
 | 06 | Frontend Next.js | ⬜ Não iniciada | — |
 | 07 | Observabilidade e deploy | ⬜ Não iniciada | — |

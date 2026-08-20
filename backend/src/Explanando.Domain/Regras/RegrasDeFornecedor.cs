@@ -214,6 +214,7 @@ public sealed class RegraNotaFiscalInicial : IRegraAnomalia
 
         var porFornecedor = contexto.Despesas
             .Where(despesa => despesa.EhDocumentoFiscal
+                && !despesa.EhEstorno
                 && contexto.FornecedorDe(despesa) is not null)
             .GroupBy(despesa => despesa.DocumentoFornecedor.Numero, StringComparer.Ordinal);
 

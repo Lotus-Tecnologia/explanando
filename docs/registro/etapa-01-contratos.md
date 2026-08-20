@@ -80,6 +80,12 @@ Um ingestor escrito a partir da documentação rodaria a coleta inteira dos 513 
 gravaria zero despesas e reportaria sucesso. **É a falha mais cara possível: silenciosa e
 plausível.**
 
+> [!warning] Corrigido depois
+> A conclusão de que a BrasilAPI não tinha rate-limit **estava errada**. Ela se apoiava em
+> oito requisições — poucas demais para revelar um limite medido por janela de tempo. A
+> primeira coleta real, de dois deputados, produziu 166 respostas `429`. Ver
+> [etapa-04b-calibragem-real.md](etapa-04b-calibragem-real.md), seção 3.1.
+
 ### 5.2 Os 2,6 s por requisição não eram rate-limit
 
 Medição inicial: 20 requisições sequenciais, ~2.619 ms cada, nenhum `429`. A leitura óbvia

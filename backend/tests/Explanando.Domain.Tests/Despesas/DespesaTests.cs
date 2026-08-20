@@ -82,13 +82,66 @@ public sealed class DespesaTests
         erro.Message.ShouldContain("glosa");
     }
 
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(-0.01)]
-    public void Rejeita_valor_negativo(decimal negativo)
+    // ------------------------------------------------------------------
+    //  Estorno — 4,3% dos registros reais
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Aceita_valor_negativo_como_estorno()
     {
+        // A primeira coleta real recusou 1.223 registros por "valor negativo". São
+        // cancelamentos de passagem aérea (SIGEPA), dado legítimo.
+        var estorno = Despesa.Criar(Real(b =>
+        {
+            b.ValorDocumento = -1846.10m;
+            b.ValorLiquido = -1846.10m;
+        }));
+
+        estorno.EhEstorno.ShouldBeTrue();
+        estorno.ValorLiquido.ShouldBe(-1846.10m);
+    }
+
+    [Fact]
+    public void Estorno_abate_o_valor_que_entra_no_score()
+    {
+        // É o ponto todo: rejeitar estorno não perderia só um registro, inflaria o gasto.
+        // Quem comprou passagem de R$ 1.846 e cancelou apareceria tendo gasto os R$ 1.846.
+        var compra = Despesa.Criar(Real(b => b.ValorLiquido = 1846.10m));
+        var estorno = Despesa.Criar(Real(b =>
+        {
+            b.ValorDocumento = -1846.10m;
+            b.ValorLiquido = -1846.10m;
+        }));
+
+        (compra.ValorParaScore + estorno.ValorParaScore).ShouldBe(0m);
+    }
+
+    [Fact]
+    public void Despesa_comum_nao_e_estorno()
+    {
+        Despesa.Criar(Real()).EhEstorno.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Estorno_com_documento_e_liquido_diferentes_e_aceito()
+    {
+        // Caso real da amostra: documento=-45,00 e liquido=-90,00. A aritmética de glosa
+        // não se aplica a estorno, então a validação de consistência não pode disparar.
+        var estorno = Despesa.Criar(Real(b =>
+        {
+            b.ValorDocumento = -45.00m;
+            b.ValorLiquido = -90.00m;
+        }));
+
+        estorno.EhEstorno.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Glosa_continua_nao_podendo_ser_negativa()
+    {
+        // Glosa é um corte aplicado ao valor, não um lançamento: negativa não significa nada.
         Should.Throw<ArgumentOutOfRangeException>(() =>
-            Despesa.Criar(Real(b => b.ValorLiquido = negativo)));
+            Despesa.Criar(Real(b => b.ValorGlosa = -10m)));
     }
 
     [Fact]
