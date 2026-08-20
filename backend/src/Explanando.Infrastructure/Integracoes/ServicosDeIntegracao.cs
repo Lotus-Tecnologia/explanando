@@ -25,6 +25,15 @@ public static class ServicosDeIntegracao
     /// </summary>
     public const int ConcorrenciaMaxima = 6;
 
+    /// <summary>
+    /// Intervalo minimo entre consultas a BrasilAPI.
+    ///
+    /// Calibrado pela primeira coleta real: dois deputados produziram 166 respostas 429.
+    /// A medicao da Etapa 01, que nao viu nenhum, usou oito requisicoes — poucas demais
+    /// para revelar um limite medido por janela de tempo.
+    /// </summary>
+    public static TimeSpan IntervaloEntreConsultasDeCnpj { get; } = TimeSpan.FromMilliseconds(400);
+
     public static IServiceCollection AdicionarIntegracoes(this IServiceCollection servicos)
     {
         servicos
@@ -62,6 +71,9 @@ public static class ServicosDeIntegracao
                 http.DefaultRequestHeaders.Add("Accept", "application/json");
                 http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
             })
+            // Espaca as chamadas ANTES de sair: evitar o 429 e' melhor que remedia-lo com
+            // retry, que so' reage depois de ja ter incomodado o servidor.
+            .AddHttpMessageHandler(() => new LimitadorDeTaxaHandler(IntervaloEntreConsultasDeCnpj))
             .AddStandardResilienceHandler(opcoes =>
             {
                 // Servico comunitario: menos insistencia e espera maior entre tentativas.

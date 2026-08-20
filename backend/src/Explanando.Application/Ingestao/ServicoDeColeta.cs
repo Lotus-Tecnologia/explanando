@@ -35,6 +35,15 @@ public sealed record ResultadoDaColeta
     public int DespesasRejeitadas { get; init; }
     public IReadOnlyList<string> Alertas { get; init; } = [];
     public IReadOnlyList<string> Falhas { get; init; } = [];
+
+    /// <summary>
+    /// Motivos de rejeicao agrupados, do mais frequente para o menos.
+    ///
+    /// Contagem sozinha nao serve: a primeira coleta real recusou 9% das despesas e o
+    /// resumo nao dizia por que. Sem o motivo, nao da' para saber se o dado da origem e'
+    /// ruim ou se o dominio esta rigido demais.
+    /// </summary>
+    public IReadOnlyList<(string Motivo, int Ocorrencias)> MotivosDeRejeicao { get; init; } = [];
 }
 
 /// <summary>
@@ -61,19 +70,40 @@ public sealed class ServicoDeColeta(
     /// </summary>
     public static TimeSpan ValidadeDoCheckpoint => TimeSpan.FromHours(24);
 
+    /// <summary>
+    /// Percorre os deputados da fonte.
+    ///
+    /// <paramref name="maxDeputados"/> limita quantos sao visitados. Existe para amostragem
+    /// de calibragem: a passada completa gera dezenas de milhares de consultas a servicos
+    /// publicos e gratuitos, e uma amostra responde as mesmas perguntas sobre limiares com
+    /// uma fracao da carga.
+    /// </summary>
     public async Task<ResultadoDaColeta> ColetarTudoAsync(
         int legislatura,
+        int? maxDeputados = null,
         CancellationToken cancelamento = default)
     {
         var alertas = new List<string>();
         var falhas = new List<string>();
         var visitados = 0;
         var pulados = 0;
+        var tentados = 0;
         var novas = 0;
         var rejeitadas = 0;
+        var motivos = new Dictionary<string, int>(StringComparer.Ordinal);
 
         await foreach (var deputado in fonte.ListarDeputadosAsync(cancelamento).ConfigureAwait(false))
         {
+            // Conta TENTATIVAS, nao sucessos: um deputado que falha tambem consumiu
+            // requisicoes da fonte. Contar so' os visitados fazia o laco seguir alem do
+            // teto — a primeira coleta real pediu 2 deputados e tentou 3.
+            if (maxDeputados is { } teto && tentados >= teto)
+            {
+                break;
+            }
+
+            tentados++;
+
             var checkpoint = await checkpoints
                 .ObterAsync(deputado.IdExterno, legislatura, cancelamento)
                 .ConfigureAwait(false);
@@ -104,6 +134,12 @@ public sealed class ServicoDeColeta(
             rejeitadas += resultado.Rejeitadas.Count;
             alertas.AddRange(resultado.AlertasDeSanidade);
 
+            foreach (var rejeicao in resultado.Rejeitadas)
+            {
+                var chave = Resumir(rejeicao.Motivo);
+                motivos[chave] = motivos.GetValueOrDefault(chave) + 1;
+            }
+
             await RegistrarCheckpointAsync(
                 checkpoint, deputado.IdExterno, legislatura, resultado, cancelamento)
                 .ConfigureAwait(false);
@@ -117,7 +153,31 @@ public sealed class ServicoDeColeta(
             DespesasRejeitadas = rejeitadas,
             Alertas = alertas,
             Falhas = falhas,
+            MotivosDeRejeicao = [.. motivos
+                .OrderByDescending(par => par.Value)
+                .Select(par => (par.Key, par.Value))],
         };
+    }
+
+    /// <summary>
+    /// Reduz a mensagem a uma familia de motivo, para que valores diferentes do mesmo
+    /// defeito agrupem juntos em vez de virar milhares de linhas distintas.
+    /// </summary>
+    private static string Resumir(string motivo)
+    {
+        if (motivo.Contains("glosa", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Valor de glosa inconsistente com documento menos liquido";
+        }
+
+        if (motivo.Contains("negative", StringComparison.OrdinalIgnoreCase)
+            || motivo.Contains("negativ", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Valor negativo";
+        }
+
+        var corte = motivo.IndexOf(':', StringComparison.Ordinal);
+        return corte > 0 ? motivo[..corte] : motivo;
     }
 
     private async Task RegistrarCheckpointAsync(

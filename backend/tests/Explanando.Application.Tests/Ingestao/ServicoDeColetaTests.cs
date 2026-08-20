@@ -60,6 +60,32 @@ public sealed class ServicoDeColetaTests
     }
 
     [Fact]
+    public async Task Respeita_o_limite_de_deputados_da_amostragem()
+    {
+        // A passada completa gera dezenas de milhares de consultas a servicos publicos e
+        // gratuitos. Para calibrar limiares, uma amostra responde a mesma pergunta.
+        var (coleta, _) = Montar([Deputado(1), Deputado(2), Deputado(3), Deputado(4)]);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura, maxDeputados: 2);
+
+        resultado.DeputadosVisitados.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Deputado_pulado_conta_para_o_limite()
+    {
+        // Se pulado nao contasse, um limite de 2 sobre uma base ja coletada percorreria
+        // a lista inteira ate achar 2 nao coletados — justamente o que o limite evita.
+        var (coleta, checkpoints) = Montar([Deputado(1), Deputado(2), Deputado(3)]);
+        checkpoints.Semear(CheckpointDeIngestao.Criar(1, Legislatura, Agora, 5, 0, comAlerta: false));
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura, maxDeputados: 2);
+
+        resultado.DeputadosPulados.ShouldBe(1);
+        resultado.DeputadosVisitados.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Registra_checkpoint_para_cada_deputado_coletado()
     {
         var (coleta, checkpoints) = Montar([Deputado(1), Deputado(2)]);
