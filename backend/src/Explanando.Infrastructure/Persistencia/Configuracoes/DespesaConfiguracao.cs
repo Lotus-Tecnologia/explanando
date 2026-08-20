@@ -159,12 +159,29 @@ internal sealed class ScoreRiscoParlamentarConfiguracao
         builder.ToTable("scores_risco");
         builder.HasKey(score => score.Id);
 
+        // O numero do B2C: soma em reais, com estornos abatidos.
         builder
-            .Property(score => score.ScoreCalculado)
+            .Property(score => score.VolumeTotalGasto)
+            .HasColumnType("numeric(18,2)")
+            .IsRequired();
+
+        builder.Property(score => score.DespesasAvaliadas).IsRequired();
+
+        builder
+            .Property(score => score.PesoDasFlags)
             .HasColumnType("numeric(10,2)")
             .IsRequired();
 
         builder.Property(score => score.TotalFlagsVermelhas).IsRequired();
+
+        // O numero do B2B: pontos por 100 despesas. Quatro casas porque a densidade e'
+        // pequena — arredondar para duas empataria parlamentares distintos.
+        builder
+            .Property(score => score.IndiceDeRisco)
+            .HasColumnType("numeric(10,4)")
+            .IsRequired();
+
+        builder.Property(score => score.AmostraSuficiente).IsRequired();
 
         builder
             .Property(score => score.DataUltimaVarredura)
@@ -177,11 +194,19 @@ internal sealed class ScoreRiscoParlamentarConfiguracao
             .IsUnique()
             .HasDatabaseName("ix_scores_risco_parlamentar_id");
 
-        // O ranking publico ordena por score desc: o indice evita sort a cada visita.
+        // Sao dois rankings, entao sao dois indices (ADR-0009).
         builder
-            .HasIndex(score => score.ScoreCalculado)
+            .HasIndex(score => score.VolumeTotalGasto)
             .IsDescending()
-            .HasDatabaseName("ix_scores_risco_score_calculado");
+            .HasDatabaseName("ix_scores_risco_volume_total_gasto");
+
+        // Filtrado: quem nao tem amostra suficiente nunca aparece neste ranking, entao
+        // nao precisa ocupar espaco no indice.
+        builder
+            .HasIndex(score => score.IndiceDeRisco)
+            .IsDescending()
+            .HasFilter("amostra_suficiente")
+            .HasDatabaseName("ix_scores_risco_indice_de_risco");
 
         builder
             .HasOne<Parlamentar>()

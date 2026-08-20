@@ -14,14 +14,18 @@ para leitura do cidadão.
 ## Estado atual
 
 **Etapas 00 a 04b concluídas** — fundação, contratos reais das APIs, domínio, persistência,
-ingestão, motor de regras e **calibragem contra 28.540 despesas reais**. **339 testes verdes**
-(274 unitários, 55 de integração e ponta a ponta contra Postgres real, 10 de arquitetura),
+ingestão, motor de regras e **calibragem contra 28.540 despesas reais**. **346 testes verdes**
+(281 unitários, 55 de integração e ponta a ponta contra Postgres real, 10 de arquitetura),
 build com 0 avisos.
 
 A coleta funciona da API ao banco, de forma idempotente e com checkpoint, e **11 das 16
 regras determinísticas estão implementadas** — com postura permissiva: na dúvida, o motor se
 cala. Os limiares foram calibrados contra dado real: 20 deputados, 28.540 despesas, **766
-flags (2,7%)**. Ainda não há API pública nem interface.
+flags (2,7%)**.
+
+São **dois rankings independentes** ([ADR-0009](docs/decisoes/ADR-0009-dois-numeros-nao-um.md)):
+volume de gastos em reais para o público, e densidade de indicadores por 100 despesas para a
+API de compliance. Ainda não há API pública nem interface.
 
 CI no GitHub Actions roda build, suíte completa e verificação de migrations a cada push.
 

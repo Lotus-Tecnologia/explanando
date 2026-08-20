@@ -109,6 +109,8 @@ switch (comando)
             var totalFlags = 0;
             var totalDespesas = 0;
             var comFlag = 0;
+            var semAmostra = 0;
+            decimal volumeTotal = 0;
             var porRegra = new Dictionary<string, int>(StringComparer.Ordinal);
             var falhas = new List<FalhaDeRegra>();
 
@@ -119,9 +121,16 @@ switch (comando)
                 totalFlags += resultado.FlagsEmitidas;
                 totalDespesas += resultado.DespesasAvaliadas;
 
+                volumeTotal += resultado.VolumeTotalGasto;
+
                 if (resultado.FlagsEmitidas > 0)
                 {
                     comFlag++;
+                }
+
+                if (!resultado.AmostraSuficiente)
+                {
+                    semAmostra++;
                 }
 
                 foreach (var (regra, quantidade) in resultado.FlagsPorRegra)
@@ -138,6 +147,8 @@ switch (comando)
                 Parlamentares       : {ids.Count} ({comFlag} com ao menos uma flag)
                 Despesas avaliadas  : {totalDespesas}
                 Flags emitidas      : {totalFlags}
+                Volume total gasto  : {volumeTotal:N2}
+                Fora do ranking de risco (amostra insuficiente) : {semAmostra}
                 Falhas de regra     : {falhas.Count}
 
                 --- flags por regra ---

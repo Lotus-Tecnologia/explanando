@@ -44,7 +44,16 @@ public sealed record ResultadoDaVarredura
     public int DespesasAvaliadas { get; init; }
     public int FlagsEmitidas { get; init; }
     public int FlagsVermelhas { get; init; }
-    public decimal ScoreCalculado { get; init; }
+
+    /// <summary>O numero do B2C: soma em reais (ADR-0009).</summary>
+    public decimal VolumeTotalGasto { get; init; }
+
+    /// <summary>O numero do B2B: densidade por 100 despesas (ADR-0009).</summary>
+    public decimal IndiceDeRisco { get; init; }
+
+    /// <summary>Falso quando o parlamentar nao tem despesas bastantes para ser ranqueado.</summary>
+    public bool AmostraSuficiente { get; init; }
+
     public decimal TaxaDeDespesasSinalizadas { get; init; }
     public IReadOnlyDictionary<string, int> FlagsPorRegra { get; init; } =
         new Dictionary<string, int>(StringComparer.Ordinal);
@@ -61,8 +70,11 @@ public sealed record ResultadoDaVarredura
 public sealed class ServicoDeVarredura(
     IRepositorioDeVarredura repositorio,
     MotorDeRegras motor,
-    IRelogioDaVarredura relogio)
+    IRelogioDaVarredura relogio,
+    ParametrosDoMotor? parametros = null)
 {
+    private readonly ParametrosDoMotor _parametros = parametros ?? ParametrosDoMotor.Padrao;
+
     public async Task<ResultadoDaVarredura> VarrerAsync(
         Guid parlamentarId,
         CancellationToken cancelamento = default)
@@ -106,7 +118,8 @@ public sealed class ServicoDeVarredura(
             repositorio.Adicionar(score);
         }
 
-        score.Recalcular(avaliacao.Flags, relogio.Agora);
+        score.Recalcular(
+            despesas, avaliacao.Flags, relogio.Agora, _parametros.PisoAmostralParaIndiceDeRisco);
 
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
 
@@ -116,7 +129,9 @@ public sealed class ServicoDeVarredura(
             DespesasAvaliadas = despesas.Count,
             FlagsEmitidas = avaliacao.Flags.Count,
             FlagsVermelhas = avaliacao.Flags.Count(flag => flag.EhVermelha),
-            ScoreCalculado = score.ScoreCalculado,
+            VolumeTotalGasto = score.VolumeTotalGasto,
+            IndiceDeRisco = score.IndiceDeRisco,
+            AmostraSuficiente = score.AmostraSuficiente,
             TaxaDeDespesasSinalizadas = avaliacao.TaxaDeDespesasSinalizadas,
             FlagsPorRegra = avaliacao.FlagsPorRegra,
             RegrasSilenciosas = avaliacao.RegrasSilenciosas,

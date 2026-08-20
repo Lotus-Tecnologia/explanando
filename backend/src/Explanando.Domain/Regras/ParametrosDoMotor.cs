@@ -15,6 +15,21 @@ public sealed record ParametrosDoMotor
     public static ParametrosDoMotor Padrao { get; } = new();
 
     // ---------------------------------------------------------------
+    //  Score — piso amostral do indice de risco (ADR-0009)
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Minimo de despesas avaliadas para o indice de risco entrar no ranking.
+    ///
+    /// Densidade sem piso cria a distorcao inversa da soma bruta: um parlamentar com 10
+    /// despesas e 2 flags marca 20% e lidera com prova fina. Um deputado em exercicio numa
+    /// legislatura inteira tem ordem de mil notas; abaixo de cem, o indice e' ruido.
+    ///
+    /// O parlamentar continua no ranking de <b>volume</b>, que nao depende de amostra.
+    /// </summary>
+    public int PisoAmostralParaIndiceDeRisco { get; init; } = 100;
+
+    // ---------------------------------------------------------------
     //  REG_KYB_003 — empresa recem-nascida
     // ---------------------------------------------------------------
 

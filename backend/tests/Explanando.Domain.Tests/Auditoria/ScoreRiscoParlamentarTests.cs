@@ -1,93 +1,215 @@
 using Explanando.Domain.Auditoria;
+using Explanando.Domain.Comum;
+using Explanando.Domain.Despesas;
 
 namespace Explanando.Domain.Tests.Auditoria;
 
+/// <summary>
+/// Dois números independentes, um para cada comprador (ADR-0009): volume em reais para o
+/// ranking público, densidade de indicadores para a API de due diligence.
+/// </summary>
 public sealed class ScoreRiscoParlamentarTests
 {
+    private const int PisoAmostral = 100;
+
     private static readonly Guid ParlamentarId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid DespesaId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
     private static FlagAnomalia Flag(Gravidade gravidade, decimal confianca = 1.0m) =>
         FlagAnomalia.Criar(DespesaId, "REG_KYB_001", gravidade, "Inconsistência financeira.", confianca);
 
+    /// <summary>Gera <paramref name="quantidade"/> despesas de igual valor.</summary>
+    private static List<Despesa> Despesas(int quantidade, decimal valorCada = 1_000m) =>
+        [.. Enumerable.Range(1, quantidade).Select(i => Despesa.Criar(new NovaDespesa
+        {
+            ParlamentarId = ParlamentarId,
+            DocumentoFornecedor = CpfCnpj.Criar("36826246000164"),
+            NomeFornecedor = "FORNECEDOR",
+            Competencia = Competencia.Criar(2026, 7),
+            TipoDespesa = "TELEFONIA",
+            CodigoDocumento = $"doc-{i}",
+            NumeroDocumento = i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            DataDocumento = new DateTimeOffset(2026, 7, 6, 0, 0, 0, TimeSpan.Zero),
+            ValorDocumento = valorCada,
+            ValorLiquido = valorCada,
+        }))];
+
+    private static ScoreRiscoParlamentar Recalculado(
+        int quantidadeDeDespesas,
+        IReadOnlyCollection<FlagAnomalia> flags,
+        decimal valorCada = 1_000m,
+        int piso = PisoAmostral)
+    {
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        score.Recalcular(Despesas(quantidadeDeDespesas, valorCada), flags, DateTimeOffset.UtcNow, piso);
+        return score;
+    }
+
     [Fact]
     public void Nasce_zerado()
     {
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
 
-        score.ScoreCalculado.ShouldBe(0m);
-        score.TotalFlagsVermelhas.ShouldBe(0);
+        score.VolumeTotalGasto.ShouldBe(0m);
+        score.IndiceDeRisco.ShouldBe(0m);
+        score.PesoDasFlags.ShouldBe(0m);
+        score.DespesasAvaliadas.ShouldBe(0);
+        score.AmostraSuficiente.ShouldBeFalse();
+    }
+
+    // ------------------------------------------------------------------
+    //  Volume — o número do B2C
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Volume_soma_o_que_o_erario_pagou()
+    {
+        var score = Recalculado(200, [], valorCada: 500m);
+
+        score.VolumeTotalGasto.ShouldBe(100_000m);
     }
 
     [Fact]
-    public void Soma_o_peso_das_flags()
+    public void Volume_nao_depende_de_flag_nenhuma()
     {
-        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        // É fato bruto: gastar a cota inteira é legal. O número não imputa conduta.
+        var semFlag = Recalculado(200, [], valorCada: 500m);
+        var comFlags = Recalculado(200, [Flag(Gravidade.Alta), Flag(Gravidade.Alta)], valorCada: 500m);
 
-        score.Recalcular([Flag(Gravidade.Alta), Flag(Gravidade.Baixa)], DateTimeOffset.UtcNow);
-
-        score.ScoreCalculado.ShouldBe(4m, "3 (alta) + 1 (baixa), ambas com confiança total");
+        comFlags.VolumeTotalGasto.ShouldBe(semFlag.VolumeTotalGasto);
     }
 
     [Fact]
-    public void Conta_apenas_as_vermelhas_no_total_de_vermelhas()
+    public void Volume_e_publicado_mesmo_sem_amostra_suficiente()
     {
-        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        // O ranking de volume não depende de amostra — é só uma soma.
+        var score = Recalculado(5, [], valorCada: 20_000m);
 
-        score.Recalcular(
-            [Flag(Gravidade.Alta), Flag(Gravidade.Alta), Flag(Gravidade.Media)],
-            DateTimeOffset.UtcNow);
+        score.AmostraSuficiente.ShouldBeFalse();
+        score.VolumeTotalGasto.ShouldBe(100_000m);
+    }
 
-        score.TotalFlagsVermelhas.ShouldBe(2);
+    // ------------------------------------------------------------------
+    //  Índice de risco — o número do B2B
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Indice_de_risco_e_densidade_por_cem_despesas()
+    {
+        // 2 flags altas (peso 3 cada) = 6, sobre 200 despesas = 3 pontos por 100.
+        var score = Recalculado(200, [Flag(Gravidade.Alta), Flag(Gravidade.Alta)]);
+
+        score.PesoDasFlags.ShouldBe(6m);
+        score.IndiceDeRisco.ShouldBe(3m);
+    }
+
+    [Fact]
+    public void Indice_corrige_a_distorcao_que_a_calibragem_real_expos()
+    {
+        // O caso concreto do ADR-0009: na base real, Afonso Hamm aparecia ACIMA de
+        // Albuquerque tendo 1 flag vermelha contra 14, só por ter emitido 5x mais notas.
+        var muitasNotasPoucasFlags = Recalculado(3_575, [Flag(Gravidade.Alta)]);
+        var poucasNotasMuitasFlags = Recalculado(
+            752, [.. Enumerable.Range(1, 14).Select(_ => Flag(Gravidade.Alta))]);
+
+        muitasNotasPoucasFlags.PesoDasFlags.ShouldBeLessThan(poucasNotasMuitasFlags.PesoDasFlags);
+        poucasNotasMuitasFlags.IndiceDeRisco.ShouldBeGreaterThan(muitasNotasPoucasFlags.IndiceDeRisco);
     }
 
     [Fact]
     public void Achado_incerto_pesa_menos_que_achado_certo()
     {
-        var certo = ScoreRiscoParlamentar.Criar(ParlamentarId);
-        var incerto = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        var certo = Recalculado(200, [Flag(Gravidade.Alta, 1.0m)]);
+        var incerto = Recalculado(200, [Flag(Gravidade.Alta, 0.5m)]);
 
-        certo.Recalcular([Flag(Gravidade.Alta, 1.0m)], DateTimeOffset.UtcNow);
-        incerto.Recalcular([Flag(Gravidade.Alta, 0.5m)], DateTimeOffset.UtcNow);
-
-        incerto.ScoreCalculado.ShouldBeLessThan(certo.ScoreCalculado);
+        incerto.IndiceDeRisco.ShouldBeLessThan(certo.IndiceDeRisco);
     }
+
+    [Fact]
+    public void Conta_apenas_as_vermelhas_no_total_de_vermelhas()
+    {
+        var score = Recalculado(
+            200, [Flag(Gravidade.Alta), Flag(Gravidade.Alta), Flag(Gravidade.Media)]);
+
+        score.TotalFlagsVermelhas.ShouldBe(2);
+    }
+
+    // ------------------------------------------------------------------
+    //  Piso amostral — a armadilha da normalização
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Amostra_pequena_nao_entra_no_ranking_de_risco()
+    {
+        // Densidade pura criaria a distorção inversa: 10 despesas com 2 flags marcaria
+        // 20% e lideraria o ranking com prova fina. Na dúvida, o motor se cala (ADR-0007).
+        var score = Recalculado(10, [Flag(Gravidade.Alta), Flag(Gravidade.Alta)]);
+
+        score.AmostraSuficiente.ShouldBeFalse();
+        score.IndiceDeRisco.ShouldBeGreaterThan(0m, "o valor continua calculado, só nao e' ranqueavel");
+    }
+
+    [Fact]
+    public void Amostra_no_piso_ja_conta_como_suficiente()
+    {
+        Recalculado(PisoAmostral, [Flag(Gravidade.Alta)]).AmostraSuficiente.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Parlamentar_sem_despesa_nenhuma_nao_tem_indice()
+    {
+        // Divisão por zero seria o jeito mais bobo de derrubar a varredura.
+        var score = Recalculado(0, []);
+
+        score.IndiceDeRisco.ShouldBe(0m);
+        score.AmostraSuficiente.ShouldBeFalse();
+        score.DespesasAvaliadas.ShouldBe(0);
+    }
+
+    // ------------------------------------------------------------------
+    //  Recálculo
+    // ------------------------------------------------------------------
 
     [Fact]
     public void Recalcular_substitui_o_valor_anterior_em_vez_de_acumular()
     {
-        // A varredura roda de novo sobre o mesmo parlamentar. Acumular inflaria
-        // o ranking a cada execucao, sem nenhum gasto novo ter existido.
+        // A varredura roda de novo sobre o mesmo parlamentar. Acumular inflaria o ranking
+        // a cada execução, sem nenhum gasto novo ter existido.
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        var despesas = Despesas(200);
         var agora = DateTimeOffset.UtcNow;
 
-        score.Recalcular([Flag(Gravidade.Alta)], agora);
-        score.Recalcular([Flag(Gravidade.Alta)], agora);
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral);
+        var primeiro = score.IndiceDeRisco;
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral);
 
-        score.ScoreCalculado.ShouldBe(3m);
+        score.IndiceDeRisco.ShouldBe(primeiro);
+        score.VolumeTotalGasto.ShouldBe(200_000m);
+    }
+
+    [Fact]
+    public void Parlamentar_que_deixou_de_ter_flags_volta_a_zero()
+    {
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        var despesas = Despesas(200);
+
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], DateTimeOffset.UtcNow, PisoAmostral);
+        score.Recalcular(despesas, [], DateTimeOffset.UtcNow, PisoAmostral);
+
+        score.IndiceDeRisco.ShouldBe(0m);
+        score.PesoDasFlags.ShouldBe(0m);
+        score.TotalFlagsVermelhas.ShouldBe(0);
+        score.VolumeTotalGasto.ShouldBe(200_000m, "o gasto continua existindo");
     }
 
     [Fact]
     public void Registra_quando_a_ultima_varredura_rodou()
     {
-        // A UI destaca essa data: e' o que mostra ao cidadao se o dado esta fresco.
+        var momento = new DateTimeOffset(2026, 8, 20, 12, 0, 0, TimeSpan.Zero);
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
-        var momento = new DateTimeOffset(2026, 8, 18, 12, 0, 0, TimeSpan.Zero);
 
-        score.Recalcular([], momento);
+        score.Recalcular(Despesas(200), [], momento, PisoAmostral);
 
         score.DataUltimaVarredura.ShouldBe(momento);
-    }
-
-    [Fact]
-    public void Parlamentar_sem_flags_fica_com_score_zero()
-    {
-        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
-
-        score.Recalcular([Flag(Gravidade.Alta)], DateTimeOffset.UtcNow);
-        score.Recalcular([], DateTimeOffset.UtcNow);
-
-        score.ScoreCalculado.ShouldBe(0m);
-        score.TotalFlagsVermelhas.ShouldBe(0);
     }
 }

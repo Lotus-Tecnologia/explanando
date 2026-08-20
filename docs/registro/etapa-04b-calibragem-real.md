@@ -152,14 +152,58 @@ Nenhuma imputa conduta, todas atribuem o achado a uma regra nomeada.
 
 | Pendência | Impacto | Observação |
 |---|---|---|
-| Score favorece quem tem mais despesas | Alto | Alceu Moreira lidera com 3.736 despesas. Mais despesas = mais chances de flag. Normalizar por volume é **decisão de produto** |
+| ~~Score favorece quem tem mais despesas~~ | ✅ Resolvido | Ver seção 7 e [ADR-0009](../decisoes/ADR-0009-dois-numeros-nao-um.md) |
 | `REG_TX_002` só alcança 2026 | Médio | Levantar limites de 2023–2025 nos Atos da Mesa |
 | `optante_pelo_mei` nulo em 65% dos fornecedores | Médio | Limitação da fonte; `REG_KYB_004` fica cega nesses casos |
 | `REG_GEO_003` com 2 flags em 28 mil despesas | Baixo | Limiar de R$ 1.000 pode estar alto para alimentação |
 | 3 despesas ainda rejeitadas por glosa inconsistente | Baixo | Investigar se é dado ruim da origem ou rigidez do domínio |
 | Coleta completa dos 513 nunca rodada | Médio | ~1,5 a 3 horas e dezenas de milhares de consultas à BrasilAPI |
 
-## 6. O que esta etapa provou
+## 6. Desdobramento: a distorção do ranking virou o ADR-0009
+
+A pendência mais grave que esta calibragem levantou não era de código, era de **modelo de
+negócio**: havia um número só tentando servir a dois compradores com necessidades opostas.
+
+O dado mostrou o problema sem ambiguidade:
+
+| | Score antigo | Vermelhas | Despesas |
+|---|---|---|---|
+| Afonso Hamm | 107 | **1** | 3.575 |
+| Albuquerque | 97 | **14** | 752 |
+
+Hamm aparecia acima de Albuquerque tendo uma flag vermelha contra quatorze, só por ter
+emitido quase cinco vezes mais notas. O score media atividade administrativa, não risco.
+
+A correção está no [ADR-0009](../decisoes/ADR-0009-dois-numeros-nao-um.md): dois números
+independentes, com piso amostral para a armadilha inversa da normalização. Depois da mudança,
+os dois rankings dizem coisas diferentes — e ambos fazem sentido:
+
+**Volume (B2C, público)**
+
+| # | | Volume | Notas |
+|---|---|---|---|
+| 1 | Albuquerque | R$ 2.192.862 | 752 |
+| 2 | Acácio Favacho | R$ 2.041.497 | 1.179 |
+| 3 | Adail Filho | R$ 2.021.647 | 792 |
+
+**Índice de risco (B2B, por 100 despesas)**
+
+| # | | Índice | Vermelhas | Notas |
+|---|---|---|---|---|
+| 1 | Alexandre Leite | 13,28 | 0 | 738 |
+| 2 | Albuquerque | 12,90 | 14 | 752 |
+| 3 | Adail Filho | 10,35 | 0 | 792 |
+| 6 | Alceu Moreira | 6,29 | 19 | 3.736 |
+
+Alceu Moreira, que liderava o score antigo, caiu para sexto — suas 19 flags vermelhas estão
+diluídas em 3.736 notas.
+
+**Observação que merece atenção:** o primeiro colocado em risco tem **zero flags vermelhas**.
+O índice pondera gravidade *e* confiança, então muitas flags médias superam poucas altas.
+É honesto, mas vale decidir se a UI do B2B deve destacar a composição do índice para não
+sugerir gravidade que não existe.
+
+## 7. O que esta etapa provou
 
 Nada aqui teria aparecido em teste com dado inventado. Os quatro defeitos — a medição errada
 de rate-limit, a falha em cascata, os estornos rejeitados e a tabela CNAE com 80% de falso

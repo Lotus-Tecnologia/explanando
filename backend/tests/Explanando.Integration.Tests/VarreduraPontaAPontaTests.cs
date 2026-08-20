@@ -156,8 +156,14 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
         flags.Select(f => f.CodigoRegra).ShouldContain("REG_KYB_002");
 
         var score = await leitura.ScoresRisco.SingleAsync(s => s.ParlamentarId == parlamentarId);
-        score.ScoreCalculado.ShouldBeGreaterThan(0m);
+        score.PesoDasFlags.ShouldBeGreaterThan(0m);
+        score.IndiceDeRisco.ShouldBeGreaterThan(0m);
         score.TotalFlagsVermelhas.ShouldBeGreaterThan(0);
+
+        // Os dois numeros do ADR-0009 chegam ao banco separados.
+        score.VolumeTotalGasto.ShouldBe(9_000m, "o volume nao depende de flag nenhuma");
+        score.DespesasAvaliadas.ShouldBe(1);
+        score.AmostraSuficiente.ShouldBeFalse("uma despesa nao da' amostra para ranquear risco");
         score.DataUltimaVarredura.ShouldBe(new RelogioFixo().Agora);
     }
 
@@ -184,7 +190,8 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
         }
 
         segunda.FlagsEmitidas.ShouldBe(primeira.FlagsEmitidas);
-        segunda.ScoreCalculado.ShouldBe(primeira.ScoreCalculado);
+        segunda.IndiceDeRisco.ShouldBe(primeira.IndiceDeRisco);
+        segunda.VolumeTotalGasto.ShouldBe(primeira.VolumeTotalGasto);
 
         await using var leitura = banco.CriarContexto();
         var despesaId = await leitura.Despesas
@@ -222,7 +229,9 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
 
             resultado.DespesasAvaliadas.ShouldBe(0);
             resultado.FlagsEmitidas.ShouldBe(0);
-            resultado.ScoreCalculado.ShouldBe(0m);
+            resultado.VolumeTotalGasto.ShouldBe(0m);
+            resultado.IndiceDeRisco.ShouldBe(0m);
+            resultado.AmostraSuficiente.ShouldBeFalse();
             resultado.TaxaDeDespesasSinalizadas.ShouldBe(0m);
             resultado.RegrasSilenciosas.Count.ShouldBe(11);
         }

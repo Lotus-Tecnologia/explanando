@@ -79,32 +79,53 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("AmostraSuficiente")
+                        .HasColumnType("boolean")
+                        .HasColumnName("amostra_suficiente");
+
                     b.Property<DateTimeOffset>("DataUltimaVarredura")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("data_ultima_varredura");
+
+                    b.Property<int>("DespesasAvaliadas")
+                        .HasColumnType("integer")
+                        .HasColumnName("despesas_avaliadas");
+
+                    b.Property<decimal>("IndiceDeRisco")
+                        .HasColumnType("numeric(10,4)")
+                        .HasColumnName("indice_de_risco");
 
                     b.Property<Guid>("ParlamentarId")
                         .HasColumnType("uuid")
                         .HasColumnName("parlamentar_id");
 
-                    b.Property<decimal>("ScoreCalculado")
+                    b.Property<decimal>("PesoDasFlags")
                         .HasColumnType("numeric(10,2)")
-                        .HasColumnName("score_calculado");
+                        .HasColumnName("peso_das_flags");
 
                     b.Property<int>("TotalFlagsVermelhas")
                         .HasColumnType("integer")
                         .HasColumnName("total_flags_vermelhas");
 
+                    b.Property<decimal>("VolumeTotalGasto")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("volume_total_gasto");
+
                     b.HasKey("Id")
                         .HasName("pk_scores_risco");
+
+                    b.HasIndex("IndiceDeRisco")
+                        .IsDescending()
+                        .HasDatabaseName("ix_scores_risco_indice_de_risco")
+                        .HasFilter("amostra_suficiente");
 
                     b.HasIndex("ParlamentarId")
                         .IsUnique()
                         .HasDatabaseName("ix_scores_risco_parlamentar_id");
 
-                    b.HasIndex("ScoreCalculado")
+                    b.HasIndex("VolumeTotalGasto")
                         .IsDescending()
-                        .HasDatabaseName("ix_scores_risco_score_calculado");
+                        .HasDatabaseName("ix_scores_risco_volume_total_gasto");
 
                     b.ToTable("scores_risco", (string)null);
                 });

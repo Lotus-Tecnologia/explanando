@@ -16,3 +16,4 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0006](ADR-0006-arquitetura-verificada-por-teste.md) | Camadas verificadas por teste, não por revisão | 2026-08-18 | Aceita |
 | [0007](ADR-0007-postura-permissiva-do-motor.md) | Motor permissivo: na dúvida, silêncio | 2026-08-19 | Aceita |
 | [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Aceita |
+| [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
