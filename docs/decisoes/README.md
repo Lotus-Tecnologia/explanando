@@ -17,6 +17,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0007](ADR-0007-postura-permissiva-do-motor.md) | Motor permissivo: na dúvida, silêncio | 2026-08-19 | Aceita |
 | [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Aceita |
 | [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
+| [0010](ADR-0010-resolucoes-produto-infraestrutura.md) | Resoluções de produto e infraestrutura | 2026-08-20 | Aceita |
 
 ## Questões abertas
 
@@ -24,5 +25,8 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 produto que a implementação e a calibragem real levantaram e que ainda não têm ADR.
 
 [**analise-das-respostas-parte-1.md**](analise-das-respostas-parte-1.md) — avaliação das
-respostas dadas às oito questões, com medição da base real. Cinco fecham, duas fecham com
-ressalva, uma não fecha e tem alternativa melhor medida.
+respostas dadas às oito questões, com medição da base real.
+
+[**analise-do-adr-de-resolucoes.md**](analise-do-adr-de-resolucoes.md) — avaliação do
+ADR-0010. Aponta que o escopo do V1 se desfez e propõe recorte em três marcos, e desmente com
+medição o item de reconstrução de URL.

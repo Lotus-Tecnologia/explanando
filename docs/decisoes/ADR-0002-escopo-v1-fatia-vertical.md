@@ -1,6 +1,15 @@
 # ADR-0002 — V1 é uma fatia vertical só da Câmara
 
-**Data:** 2026-08-18 · **Situação:** Aceita
+**Data:** 2026-08-18 · **Situação:** ⚠️ Superada em parte — ver nota abaixo
+
+> [!warning] O escopo definido aqui não vale mais integralmente
+> As decisões de produto tomadas em 2026-08-20 trouxeram de volta **todos os sete itens** que
+> este ADR excluía do V1. Não há hoje uma definição acordada do que é o V1.
+>
+> A análise em [analise-do-adr-de-resolucoes.md](analise-do-adr-de-resolucoes.md) propõe um
+> recorte em três marcos — V1 publicar, V1.1 monetizar, V2 comercial — que ainda **precisa de
+> decisão**. Até lá, tratar este ADR como histórico da intenção original, não como escopo
+> vigente.
 
 ## Contexto
 
