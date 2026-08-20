@@ -21,5 +21,8 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 ## Questões abertas
 
 [**questoes-abertas-de-negocio.md**](questoes-abertas-de-negocio.md) — fila de decisões de
-produto que a implementação e a calibragem real levantaram e que ainda não têm ADR. Três
-delas definem o contrato da API e precisam ser respondidas antes da Etapa 05.
+produto que a implementação e a calibragem real levantaram e que ainda não têm ADR.
+
+[**analise-das-respostas-parte-1.md**](analise-das-respostas-parte-1.md) — avaliação das
+respostas dadas às oito questões, com medição da base real. Cinco fecham, duas fecham com
+ressalva, uma não fecha e tem alternativa melhor medida.
