@@ -19,10 +19,17 @@ namespace Explanando.Domain.Despesas;
 /// guardado com o nome por extenso, exatamente como hoje: custa o mesmo que custava e não
 /// perde nada.</para>
 ///
-/// <para>Estes dezesseis são os que apareceram em 5.843 despesas reais, com a grafia exata
-/// que a API entrega — inclusive o ponto final de uns e a vírgula deslocada de outro. A
-/// tabela curada de CNAE conhece outros oito tipos, mas só na forma normalizada, sem acento;
-/// reconstruir a grafia original deles seria invenção, então esperam aparecer numa coleta.</para>
+/// <para>Os dezesseis primeiros são da CEAP da Câmara, vistos em 5.843 despesas reais, com
+/// a grafia exata que a API entrega — inclusive o ponto final de uns e a vírgula deslocada de
+/// outro. A tabela curada de CNAE conhece outros oito tipos da Câmara, mas só na forma
+/// normalizada, sem acento; reconstruir a grafia original deles seria invenção, então esperam
+/// aparecer numa coleta.</para>
+///
+/// <para>Do dezessete em diante vem a CEAPS do Senado: <b>sete</b> categorias, verificadas em
+/// cinco anos de dado (2019, 2023, 2024, 2025 e 2026) sem uma única mudança de esquema. As
+/// duas casas dividem o mesmo catálogo porque o código é só um identificador — separá-las
+/// obrigaria toda leitura a descobrir a casa antes de resolver o nome, e a despesa não carrega
+/// a casa: ela está no parlamentar.</para>
 /// </summary>
 public static class CatalogoDeTiposDeDespesa
 {
@@ -52,6 +59,23 @@ public static class CatalogoDeTiposDeDespesa
         "PASSAGENS TERRESTRES, MARÍTIMAS OU FLUVIAIS",
         "AQUISIÇÃO DE TOKENS E CERTIFICADOS DIGITAIS",
         "SERVIÇOS POSTAIS",
+
+        // --- CEAPS, do Senado (codigos 17 em diante) ---
+        //
+        // Entram na MESMA lista de proposito. O codigo e' so' um identificador; separar em
+        // dois catalogos obrigaria toda leitura a saber de que casa a despesa veio antes de
+        // resolver o nome, e Despesa nao carrega a casa — ela esta no parlamentar.
+        //
+        // Sao sete, verificados em cinco anos (2019, 2023, 2024, 2025, 2026): o esquema nao
+        // mudou nenhuma vez. A grafia esta como a origem entrega, exceto o espaco final de
+        // "...equipamentos. ", que o Trim de Despesa.Criar absorve antes da busca.
+        "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes",
+        "Aluguel de imóveis para escritório político, compreendendo despesas concernentes a eles.",
+        "Passagens aéreas, aquáticas e terrestres nacionais",
+        "Contratação de consultorias, assessorias, pesquisas, trabalhos técnicos e outros serviços de apoio ao exercício do mandato parlamentar",
+        "Divulgação da atividade parlamentar",
+        "Aquisição de material de consumo para uso no escritório político, inclusive aquisição ou locação de software, despesas postais, aquisição de publicações, locação de móveis e de equipamentos.",
+        "Serviços de Segurança Privada",
     ];
 
     private static readonly FrozenDictionary<string, short> PorNome =

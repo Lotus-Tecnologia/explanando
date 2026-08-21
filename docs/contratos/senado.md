@@ -53,7 +53,7 @@ a API entrega tudo de uma vez.
 | `nomeSenador` | 100% | |
 | `ano`, `mes` | 100% | A competência |
 | `data` | 100% | Data do documento. **Ver as armadilhas** |
-| `tipoDespesa` | 99,7% | 8 categorias. 76 registros nulos |
+| `tipoDespesa` | 99,7% | **7** categorias. 76 registros nulos |
 | `tipoDocumento` | 100% | String legível, não código numérico |
 | `cpfCnpj` | 100% | 98,6% CNPJ. Ver §3.1 |
 | `fornecedor` | 100% | Razão social |
@@ -61,7 +61,7 @@ a API entrega tudo de uma vez.
 | `detalhamento` | 38,8% | **Texto livre. A Câmara não tem nada assim** |
 | `valorReembolsado` | 100% | **O único valor. Ver §3.2** |
 
-### 2.3 As oito categorias de despesa
+### 2.3 As sete categorias de despesa
 
 | Registros | Tipo |
 |---|---|
@@ -74,7 +74,7 @@ a API entrega tudo de uma vez.
 | 9 | Serviços de Segurança Privada |
 | 76 | *(nulo)* |
 
-**São outras oito, não as dezesseis da Câmara.** A tabela curada de CNAE × tipo de despesa
+**São outras sete, não as dezesseis da Câmara.** A tabela curada de CNAE × tipo de despesa
 não serve: precisa de uma segunda curadoria. E note que a primeira categoria mistura
 locomoção, hospedagem, alimentação e combustível numa só — bem mais grossa que as da Câmara,
 o que enfraquece `REG_KYB_001` por construção.
@@ -269,4 +269,4 @@ partido é, se alguma coisa, mais notável.
 - **Tabela de limites da CEAPS por UF.** Como na Câmara, não vem em API. Sem ela `REG_TX_002`
   não roda.
 - **Fonte histórica de senadores**, para os 12% que não estão em exercício.
-- **Tabela CNAE × tipo de despesa do Senado**, com as 8 categorias.
+- ~~Tabela CNAE × tipo de despesa do Senado~~ — feita, ver ADR-0012 §5.

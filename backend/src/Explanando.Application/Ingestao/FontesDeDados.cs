@@ -38,7 +38,8 @@ public sealed record DespesaDaFonte
     public required DateTimeOffset DataDocumento { get; init; }
     public required decimal ValorDocumento { get; init; }
     public required decimal ValorLiquido { get; init; }
-    public decimal ValorGlosa { get; init; }
+    /// <summary>Nulo quando a fonte nao publica a glosa — caso da CEAPS do Senado.</summary>
+    public decimal? ValorGlosa { get; init; }
     public string? UrlDocumento { get; init; }
     public string? NomeFornecedor { get; init; }
     public string? CnpjCpfFornecedor { get; init; }

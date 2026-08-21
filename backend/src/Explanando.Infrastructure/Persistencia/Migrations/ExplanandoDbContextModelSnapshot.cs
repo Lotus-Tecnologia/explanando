@@ -273,6 +273,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("Casa")
+                        .HasColumnType("integer")
+                        .HasColumnName("casa");
+
                     b.Property<string>("Uf")
                         .IsRequired()
                         .HasColumnType("char(2)")
@@ -293,9 +297,9 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.HasKey("Id")
                         .HasName("pk_limites_cota");
 
-                    b.HasIndex("Uf", "VigenciaInicio")
+                    b.HasIndex("Casa", "Uf", "VigenciaInicio")
                         .IsUnique()
-                        .HasDatabaseName("ix_limites_cota_uf_vigencia");
+                        .HasDatabaseName("ix_limites_cota_casa_uf_vigencia");
 
                     b.ToTable("limites_cota", (string)null);
                 });
@@ -386,7 +390,7 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("valor_documento");
 
-                    b.Property<decimal>("ValorGlosa")
+                    b.Property<decimal?>("ValorGlosa")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("valor_glosa");
 
@@ -697,7 +701,7 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("total_documento");
 
-                    b.Property<decimal>("TotalGlosa")
+                    b.Property<decimal?>("TotalGlosa")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("total_glosa");
 

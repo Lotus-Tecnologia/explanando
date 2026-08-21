@@ -302,7 +302,7 @@ internal sealed class ConsolidadoMensalConfiguracao : IEntityTypeConfiguration<C
         // diferente das notas que o formaram.
         builder.Property(c => c.TotalLiquido).HasColumnType("numeric(18,2)").IsRequired();
         builder.Property(c => c.TotalDocumento).HasColumnType("numeric(18,2)").IsRequired();
-        builder.Property(c => c.TotalGlosa).HasColumnType("numeric(18,2)").IsRequired();
+        builder.Property(c => c.TotalGlosa).HasColumnType("numeric(18,2)");
 
         builder.Property(c => c.QuantidadeDeDespesas).IsRequired();
         builder.Property(c => c.QuantidadeDeEstornos).IsRequired();

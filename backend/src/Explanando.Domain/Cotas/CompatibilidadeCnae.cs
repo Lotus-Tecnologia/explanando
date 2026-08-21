@@ -150,6 +150,49 @@ public static class CompatibilidadeCnae
 
         // 145 — certificacao digital, TI e varejo de informatica.
         ["aquisicao de tokens e certificados digitais"] = ["62", "63", "475", "8299"],
+
+        // ------------------------------------------------------------------
+        //  CEAPS — Senado Federal
+        // ------------------------------------------------------------------
+        //  As categorias do Senado sao MAIS GROSSAS que as da Camara, e isso enfraquece
+        //  esta regra por construcao. A primeira delas junta locomocao, hospedagem,
+        //  alimentacao e combustivel numa rubrica so' — 44% das despesas do Senado — e a
+        //  lista de prefixos precisa cobrir os quatro dominios. O efeito e' que quase
+        //  qualquer CNAE plausivel passa, e a regra so' pega incompatibilidade grosseira.
+        //
+        //  A alternativa seria deixar a categoria fora da tabela, o que a marcaria como
+        //  SemDado na cobertura. Preferiu-se a lista ampla: "construcao civil" contra
+        //  "locomocao e alimentacao" continua sendo achado legitimo, e perder isso seria
+        //  jogar fora sinal que existe.
+
+        // 45 — locomocao + hospedagem + alimentacao + combustivel, tudo numa rubrica.
+        ["locomocao, hospedagem, alimentacao, combustiveis e lubrificantes"] =
+            ["49", "50", "51", "55", "56", "79", "473", "468", "192", "522", "5229"],
+
+        // 46 — aluguel de imovel para escritorio politico.
+        ["aluguel de imoveis para escritorio politico, compreendendo despesas concernentes a eles"] =
+            ["68", "6810", "6821", "35", "36", "37", "61"],
+
+        // 47 — passagens, de qualquer modal.
+        ["passagens aereas, aquaticas e terrestres nacionais"] = ["49", "50", "51", "79"],
+
+        // 48 — consultorias e assessorias. Mesmo dominio da rubrica equivalente da Camara.
+        ["contratacao de consultorias, assessorias, pesquisas, trabalhos tecnicos e outros servicos de apoio ao exercicio do mandato parlamentar"] =
+            ["69", "70", "71", "72", "73", "62", "63", "85"],
+
+        // 49 — divulgacao NAO tem entrada propria: a rubrica do Senado normaliza para a
+        //  mesma chave da Camara ("DIVULGACAO DA ATIVIDADE PARLAMENTAR." perde o ponto
+        //  final em Normalizar). A entrada de cima ja atende as duas casas — e foi o
+        //  analisador que pegou a duplicata, que teria sobrescrito em silencio.
+
+        // 50 — material de consumo, software, postais, publicacoes e locacao de moveis.
+        //  Outra rubrica-guarda-chuva: o proprio texto dela lista cinco coisas diferentes.
+        ["aquisicao de material de consumo para uso no escritorio politico, inclusive aquisicao ou locacao de software, despesas postais, aquisicao de publicacoes, locacao de moveis e de equipamentos"] =
+            ["476", "464", "475", "17", "18", "77", "62", "63", "53", "58"],
+
+        // 51 — seguranca privada.
+        ["servicos de seguranca privada"] = ["80"],
+
     };
 
     /// <summary>Os tipos de despesa que a tabela cobre, em forma normalizada.</summary>

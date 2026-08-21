@@ -71,7 +71,11 @@ public sealed class ContextoDeAvaliacao
     /// </summary>
     public LimiteCota? LimiteVigenteEm(DateOnly data) =>
         _limites.Find(limite =>
-            string.Equals(limite.Uf, Parlamentar.Uf, StringComparison.Ordinal)
+            // A casa entra na busca porque CEAP e CEAPS sao cotas distintas com valores
+            // proprios. Sem este filtro, o gasto de um senador seria comparado ao teto de
+            // um deputado da mesma UF — e REG_TX_002 falaria sobre o numero errado.
+            limite.Casa == Parlamentar.Tipo
+            && string.Equals(limite.Uf, Parlamentar.Uf, StringComparison.Ordinal)
             && limite.VigenteEm(data));
 
     /// <summary>Despesas agrupadas por competencia, em ordem cronologica.</summary>

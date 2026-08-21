@@ -20,12 +20,57 @@ public sealed class CompatibilidadeCnaeTests
     // ------------------------------------------------------------------
 
     [Fact]
-    public void Cobre_os_24_tipos_de_despesa_que_a_camara_publica()
+    public void Cobre_os_tipos_de_despesa_das_duas_casas()
     {
-        // A lista veio de /referencias/deputados/tipoDespesa (docs/contratos/).
-        // Se a Camara criar um tipo novo, o teste nao quebra — mas o tipo desconhecido
-        // faz a regra se abster, e isso e' visivel em ConhecidoOTipo.
-        CompatibilidadeCnae.TiposCobertos.Count.ShouldBe(24);
+        // 24 da Camara, de /referencias/deputados/tipoDespesa (docs/contratos/), mais 7
+        // da CEAPS do Senado — menos 1, porque "divulgacao da atividade parlamentar"
+        // normaliza para a MESMA chave nas duas casas: a da Camara traz ponto final, que
+        // Normalizar remove.
+        //
+        // Se qualquer das casas criar um tipo novo, o teste nao quebra — mas o tipo
+        // desconhecido faz a regra se abster, e isso aparece como SemDado na cobertura.
+        CompatibilidadeCnae.TiposCobertos.Count.ShouldBe(30);
+    }
+
+    [Fact]
+    public void A_rubrica_de_divulgacao_e_compartilhada_entre_as_casas()
+    {
+        // Foi o analisador que pegou a duplicata quando ela foi escrita. O teste existe
+        // para que a proxima pessoa saiba que a colisao e' intencional, e nao descuido.
+        CompatibilidadeCnae
+            .PrefixosPara("DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.")
+            .ShouldBe(CompatibilidadeCnae.PrefixosPara("Divulgação da atividade parlamentar"));
+    }
+
+    [Theory]
+    [InlineData("Locomoção, hospedagem, alimentação, combustíveis e lubrificantes")]
+    [InlineData("Aluguel de imóveis para escritório político, compreendendo despesas concernentes a eles.")]
+    [InlineData("Passagens aéreas, aquáticas e terrestres nacionais")]
+    [InlineData("Serviços de Segurança Privada")]
+    public void Conhece_as_rubricas_do_senado(string tipo)
+    {
+        CompatibilidadeCnae.ConheceOTipo(tipo).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void A_rubrica_generica_do_senado_e_permissiva_de_proposito()
+    {
+        // Ela junta locomocao, hospedagem, alimentacao e combustivel — 44% das despesas do
+        // Senado. Hotel, restaurante, posto e transporte tem de passar todos; a regra so'
+        // sobra para o desencontro grosseiro.
+        const string Generica = "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes";
+
+        foreach (var cnae in new[] { "5510801", "5611201", "4731800", "4921301", "5111100" })
+        {
+            CompatibilidadeCnae
+                .Avaliar(Generica, [cnae])
+                .ShouldBe(ResultadoDeCompatibilidade.Compativel, $"CNAE {cnae}");
+        }
+
+        // Construcao civil contra locomocao e alimentacao continua sendo achado legitimo.
+        CompatibilidadeCnae
+            .Avaliar(Generica, ["4120400"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel);
     }
 
     [Fact]

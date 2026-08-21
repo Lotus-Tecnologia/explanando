@@ -19,6 +19,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
 | [0010](ADR-0010-resolucoes-produto-infraestrutura.md) | Resoluções de produto e infraestrutura | 2026-08-20 | Aceita |
 | [0011](ADR-0011-v1-e-o-plano-inteiro.md) | O V1 é o plano de execução inteiro | 2026-08-20 | Aceita |
+| [0012](ADR-0012-assimetria-camara-senado.md) | A assimetria entre Câmara e Senado é exibida, não escondida | 2026-08-21 | Aceita |
 
 ## Questões abertas
 

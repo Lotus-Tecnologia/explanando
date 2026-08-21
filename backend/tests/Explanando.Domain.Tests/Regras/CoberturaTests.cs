@@ -70,6 +70,38 @@ public sealed class CoberturaTests
     }
 
     [Fact]
+    public void Teto_de_deputado_nao_vale_para_senador()
+    {
+        // CEAP e CEAPS sao cotas distintas com valores proprios para a mesma UF. Sem o
+        // filtro por casa, o gasto de um senador seria comparado ao teto de um deputado —
+        // e REG_TX_002 falaria sobre o numero errado, com nome e foto na tela.
+        var contexto = new CenarioDeAvaliacao()
+            .ParlamentarDoSenado("AP")
+            .ComLimiteDeCota("AP", 50_000m, casa: Domain.Parlamentares.TipoParlamentar.DeputadoFederal)
+            .ComFornecedor()
+            .ComDespesa(1_000m)
+            .Construir();
+
+        var teto = De(MotorDeRegras.Padrao().Avaliar(contexto), "REG_TX_002");
+
+        teto.Situacao.ShouldBe(SituacaoDaRegra.SemDado, "o teto existente e' de outra casa");
+    }
+
+    [Fact]
+    public void Teto_da_casa_certa_e_encontrado()
+    {
+        var contexto = new CenarioDeAvaliacao()
+            .ParlamentarDoSenado("AP")
+            .ComLimiteDeCota("AP", 50_000m, casa: Domain.Parlamentares.TipoParlamentar.Senador)
+            .ComFornecedor()
+            .ComDespesa(1_000m)
+            .Construir();
+
+        De(MotorDeRegras.Padrao().Avaliar(contexto), "REG_TX_002")
+            .Situacao.ShouldBe(SituacaoDaRegra.SemAchados);
+    }
+
+    [Fact]
     public void Despesa_com_cnpj_sentinela_deixa_as_regras_de_fornecedor_sem_dado()
     {
         // 2 em 100 despesas reais têm "00000000000001", que não resolve para fornecedor.

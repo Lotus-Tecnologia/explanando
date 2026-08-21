@@ -10,9 +10,36 @@ namespace Explanando.Domain.Tests.Despesas;
 public sealed class CatalogoDeTiposDeDespesaTests
 {
     [Fact]
-    public void Conhece_os_dezesseis_tipos_vistos_na_base_real()
+    public void Conhece_os_tipos_das_duas_casas()
     {
-        CatalogoDeTiposDeDespesa.Quantidade.ShouldBe(16);
+        // 16 da CEAP da Camara + 7 da CEAPS do Senado, todos com grafia verificada em dado
+        // real. As duas casas dividem o catalogo: o codigo e' so' um identificador.
+        CatalogoDeTiposDeDespesa.Quantidade.ShouldBe(23);
+    }
+
+    [Theory]
+    [InlineData("Locomoção, hospedagem, alimentação, combustíveis e lubrificantes")]
+    [InlineData("Serviços de Segurança Privada")]
+    [InlineData("Passagens aéreas, aquáticas e terrestres nacionais")]
+    public void Conhece_as_categorias_do_senado(string nome)
+    {
+        CatalogoDeTiposDeDespesa.CodigoDe(nome).ShouldNotBe(CatalogoDeTiposDeDespesa.NaoCatalogado);
+    }
+
+    [Fact]
+    public void Espaco_final_da_rubrica_de_material_de_consumo_nao_atrapalha()
+    {
+        // A origem entrega essa rubrica com espaco no fim. O catalogo guarda a forma
+        // aparada, e Despesa.Criar apara antes de buscar — mas se alguem chamar direto,
+        // o espaco tem de ser irrelevante do mesmo jeito.
+        const string ComEspaco =
+            "Aquisição de material de consumo para uso no escritório político, inclusive "
+            + "aquisição ou locação de software, despesas postais, aquisição de publicações, "
+            + "locação de móveis e de equipamentos. ";
+
+        CatalogoDeTiposDeDespesa
+            .CodigoDe(ComEspaco.Trim())
+            .ShouldNotBe(CatalogoDeTiposDeDespesa.NaoCatalogado);
     }
 
     [Theory]

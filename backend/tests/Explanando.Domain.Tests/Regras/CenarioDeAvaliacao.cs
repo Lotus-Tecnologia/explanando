@@ -92,9 +92,28 @@ internal sealed class CenarioDeAvaliacao
         return this;
     }
 
-    public CenarioDeAvaliacao ComLimiteDeCota(string uf, decimal valorMensal, int ano = 2026)
+    public CenarioDeAvaliacao ComLimiteDeCota(
+        string uf,
+        decimal valorMensal,
+        int ano = 2026,
+        TipoParlamentar casa = TipoParlamentar.DeputadoFederal)
     {
-        _limites.Add(LimiteCota.Criar(uf, valorMensal, new DateOnly(ano, 1, 1)));
+        _limites.Add(LimiteCota.Criar(uf, valorMensal, new DateOnly(ano, 1, 1), casa: casa));
+        return this;
+    }
+
+    public CenarioDeAvaliacao ParlamentarDoSenado(string uf = "AP")
+    {
+        Parlamentar = Parlamentar.Criar(new NovoParlamentar
+        {
+            IdExterno = 5672,
+            NomeCivil = "SENADOR DE TESTE",
+            NomeParlamentar = "Senador de Teste",
+            SiglaPartido = "MDB",
+            Uf = uf,
+            Tipo = TipoParlamentar.Senador,
+        });
+
         return this;
     }
 

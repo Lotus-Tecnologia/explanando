@@ -33,6 +33,17 @@ public sealed class RegrasDeRedeTests
             Tipo = TipoParlamentar.DeputadoFederal,
         });
 
+    private static Parlamentar Senador(string partido, string uf = "AP") =>
+        Parlamentar.Criar(new NovoParlamentar
+        {
+            IdExterno = Interlocked.Increment(ref _sequencia),
+            NomeCivil = $"SENADOR {_sequencia}",
+            NomeParlamentar = $"Senador {_sequencia}",
+            SiglaPartido = partido,
+            Uf = uf,
+            Tipo = TipoParlamentar.Senador,
+        });
+
     private static Fornecedor Fornecedora(DateOnly abertura, string cnpj = CnpjNovo) =>
         Fornecedor.Criar(new NovoFornecedor
         {
@@ -277,6 +288,82 @@ public sealed class RegrasDeRedeTests
                 Nota(c.Id, 5_000m, cnpj: CnpjOutro),
             ],
             [Fornecedora(new DateOnly(2026, 1, 15)), Fornecedora(new DateOnly(2026, 1, 15), CnpjOutro)]);
+
+        Rodar(contexto).ShouldBeEmpty();
+    }
+
+    // ------------------------------------------------------------------
+    //  A regra atravessa as duas casas
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Concentracao_atravessa_camara_e_senado()
+    {
+        // A regra agrupa por fornecedor e le o partido; nunca olha a casa. E' o que permite
+        // a passada de rede rodar sobre os 594 parlamentares juntos — necessario, porque o
+        // Senado sozinho tem 82 e o piso da regra e' 100.
+        var deputadoA = Deputado("MDB");
+        var deputadoB = Deputado("MDB");
+        var senador = Senador("MDB");
+
+        var contexto = new ContextoDeRede(
+            [deputadoA, deputadoB, senador],
+            [
+                Nota(deputadoA.Id, 5_000m),
+                Nota(deputadoB.Id, 5_000m),
+                Nota(senador.Id, 5_000m),
+            ],
+            [Fornecedora(new DateOnly(2026, 1, 15))]);
+
+        var flags = Rodar(contexto);
+
+        flags.Count.ShouldBe(3);
+        flags[0].Descricao.ShouldContain("2 deputados e 1 senador");
+    }
+
+    [Fact]
+    public void Descricao_diz_so_deputados_quando_nao_atravessa()
+    {
+        // "3 parlamentares (3 deputados e 0 senadores)" seria ruido. Quando a concentracao
+        // fica numa casa so', a frase nao inventa uma travessia que nao houve.
+        Rodar(CenarioConcentrado())[0]
+            .Descricao.ShouldContain("3 deputados");
+    }
+
+    [Fact]
+    public void Concentracao_so_entre_senadores_tambem_fala()
+    {
+        var a = Senador("PT");
+        var b = Senador("PT");
+        var c = Senador("PT");
+
+        var contexto = new ContextoDeRede(
+            [a, b, c],
+            [Nota(a.Id, 5_000m), Nota(b.Id, 5_000m), Nota(c.Id, 5_000m)],
+            [Fornecedora(new DateOnly(2026, 1, 15))]);
+
+        var flags = Rodar(contexto);
+
+        flags.Count.ShouldBe(3);
+        flags[0].Descricao.ShouldContain("3 senadores");
+    }
+
+    [Fact]
+    public void Partido_diferente_desliga_a_regra_mesmo_atravessando_as_casas()
+    {
+        // A exclusividade partidaria continua valendo: casa diferente nao afrouxa nada.
+        var deputadoA = Deputado("MDB");
+        var deputadoB = Deputado("MDB");
+        var senador = Senador("PT");
+
+        var contexto = new ContextoDeRede(
+            [deputadoA, deputadoB, senador],
+            [
+                Nota(deputadoA.Id, 5_000m),
+                Nota(deputadoB.Id, 5_000m),
+                Nota(senador.Id, 5_000m),
+            ],
+            [Fornecedora(new DateOnly(2026, 1, 15))]);
 
         Rodar(contexto).ShouldBeEmpty();
     }

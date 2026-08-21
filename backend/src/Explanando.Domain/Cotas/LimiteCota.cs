@@ -1,4 +1,5 @@
 using Explanando.Domain.Comum;
+using Explanando.Domain.Parlamentares;
 
 namespace Explanando.Domain.Cotas;
 
@@ -12,6 +13,11 @@ namespace Explanando.Domain.Cotas;
 ///
 /// Modelada com vigencia porque o teto e' reajustado: uma despesa de 2023 tem de ser
 /// comparada ao limite de 2023, nao ao de hoje.
+///
+/// <para>E modelada com <see cref="Casa"/> porque <b>sao duas cotas diferentes</b>: a CEAP
+/// da Camara e a CEAPS do Senado tem valores proprios para a mesma UF. Sem o discriminador,
+/// o teto do Acre para deputado e o do Acre para senador colidiriam no indice unico, e a
+/// regra compararia o gasto de um senador contra o teto de um deputado.</para>
 /// </summary>
 public sealed class LimiteCota : Entidade
 {
@@ -20,6 +26,9 @@ public sealed class LimiteCota : Entidade
         // EF Core.
         Uf = string.Empty;
     }
+
+    /// <summary>Qual cota este teto governa: a CEAP da Camara ou a CEAPS do Senado.</summary>
+    public TipoParlamentar Casa { get; private set; }
 
     public string Uf { get; private set; }
 
@@ -34,7 +43,8 @@ public sealed class LimiteCota : Entidade
         string uf,
         decimal valorMensal,
         DateOnly vigenciaInicio,
-        DateOnly? vigenciaFim = null)
+        DateOnly? vigenciaFim = null,
+        TipoParlamentar casa = TipoParlamentar.DeputadoFederal)
     {
         var normalizada = (uf ?? string.Empty).Trim().ToUpperInvariant();
 
@@ -55,6 +65,7 @@ public sealed class LimiteCota : Entidade
 
         return new LimiteCota
         {
+            Casa = casa,
             Uf = normalizada,
             ValorMensal = valorMensal,
             VigenciaInicio = vigenciaInicio,

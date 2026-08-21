@@ -56,9 +56,11 @@ confere sozinho. É a peça que sustenta a postura do
 [ADR-0004](../decisoes/ADR-0004-nomenclatura-tecnica.md): o produto não acusa, ele mostra o
 documento e deixa o leitor concluir. **No Senado essa peça não existe.**
 
-Isso é uma decisão de produto pendente, não um detalhe técnico. A página de um senador vai ter
-de dizer, de forma visível, que o comprovante não é publicado pela origem — senão a ausência
-do link vai parecer falha nossa.
+Isso é decisão de produto, não detalhe técnico — e foi tomada no mesmo dia: a página exibe uma
+tag inativa com contraste de alerta no lugar do botão, atribuindo a ausência a quem a produziu,
+e o Relatório Cidadão traz nota técnica no rodapé. Ver
+[ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §1 e §3. Sem isso, o espaço vazio
+onde o link deveria estar seria lido como falha da plataforma.
 
 **E não existe glosa.** A Câmara entrega três valores (pedido, pago, cortado); o Senado
 entrega um. O sinal da glosa, que aparece em ~1 de cada 100 notas da Câmara, simplesmente não
@@ -94,14 +96,14 @@ senadores do mesmo partido é, se alguma coisa, mais notável que o caso de uma 
 
 ### 6.2 Duas tabelas curadas novas
 
-As oito categorias de despesa do Senado são **outras**, não as dezesseis da Câmara — e mais
+As sete categorias de despesa do Senado são **outras**, não as dezesseis da Câmara — e mais
 grossas: a maior delas junta "locomoção, hospedagem, alimentação, combustíveis e
 lubrificantes" numa categoria só. Isso enfraquece `REG_KYB_001` por construção, porque quase
 qualquer CNAE é compatível com uma categoria tão ampla.
 
 Faltam, e nenhuma das duas vem em API:
 
-1. **CNAE × tipo de despesa do Senado**, com as 8 categorias;
+1. **CNAE × tipo de despesa do Senado**, com as 7 categorias;
 2. **Limites da CEAPS por UF** — sem ela `REG_TX_002` não roda, exatamente como aconteceu na
    Câmara antes da curadoria da Etapa 03.
 
@@ -116,19 +118,21 @@ Faltam, e nenhuma das duas vem em API:
 - **Fonte histórica de senadores.** 10 dos 82 que gastaram em 2025 não estão na lista de "em
   exercício" — suplentes que assumiram e saíram. Sem isso, 12% de quem gastou fica sem nome e
   sem UF.
-- O modelo de `Despesa` acomoda o Senado sem mudança: `ValorDocumento` e `ValorLiquido` ambos
-  recebem `valorReembolsado`, e `ValorGlosa` fica zero. `TemDocumentoPublicado` fica sempre
-  falso.
+- O modelo de `Despesa` acomoda o Senado com **uma** mudança, feita em 2026-08-21:
+  `ValorDocumento` e `ValorLiquido` ambos recebem `valorReembolsado`, e `ValorGlosa` fica
+  **nulo — não zero**. Zero diria que houve conferência e nada foi cortado, afirmação que
+  ninguém fez. Ver [ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §2.
+  `TemDocumentoPublicado` fica sempre falso.
 
 ## 8. Pendências
 
 | Pendência | Impacto | Observação |
 |---|---|---|
-| Tabela CNAE × tipo de despesa do Senado (8 categorias) | Alto para `REG_KYB_001` | **Precisa de decisão sua**, como foi na Câmara |
+| ~~Tabela CNAE × tipo de despesa do Senado~~ | — | ✅ Resolvida em 2026-08-21 ([ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §5). **Precisa da sua revisão**: as rubricas do Senado são grossas e a tabela é permissiva por consequência |
 | Tabela de limites da CEAPS por UF | Alto para `REG_TX_002` | Não vem em API. Idem |
-| Como a página comunica a ausência de comprovante | **Alto, de produto** | Sem isso, a falta do link parece falha nossa |
+| ~~Como a página comunica a ausência de comprovante~~ | — | ✅ Resolvida: [ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §1 e §3 |
 | Fonte histórica de senadores | Médio | 12% de quem gastou em 2025 |
-| Passada de rede unificada Câmara + Senado | Médio | Destrava `REG_NET_004` para as duas casas |
+| ~~Passada de rede unificada Câmara + Senado~~ | — | ✅ Resolvida: [ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §4, com testes |
 
 ## 9. Próxima etapa
 

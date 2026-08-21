@@ -77,7 +77,12 @@ public sealed class ConsolidadoMensal : Entidade
 
     public decimal TotalDocumento { get; private set; }
 
-    public decimal TotalGlosa { get; private set; }
+    /// <summary>
+    /// Soma das glosas do mês. <b>Nula quando nenhuma despesa do mês informa glosa</b> —
+    /// o mês inteiro de um senador cai aqui. Zero significaria "houve conferência e nada
+    /// foi cortado", que é afirmação diferente.
+    /// </summary>
+    public decimal? TotalGlosa { get; private set; }
 
     public int QuantidadeDeDespesas { get; private set; }
 
@@ -122,7 +127,11 @@ public sealed class ConsolidadoMensal : Entidade
 
         TotalLiquido = despesasDoMes.Sum(despesa => despesa.ValorLiquido);
         TotalDocumento = despesasDoMes.Sum(despesa => despesa.ValorDocumento);
-        TotalGlosa = despesasDoMes.Sum(despesa => despesa.ValorGlosa);
+        // Soma so' o que a origem informou. Se ninguem informou, o total e' nulo — nao
+        // zero: um parlamentar pertence a uma casa so', entao o mes e' todo conhecido ou
+        // todo desconhecido.
+        var comGlosa = despesasDoMes.Where(despesa => despesa.GlosaConhecida).ToList();
+        TotalGlosa = comGlosa.Count == 0 ? null : comGlosa.Sum(despesa => despesa.ValorGlosa!.Value);
         QuantidadeDeDespesas = despesasDoMes.Count;
         QuantidadeDeEstornos = despesasDoMes.Count(despesa => despesa.EhEstorno);
         AtualizadoEm = momento;

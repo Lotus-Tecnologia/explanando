@@ -136,6 +136,47 @@ public sealed class DespesaTests
         estorno.EhEstorno.ShouldBeTrue();
     }
 
+    // ------------------------------------------------------------------
+    //  Glosa desconhecida nao e' glosa zero
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Glosa_nula_significa_que_a_origem_nao_informa()
+    {
+        // A CEAPS do Senado publica um valor unico. Guardar zero ali diria que a despesa
+        // passou por malha fina e foi integralmente aprovada — afirmacao que ninguem fez.
+        var doSenado = Despesa.Criar(Real(b => b.ValorGlosa = null));
+
+        doSenado.ValorGlosa.ShouldBeNull();
+        doSenado.GlosaConhecida.ShouldBeFalse();
+        doSenado.TemGlosa.ShouldBeFalse("nao houve corte informado, e nao 'houve zero corte'");
+    }
+
+    [Fact]
+    public void Glosa_zero_e_diferente_de_glosa_nula()
+    {
+        // A Camara publica os tres valores. Zero ali e' informacao: houve conferencia e
+        // nada foi cortado.
+        var daCamara = Despesa.Criar(Real(b => b.ValorGlosa = 0m));
+
+        daCamara.GlosaConhecida.ShouldBeTrue();
+        daCamara.TemGlosa.ShouldBeFalse();
+        daCamara.ValorGlosa.ShouldBe(0m);
+    }
+
+    [Fact]
+    public void Glosa_nula_dispensa_a_checagem_de_consistencia()
+    {
+        // Nao ha o que conferir sobre um numero que ninguem publicou. Sem isto, toda
+        // despesa do Senado com valor liquido diferente do documento seria rejeitada.
+        Should.NotThrow(() => Despesa.Criar(Real(b =>
+        {
+            b.ValorGlosa = null;
+            b.ValorDocumento = 1_000m;
+            b.ValorLiquido = 900m;
+        })));
+    }
+
     [Fact]
     public void Glosa_continua_nao_podendo_ser_negativa()
     {
@@ -235,7 +276,7 @@ public sealed class DespesaTests
         public DateTimeOffset DataDocumento { get; set; } = new(2026, 7, 6, 0, 0, 0, TimeSpan.Zero);
         public decimal ValorDocumento { get; set; } = 385.92m;
         public decimal ValorLiquido { get; set; } = 385.92m;
-        public decimal ValorGlosa { get; set; }
+        public decimal? ValorGlosa { get; set; }
         public string? UrlDocumento { get; set; } = "http://www.camara.leg.br/cota-parlamentar/nota";
         public long CodigoLote { get; set; } = 2253045;
         public int Parcela { get; set; }

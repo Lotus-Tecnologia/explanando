@@ -30,7 +30,11 @@ public sealed record NovaDespesa
     public required DateTimeOffset DataDocumento { get; init; }
     public required decimal ValorDocumento { get; init; }
     public required decimal ValorLiquido { get; init; }
-    public decimal ValorGlosa { get; init; }
+    /// <summary>
+    /// Parte cortada pela casa legislativa. <b>Nulo quando a origem não informa</b> — não
+    /// zero. Ver a nota da propriedade correspondente em <see cref="Despesa"/>.
+    /// </summary>
+    public decimal? ValorGlosa { get; init; }
     public string? UrlDocumento { get; init; }
     public long CodigoLote { get; init; }
     public int Parcela { get; init; }
@@ -104,8 +108,17 @@ public sealed class Despesa : Entidade
     /// <summary>Valor efetivamente reembolsado pelo erario.</summary>
     public decimal ValorLiquido { get; private set; }
 
-    /// <summary>Parte cortada pela Camara. Sinal proprio: aparece em ~1 de 100 despesas.</summary>
-    public decimal ValorGlosa { get; private set; }
+    /// <summary>
+    /// Parte cortada pela casa legislativa. Sinal proprio: aparece em ~1 de 100 despesas
+    /// da Camara.
+    ///
+    /// <para><b>Nulo significa "a origem nao informa", e nao "nao houve corte".</b> A
+    /// CEAPS do Senado publica um valor unico: guardar zero ali diria que a despesa passou
+    /// por malha fina e foi integralmente aprovada, que e' afirmacao que ninguem fez. E'
+    /// a mesma disciplina de <c>SemBaseParaAvaliar</c> no motor — ausencia de dado nunca
+    /// vira conclusao.</para>
+    /// </summary>
+    public decimal? ValorGlosa { get; private set; }
 
     /// <summary>
     /// Se a Camara publicou o arquivo do documento.
@@ -141,7 +154,16 @@ public sealed class Despesa : Entidade
     /// </summary>
     public byte[] HashUnico { get; private set; }
 
+    /// <summary>Houve corte. Falso tambem quando a origem nao informa — ver <see cref="GlosaConhecida"/>.</summary>
     public bool TemGlosa => ValorGlosa > 0m;
+
+    /// <summary>
+    /// Se a origem informa a glosa. Falso para o Senado inteiro.
+    ///
+    /// A interface consulta isto antes de exibir a quebra "valor declarado x glosa": mostrar
+    /// R$ 0,00 onde a informacao nao existe e' pior que omitir a linha.
+    /// </summary>
+    public bool GlosaConhecida => ValorGlosa is not null;
 
     /// <summary>
     /// Estorno: devolucao de valor a cota, lancada como despesa de valor negativo.
@@ -173,24 +195,29 @@ public sealed class Despesa : Entidade
     {
         ArgumentNullException.ThrowIfNull(dados);
 
-        // Valor negativo e' estorno e e' dado legitimo — ver EhEstorno. So' a glosa
-        // permanece obrigatoriamente nao negativa: ela e' um corte, nao um lancamento.
-        ArgumentOutOfRangeException.ThrowIfNegative(dados.ValorGlosa);
-
-        var glosaEsperada = dados.ValorDocumento - dados.ValorLiquido;
-
-        // A consistencia da glosa so' vale para lancamento comum. Num estorno os dois
-        // valores sao negativos e a aritmetica de corte nao se aplica.
-        var ehLancamentoComum = dados.ValorDocumento >= 0m && dados.ValorLiquido >= 0m;
-
-        if (ehLancamentoComum && dados.ValorGlosa != 0m
-            && Math.Abs(glosaEsperada - dados.ValorGlosa) > 0.01m)
+        // Nulo e' "a origem nao informa" e passa direto: nao ha o que validar sobre um
+        // numero que ninguem publicou.
+        if (dados.ValorGlosa is { } glosa)
         {
-            throw new ArgumentException(
-                $"Valor de glosa inconsistente: documento {dados.ValorDocumento} menos liquido "
-                + $"{dados.ValorLiquido} da {glosaEsperada}, mas a origem informou "
-                + $"{dados.ValorGlosa}.",
-                nameof(dados));
+            // Valor negativo e' estorno e e' dado legitimo — ver EhEstorno. So' a glosa
+            // permanece obrigatoriamente nao negativa: ela e' um corte, nao um lancamento.
+            ArgumentOutOfRangeException.ThrowIfNegative(glosa);
+
+            var glosaEsperada = dados.ValorDocumento - dados.ValorLiquido;
+
+            // A consistencia da glosa so' vale para lancamento comum. Num estorno os dois
+            // valores sao negativos e a aritmetica de corte nao se aplica.
+            var ehLancamentoComum = dados.ValorDocumento >= 0m && dados.ValorLiquido >= 0m;
+
+            if (ehLancamentoComum && glosa != 0m
+                && Math.Abs(glosaEsperada - glosa) > 0.01m)
+            {
+                throw new ArgumentException(
+                    $"Valor de glosa inconsistente: documento {dados.ValorDocumento} menos "
+                    + $"liquido {dados.ValorLiquido} da {glosaEsperada}, mas a origem "
+                    + $"informou {glosa}.",
+                    nameof(dados));
+            }
         }
 
         var despesa = new Despesa

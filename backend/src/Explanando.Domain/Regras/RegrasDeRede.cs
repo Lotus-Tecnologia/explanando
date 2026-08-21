@@ -177,6 +177,11 @@ public sealed class RegraConcentracaoPartidaria : IRegraDeRede
 
             var partido = partidos.Single();
 
+            // A composicao por casa entra na descricao porque muda o que o leitor entende.
+            // "Tres deputados" e "dois deputados e um senador" sao achados de peso
+            // diferente: o segundo atravessa as duas casas do Congresso.
+            var composicao = DescreverComposicao(contexto, relacoes.Select(r => r.MaiorDespesa));
+
             foreach (var relacao in relacoes)
             {
                 yield return FlagAnomalia.Criar(
@@ -184,12 +189,46 @@ public sealed class RegraConcentracaoPartidaria : IRegraDeRede
                     Codigo,
                     Gravidade.Media,
                     $"Padrão de contratação: '{fornecedor.RazaoSocial}', aberta em "
-                    + $"{abertura:dd/MM/yyyy}, presta serviço a {relacoes.Count} "
-                    + $"parlamentares nesta base, todos do partido {partido}. "
+                    + $"{abertura:dd/MM/yyyy}, presta serviço a {composicao} "
+                    + $"nesta base, todos do partido {partido}. "
                     + "A coincidência é descritiva e não caracteriza, por si, qualquer "
                     + "situação irregular.",
                     grauDeConfianca: 0.7m);
             }
         }
+    }
+
+    /// <summary>
+    /// "3 parlamentares (2 deputados e 1 senador)" — ou so' "3 deputados" quando a
+    /// concentracao nao atravessa as casas.
+    /// </summary>
+    private static string DescreverComposicao(
+        ContextoDeRede contexto,
+        IEnumerable<Despesa> despesas)
+    {
+        var tipos = despesas
+            .Select(contexto.ParlamentarDe)
+            .OfType<Parlamentar>()
+            .ToList();
+
+        var deputados = tipos.Count(p => p.Tipo == TipoParlamentar.DeputadoFederal);
+        var senadores = tipos.Count(p => p.Tipo == TipoParlamentar.Senador);
+
+        static string Plural(int quantos, string singular, string plural) =>
+            $"{quantos} {(quantos == 1 ? singular : plural)}";
+
+        if (senadores == 0)
+        {
+            return Plural(deputados, "deputado", "deputados");
+        }
+
+        if (deputados == 0)
+        {
+            return Plural(senadores, "senador", "senadores");
+        }
+
+        return $"{Plural(deputados + senadores, "parlamentar", "parlamentares")} "
+            + $"({Plural(deputados, "deputado", "deputados")} e "
+            + $"{Plural(senadores, "senador", "senadores")})";
     }
 }

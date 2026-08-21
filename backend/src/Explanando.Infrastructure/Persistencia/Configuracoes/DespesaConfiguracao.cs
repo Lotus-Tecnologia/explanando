@@ -57,7 +57,9 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
         // Tres valores, nao um: o pedido, o pago e o cortado.
         builder.Property(despesa => despesa.ValorDocumento).HasColumnType("numeric(18,2)").IsRequired();
         builder.Property(despesa => despesa.ValorLiquido).HasColumnType("numeric(18,2)").IsRequired();
-        builder.Property(despesa => despesa.ValorGlosa).HasColumnType("numeric(18,2)").IsRequired();
+        // Nullable de proposito: nulo e' "a origem nao informa", que e' diferente de
+        // zero. A CEAPS do Senado publica um valor unico.
+        builder.Property(despesa => despesa.ValorGlosa).HasColumnType("numeric(18,2)");
 
         // A URL saiu: 1.735 kB em 28.540 despesas, e inteiramente derivavel. No lugar
         // ficam o booleano e — so' nos 2,3% em que o ano da pasta diverge do ano da nota —
@@ -77,6 +79,7 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
             .IsRequired();
 
         builder.Ignore(despesa => despesa.TemGlosa);
+        builder.Ignore(despesa => despesa.GlosaConhecida);
         builder.Ignore(despesa => despesa.EhEstorno);
         builder.Ignore(despesa => despesa.EhDocumentoFiscal);
         builder.Ignore(despesa => despesa.ValorParaScore);
@@ -255,14 +258,15 @@ internal sealed class LimiteCotaConfiguracao : IEntityTypeConfiguration<LimiteCo
         builder.ToTable("limites_cota");
         builder.HasKey(limite => limite.Id);
 
+        builder.Property(limite => limite.Casa).HasConversion<int>().IsRequired();
         builder.Property(limite => limite.Uf).HasColumnType("char(2)").IsRequired();
         builder.Property(limite => limite.ValorMensal).HasColumnType("numeric(18,2)").IsRequired();
         builder.Property(limite => limite.VigenciaInicio).HasColumnType("date").IsRequired();
         builder.Property(limite => limite.VigenciaFim).HasColumnType("date");
 
         builder
-            .HasIndex(limite => new { limite.Uf, limite.VigenciaInicio })
+            .HasIndex(limite => new { limite.Casa, limite.Uf, limite.VigenciaInicio })
             .IsUnique()
-            .HasDatabaseName("ix_limites_cota_uf_vigencia");
+            .HasDatabaseName("ix_limites_cota_casa_uf_vigencia");
     }
 }
