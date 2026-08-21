@@ -22,6 +22,65 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Explanando.Domain.Auditoria.CoberturaDoParlamentar", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<string>("CodigoRegra")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("codigo_regra");
+
+                    b.Property<int>("DadoAusente")
+                        .HasColumnType("integer")
+                        .HasColumnName("dado_ausente");
+
+                    b.Property<int>("DespesasComDado")
+                        .HasColumnType("integer")
+                        .HasColumnName("despesas_com_dado");
+
+                    b.Property<int>("DespesasSemDado")
+                        .HasColumnType("integer")
+                        .HasColumnName("despesas_sem_dado");
+
+                    b.Property<int>("FlagsEmitidas")
+                        .HasColumnType("integer")
+                        .HasColumnName("flags_emitidas");
+
+                    b.Property<string>("MotivoDaFalha")
+                        .HasColumnType("text")
+                        .HasColumnName("motivo_da_falha");
+
+                    b.Property<Guid>("ParlamentarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parlamentar_id");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("integer")
+                        .HasColumnName("situacao");
+
+                    b.Property<int>("VersaoDoMotor")
+                        .HasColumnType("integer")
+                        .HasColumnName("versao_do_motor");
+
+                    b.HasKey("Id")
+                        .HasName("pk_coberturas_regra");
+
+                    b.HasIndex("ParlamentarId", "CodigoRegra")
+                        .IsUnique()
+                        .HasDatabaseName("ix_coberturas_regra_parlamentar_regra");
+
+                    b.ToTable("coberturas_regra", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Auditoria.FlagAnomalia", b =>
                 {
                     b.Property<Guid>("Id")
@@ -866,6 +925,16 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasDatabaseName("ix_solicitacoes_varredura_parlamentar_concluida");
 
                     b.ToTable("solicitacoes_varredura", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Auditoria.CoberturaDoParlamentar", b =>
+                {
+                    b.HasOne("Explanando.Domain.Parlamentares.Parlamentar", null)
+                        .WithMany()
+                        .HasForeignKey("ParlamentarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_coberturas_regra_parlamentares_parlamentar_id");
                 });
 
             modelBuilder.Entity("Explanando.Domain.Auditoria.FlagAnomalia", b =>

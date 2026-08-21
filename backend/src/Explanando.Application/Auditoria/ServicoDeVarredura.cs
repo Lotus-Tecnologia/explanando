@@ -34,6 +34,16 @@ public interface IRepositorioDeVarredura
         CancellationToken cancelamento = default);
 
     /// <summary>
+    /// As medicoes de cobertura ja gravadas para o parlamentar, por codigo de regra.
+    ///
+    /// Rastreadas, porque a varredura as atualiza no lugar: o indice e' unico por
+    /// (parlamentar, regra) e inserir de novo violaria a chave.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, CoberturaDoParlamentar>> ObterCoberturaAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
     /// Apaga as flags das despesas informadas. A varredura recalcula do zero em vez de
     /// somar: rodar de novo com as mesmas regras nao pode dobrar o score, e uma regra
     /// afrouxada tem de conseguir <b>remover</b> um achado anterior.
@@ -45,6 +55,8 @@ public interface IRepositorioDeVarredura
     void Adicionar(ScoreRiscoParlamentar score);
 
     void Adicionar(HistoricoScore ponto);
+
+    void Adicionar(CoberturaDoParlamentar cobertura);
 
     Task SalvarAsync(CancellationToken cancelamento = default);
 }
@@ -145,6 +157,9 @@ public sealed class ServicoDeVarredura(
         await RegistrarNoHistoricoAsync(score, avaliacao.VersaoDoMotor, cancelamento)
             .ConfigureAwait(false);
 
+        await RegistrarCoberturaAsync(parlamentarId, avaliacao, cancelamento)
+            .ConfigureAwait(false);
+
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
 
         return new ResultadoDaVarredura
@@ -162,6 +177,37 @@ public sealed class ServicoDeVarredura(
             Falhas = avaliacao.Falhas,
             Cobertura = avaliacao.Cobertura,
         };
+    }
+
+    /// <summary>
+    /// Grava o que cada regra conseguiu avaliar.
+    ///
+    /// <para>Sem isto a <see cref="MetadadosDeCobertura"/> morre com a passada, e a API fica
+    /// sem como distinguir "avaliei e esta limpo" de "nao tive como avaliar" — distincao que
+    /// o ADR-0013 tornou obrigatoria na interface.</para>
+    /// </summary>
+    private async Task RegistrarCoberturaAsync(
+        Guid parlamentarId,
+        ResultadoDaAvaliacao avaliacao,
+        CancellationToken cancelamento)
+    {
+        var existentes = await repositorio
+            .ObterCoberturaAsync(parlamentarId, cancelamento)
+            .ConfigureAwait(false);
+
+        var momento = relogio.Agora;
+
+        foreach (var medicao in avaliacao.Cobertura.PorRegra)
+        {
+            if (existentes.TryGetValue(medicao.Codigo, out var registro))
+            {
+                registro.Atualizar(medicao, avaliacao.VersaoDoMotor, momento);
+                continue;
+            }
+
+            repositorio.Adicionar(CoberturaDoParlamentar.Registrar(
+                parlamentarId, medicao, avaliacao.VersaoDoMotor, momento));
+        }
     }
 
     /// <summary>

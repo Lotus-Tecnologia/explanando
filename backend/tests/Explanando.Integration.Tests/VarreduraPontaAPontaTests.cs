@@ -333,6 +333,90 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
     }
 
     // ------------------------------------------------------------------
+    //  Cobertura persistida: o que a API precisa para nao mentir
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Varredura_grava_a_cobertura_de_cada_regra()
+    {
+        // Sem isto a MetadadosDeCobertura morre com a passada, e a API fica sem como
+        // distinguir "avaliei e esta limpo" de "nao tive como avaliar".
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+        var servico = MontarServico(out var contexto);
+
+        await using (contexto)
+        {
+            await servico.VarrerAsync(parlamentarId);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var coberturas = await leitura.CoberturasDeRegra
+            .Where(c => c.ParlamentarId == parlamentarId)
+            .ToListAsync();
+
+        coberturas.Count.ShouldBe(11, "uma medicao por regra do motor padrao");
+        coberturas.ShouldAllBe(c => c.VersaoDoMotor == MotorDeRegras.VersaoAtual);
+    }
+
+    [Fact]
+    public async Task Regra_sem_dado_fica_marcada_como_silencio_nao_conclusivo()
+    {
+        // REG_KYB_004 se abstem porque o fornecedor semeado nao tem a opcao pelo MEI
+        // informada — o mesmo motivo pelo qual ela emitiu so' 14 flags em 711.796 despesas
+        // reais. A API tem de dizer "nao avaliado", e nao "nada encontrado".
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+        var servico = MontarServico(out var contexto);
+
+        await using (contexto)
+        {
+            await servico.VarrerAsync(parlamentarId);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var coberturas = await leitura.CoberturasDeRegra
+            .Where(c => c.ParlamentarId == parlamentarId)
+            .ToListAsync();
+
+        var mei = coberturas.Single(c => c.CodigoRegra == "REG_KYB_004");
+
+        mei.Situacao.ShouldBe(SituacaoDaRegra.SemDado);
+        mei.SilencioEhConclusivo.ShouldBeFalse();
+        mei.FlagsEmitidas.ShouldBe(0);
+        mei.DadoAusente.HasFlag(DadoExigido.OpcaoPeloMei).ShouldBeTrue();
+
+        // E o contraste que importa: uma regra que avaliou de verdade e nao achou nada
+        // tem silencio conclusivo. As duas produzem zero flags e significam coisas opostas.
+        var recesso = coberturas.Single(c => c.CodigoRegra == "REG_GEO_003");
+
+        recesso.Situacao.ShouldBe(SituacaoDaRegra.SemAchados);
+        recesso.SilencioEhConclusivo.ShouldBeTrue();
+        recesso.FlagsEmitidas.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Varrer_de_novo_atualiza_a_cobertura_em_vez_de_duplicar()
+    {
+        // O indice e' unico por (parlamentar, regra): inserir de novo violaria a chave, e
+        // duas linhas seriam duas verdades sobre a mesma pergunta.
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+
+        for (var vez = 0; vez < 2; vez++)
+        {
+            var servico = MontarServico(out var contexto);
+
+            await using (contexto)
+            {
+                await servico.VarrerAsync(parlamentarId);
+            }
+        }
+
+        await using var leitura = banco.CriarContexto();
+
+        (await leitura.CoberturasDeRegra.CountAsync(c => c.ParlamentarId == parlamentarId))
+            .ShouldBe(11);
+    }
+
+    // ------------------------------------------------------------------
     //  Cobertura
     // ------------------------------------------------------------------
 

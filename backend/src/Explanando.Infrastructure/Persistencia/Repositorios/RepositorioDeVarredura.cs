@@ -91,6 +91,18 @@ public sealed class RepositorioDeVarredura(ExplanandoDbContext contexto) : IRepo
 
     public void Adicionar(HistoricoScore ponto) => contexto.HistoricoScores.Add(ponto);
 
+    public void Adicionar(CoberturaDoParlamentar cobertura) =>
+        contexto.CoberturasDeRegra.Add(cobertura);
+
+    public async Task<IReadOnlyDictionary<string, CoberturaDoParlamentar>> ObterCoberturaAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default) =>
+        // Rastreado de proposito: o servico chama Atualizar nestes objetos.
+        await contexto.CoberturasDeRegra
+            .Where(cobertura => cobertura.ParlamentarId == parlamentarId)
+            .ToDictionaryAsync(cobertura => cobertura.CodigoRegra, cancelamento)
+            .ConfigureAwait(false);
+
     public Task SalvarAsync(CancellationToken cancelamento = default) =>
         contexto.SaveChangesAsync(cancelamento);
 }

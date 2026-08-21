@@ -326,3 +326,44 @@ internal sealed class ConsolidadoMensalConfiguracao : IEntityTypeConfiguration<C
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class CoberturaDoParlamentarConfiguracao
+    : IEntityTypeConfiguration<CoberturaDoParlamentar>
+{
+    public void Configure(EntityTypeBuilder<CoberturaDoParlamentar> builder)
+    {
+        builder.ToTable("coberturas_regra");
+        builder.HasKey(cobertura => cobertura.Id);
+
+        builder.Property(cobertura => cobertura.ParlamentarId).IsRequired();
+        builder.Property(cobertura => cobertura.CodigoRegra).HasMaxLength(50).IsRequired();
+        builder.Property(cobertura => cobertura.Situacao).HasConversion<int>().IsRequired();
+        builder.Property(cobertura => cobertura.DespesasComDado).IsRequired();
+        builder.Property(cobertura => cobertura.DespesasSemDado).IsRequired();
+        builder.Property(cobertura => cobertura.FlagsEmitidas).IsRequired();
+        builder.Property(cobertura => cobertura.DadoAusente).HasConversion<int>().IsRequired();
+        builder.Property(cobertura => cobertura.MotivoDaFalha).HasColumnType("text");
+        builder.Property(cobertura => cobertura.VersaoDoMotor).IsRequired();
+
+        builder
+            .Property(cobertura => cobertura.AtualizadoEm)
+            .HasColumnType("timestamp with time zone")
+            .IsRequired();
+
+        builder.Ignore(cobertura => cobertura.DespesasVistas);
+        builder.Ignore(cobertura => cobertura.SilencioEhConclusivo);
+
+        // Uma medicao por regra por parlamentar. Duas linhas seriam duas verdades sobre a
+        // mesma pergunta.
+        builder
+            .HasIndex(cobertura => new { cobertura.ParlamentarId, cobertura.CodigoRegra })
+            .IsUnique()
+            .HasDatabaseName("ix_coberturas_regra_parlamentar_regra");
+
+        builder
+            .HasOne<Parlamentar>()
+            .WithMany()
+            .HasForeignKey(cobertura => cobertura.ParlamentarId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

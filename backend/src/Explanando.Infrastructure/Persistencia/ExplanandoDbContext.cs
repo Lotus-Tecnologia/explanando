@@ -53,6 +53,8 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
 
     public DbSet<ConsolidadoMensal> ConsolidadosMensais => Set<ConsolidadoMensal>();
 
+    public DbSet<CoberturaDoParlamentar> CoberturasDeRegra => Set<CoberturaDoParlamentar>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
