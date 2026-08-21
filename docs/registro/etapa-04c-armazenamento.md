@@ -116,6 +116,26 @@ reconhece faria a regra se abster em silêncio sobre todas as despesas dele.
 A migration **converte** o dado existente em vez de descartá-lo — 16 casos de `CASE`, verificados
 contra as 5.843 despesas já coletadas: todas mapearam, nenhuma sobrou.
 
+### 3.5 Os tipos não catalogados apareceram, como previsto
+
+A coleta completa de 2026-08-21 trouxe **quatro** dos oito tipos da CEAP que faltavam, com a
+grafia exata — inclusive os pontos finais, que não teriam sido adivinhados:
+
+| Tipo | Ocorrências |
+|---|---|
+| `SERVIÇO DE SEGURANÇA PRESTADO POR EMPRESA ESPECIALIZADA.` | 277 |
+| `CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.` | 4 |
+| `PARTICIPAÇÃO EM CURSO, PALESTRA OU EVENTO SIMILAR` | 4 |
+| `LOCAÇÃO OU FRETAMENTO DE EMBARCAÇÕES` | 2 |
+
+**Nenhuma despesa foi perdida** — as 287 estão gravadas com o nome por extenso na coluna de
+exceção, que é precisamente o que o desenho prometia. Foi o caminho de fallback rodando em
+produção, não uma falha.
+
+Catalogá-los é uma migration como a dos dezesseis primeiros, e fica para **depois** da coleta:
+alterar o catálogo no meio dela exigiria reiniciar horas de trabalho para converter 287
+linhas.
+
 ## 4. O ganho acumulado
 
 | Esquema | Bytes por despesa |
