@@ -247,6 +247,29 @@ gráfico produzidos por motores diferentes.
 
 Versão em **3**: 1 é a calibragem inicial, 2 a tabela CNAE contra dado real, 3 esta etapa.
 
+### 5-bis.4 As três coisas ligadas ao worker
+
+Nada disso valeria se ficasse só no domínio.
+
+`REG_NET_004` ganhou `ServicoDeVarreduraDeRede`, `RepositorioDeRede` e uma passada de
+fechamento ao fim de `dotnet run -- varrer` — depois de todos os parlamentares, porque uma
+regra que cruza pessoas não roda com uma pessoa só. A limpeza da passada anterior recorta por
+**código de regra** e não por despesa: recortar por despesa levaria junto os achados da
+varredura individual daquela nota, que falam de outra coisa e vieram de outra passada. Há um
+teste de integração só para isso.
+
+O repositório de rede lê a base inteira de uma vez, o que é deliberado — paginar deixaria
+invisível o fornecedor cujos deputados caíssem em páginas diferentes. Por isso a passada roda
+no worker e nunca numa requisição HTTP, e o CLI imprime o aviso de amostra quando a base está
+abaixo do piso de 100.
+
+`HistoricoScore` passou a ser capturado a cada varredura. Duas varreduras no mesmo dia
+**regravam** o mesmo ponto em vez de falhar por chave duplicada — cada solicitação paga
+dispara uma, então duas no mesmo dia é o caso normal e não a exceção.
+
+E `MetadadosDeCobertura` viaja no `ResultadoDaVarredura`, para a Etapa 05 poder publicar o
+que não foi avaliado junto com o que foi.
+
 ## 6. Pendências
 
 | Pendência | Impacto | Observação |
