@@ -28,6 +28,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 |---|---|---|---|
 | 00 | Fundação e git | ✅ Concluída | [etapa-00-fundacao.md](etapa-00-fundacao.md) |
 | 01 | Spike de contratos das APIs | ✅ Concluída | [etapa-01-contratos.md](etapa-01-contratos.md) |
+| 01b | Spike de contratos do Senado | ✅ Concluída | [etapa-01b-contratos-senado.md](etapa-01b-contratos-senado.md) |
 | 02 | Domínio e EF Core | ✅ Concluída | [etapa-02-dominio-e-efcore.md](etapa-02-dominio-e-efcore.md) |
 | 03 | Ingestão (Câmara + BrasilAPI) | ✅ Concluída | [etapa-03-ingestao.md](etapa-03-ingestao.md) |
 | 04 | Motor de regras determinísticas | ✅ Concluída | [etapa-04-motor-de-regras.md](etapa-04-motor-de-regras.md) |

@@ -1,0 +1,70 @@
+{
+  "statusCode": 200,
+  "msg": "Dados gerados com sucesso",
+  "data": [
+    {
+      "parlamentar": {
+        "nome": "ALAN RICK",
+        "partido": null,
+        "estado": "AC"
+      },
+      "setor": {
+        "siglaSetorSuperior": null,
+        "nomeSetorSuperior": null,
+        "sigla": null,
+        "nome": "Escritório de Apoio nº 1 do Senador Alan Rick",
+        "telefone": null,
+        "endereco": "RIO BRANCO.",
+        "codigo": 0
+      }
+    },
+    {
+      "parlamentar": {
+        "nome": "ALESSANDRO VIEIRA",
+        "partido": null,
+        "estado": "SE"
+      },
+      "setor": {
+        "siglaSetorSuperior": null,
+        "nomeSetorSuperior": null,
+        "sigla": null,
+        "nome": "Escritório de Apoio nº 01 do Senador Alessandro Vieira",
+        "telefone": "(79) 3303-4349",
+        "endereco": "RUA FREI PAULO, 444. SUISSA, ARACAJU, SE. CEP:49052-270",
+        "codigo": 0
+      }
+    },
+    {
+      "parlamentar": {
+        "nome": "ANGELO CORONEL",
+        "partido": null,
+        "estado": "BA"
+      },
+      "setor": {
+        "siglaSetorSuperior": null,
+        "nomeSetorSuperior": null,
+        "sigla": null,
+        "nome": "Escritório de Apoio nº 01 do Senador Angelo Coronel",
+        "telefone": null,
+        "endereco": "ALAMEDA DAS FRAMBOESAS, 349. CAMINHO DAS ÁRVORES, SALVADOR, BA. CEP:41820-450",
+        "codigo": 0
+      }
+    },
+    {
+      "parlamentar": {
+        "nome": "ASTRONAUTA MARCOS PONTES",
+        "partido": null,
+        "estado": "SP"
+      },
+      "setor": {
+        "siglaSetorSuperior": null,
+        "nomeSetorSuperior": null,
+        "sigla": null,
+        "nome": "Escritório de Apoio nº 1 do Senador Astronauta Marcos Pontes",
+        "telefone": null,
+        "endereco": "RUA RIO AZUL, 192. VILA SÔNIA, SÃO PAULO, SP. CEP:05519120",
+        "codigo": 0
+      }
+    }
+  ]
+}

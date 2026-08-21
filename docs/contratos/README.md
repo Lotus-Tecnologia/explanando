@@ -17,6 +17,16 @@ documento de Análise de Lacunas.
 | `camara-tipos-despesa.json` | `GET /api/v2/referencias/deputados/tipoDespesa` |
 | `brasilapi-cnpj.json` | `GET /api/cnpj/v1/36826246000164` |
 | `brasilapi-cnpj-invalido.json` | idem, com o CNPJ sentinela — resposta de erro |
+| `senado-ceaps-amostra.json` | `GET /adm-dadosabertos/api/v1/senadores/despesas_ceaps/2025` — 15 registros **escolhidos pelas armadilhas**, não pelo caminho feliz: CPF mascarado, CNPJ malformado, tipo nulo, data fora do ano, estorno e documento não numérico |
+| `senado-escritorios-apoio.json` | `GET /adm-dadosabertos/api/v1/senadores/escritorios-apoio` |
+| `senado-senadores-adm.json` | `GET /adm-dadosabertos/api/v1/senadores` |
+| `senado-legis-senadores.json` | `GET legis.senado.leg.br/dadosabertos/senador/lista/atual.json` |
+
+## Senado
+
+O levantamento completo está em [**senado.md**](senado.md), feito em 2026-08-21 contra o ano
+de 2025 inteiro (23.615 despesas). A leitura curta: a CEAPS vem num só request por ano, o CNPJ
+aparece em 98,6% dos registros e **não existe link para o comprovante em lugar nenhum**.
 
 ---
 

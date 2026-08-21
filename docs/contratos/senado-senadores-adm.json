@@ -1,0 +1,44 @@
+[
+  {
+    "nomeParlamentar": "ALAN RICK",
+    "titularSuplente": "Titular",
+    "uf": "AC",
+    "partido": "REPUBLICANOS",
+    "endereco": "SENADO FEDERAL ANEXO 2   ALA TEOTÔNIO VILELA GABINETE 05",
+    "telefones": "(61)3303-6333",
+    "fax": "-",
+    "dataNascimento": "23/10/1976",
+    "email": "sen.alanrick@senado.leg.br",
+    "chefeGabinete": "Maria Janete Sousa Dos Santos",
+    "aniversario": "23/out",
+    "mandato": "2023 / 2031"
+  },
+  {
+    "nomeParlamentar": "ALESSANDRO VIEIRA",
+    "titularSuplente": "Titular",
+    "uf": "SE",
+    "partido": "MDB",
+    "endereco": "SENADO FEDERAL ANEXO 2   ALA AFFONSO ARINOS GABINETE 08",
+    "telefones": "(61)3303-9011; (61)3303-9014",
+    "fax": "-",
+    "dataNascimento": "03/04/1975",
+    "email": "sen.alessandrovieira@senado.leg.br",
+    "chefeGabinete": "Elaine Da Silva Gontijo",
+    "aniversario": "03/abr",
+    "mandato": "2019 / 2027"
+  },
+  {
+    "nomeParlamentar": "ANGELO CORONEL",
+    "titularSuplente": "Titular",
+    "uf": "BA",
+    "partido": "REPUBLICANOS",
+    "endereco": "SENADO FEDERAL ANEXO 1  7º PAVIMENTO  ",
+    "telefones": "(61)3303-6103; (61)3303-6105",
+    "fax": "-",
+    "dataNascimento": "03/05/1958",
+    "email": "sen.angelocoronel@senado.leg.br",
+    "chefeGabinete": "Natanael Alves Ferreira",
+    "aniversario": "03/mai",
+    "mandato": "2019 / 2027"
+  }
+]

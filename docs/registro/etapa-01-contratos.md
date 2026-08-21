@@ -163,7 +163,7 @@ Um caso real de `REG_GEO_002` já apareceu na amostra de 100 despesas: deputado 
 | Tabela CNAE × tipo de despesa (24 linhas) precisa de curadoria humana | Alto para `REG_KYB_001` | Etapa 04 — **precisa de decisão sua** |
 | Tabela de limite CEAP por UF (27 valores) não vem em API | Alto para `REG_TX_002` | Etapa 04 — **precisa de decisão sua** |
 | Calendário de recesso legislativo | Médio para `REG_GEO_003` | Etapa 04 |
-| Nada verificado sobre o Senado | **Alto** — entrou no escopo pelo [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md) | Precisa do próprio spike de contratos, como este |
+| ~~Nada verificado sobre o Senado~~ | — | ✅ Resolvida em 2026-08-21: [etapa-01b](etapa-01b-contratos-senado.md) e [contratos/senado.md](../contratos/senado.md) |
 | Nada verificado sobre o TSE | **Alto** — `REG_NET_001` depende dele | Spike próprio. A carga do TSE é volumosa e conflita com a premissa de 0,5 GB do [ADR-0010](../decisoes/ADR-0010-resolucoes-produto-infraestrutura.md) |
 
 ## 7. Próxima etapa
