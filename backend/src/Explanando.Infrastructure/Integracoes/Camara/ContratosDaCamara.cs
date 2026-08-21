@@ -19,6 +19,48 @@ internal sealed record RespostaPaginada<T>
     public string? ProximaPagina => Links
         .Find(link => string.Equals(link.Rel, "next", StringComparison.OrdinalIgnoreCase))
         ?.Href;
+
+    /// <summary>
+    /// Quantas paginas a origem diz existir, lido do link <c>last</c>.
+    ///
+    /// <para>E' o que permite conferir se a paginacao foi ate' o fim. Sem isso, uma pagina
+    /// do meio vindo vazia encerra o laco em silencio e o parlamentar fica com dado
+    /// truncado — <b>pior que zero</b>, porque nao dispara alerta nenhum: ele tem despesas,
+    /// so' nao todas.</para>
+    ///
+    /// <para>Nulo quando o link nao vem, o que acontece na resposta degradada (que traz
+    /// so' <c>self</c>) e tambem quando ha uma pagina unica.</para>
+    /// </summary>
+    public int? TotalDePaginas
+    {
+        get
+        {
+            var href = Links.Find(link =>
+                string.Equals(link.Rel, "last", StringComparison.OrdinalIgnoreCase))?.Href;
+
+            if (href is null)
+            {
+                return null;
+            }
+
+            var marca = href.IndexOf("pagina=", StringComparison.OrdinalIgnoreCase);
+
+            if (marca < 0)
+            {
+                return null;
+            }
+
+            var digitos = href[(marca + "pagina=".Length)..]
+                .TakeWhile(char.IsAsciiDigit)
+                .ToArray();
+
+            return digitos.Length > 0
+                && int.TryParse(digitos, System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out var total)
+                ? total
+                : null;
+        }
+    }
 }
 
 internal sealed record LinkDaCamara

@@ -55,6 +55,29 @@ internal sealed class ManipuladorDeFixtures : HttpMessageHandler
             });
     }
 
+    /// <summary>
+    /// Serve a fixture como <b>pagina unica</b>, trocando os links por so' <c>self</c>.
+    ///
+    /// <para>Necessario porque as fixtures reais foram capturadas com <c>itens=3</c> e
+    /// trazem <c>last=397</c>. Servir uma pagina so' com esse link e' simular exatamente o
+    /// truncamento que o cliente agora recusa — e o teste de mapeamento de campos nao fala
+    /// de paginacao, fala de campos.</para>
+    /// </summary>
+    public ManipuladorDeFixtures QuandoContiverPaginaUnica(string trecho, string arquivoDeFixture) =>
+        Quando(
+            uri => uri.PathAndQuery.Contains(trecho, StringComparison.OrdinalIgnoreCase),
+            _ =>
+            {
+                var corpo = Fixtures.Ler(arquivoDeFixture);
+                var abre = corpo.IndexOf("\"links\"", StringComparison.Ordinal);
+
+                var soDados = abre < 0
+                    ? corpo
+                    : corpo[..abre] + "\"links\":[]}";
+
+                return new RespostaFalsa(HttpStatusCode.OK, soDados);
+            });
+
     public ManipuladorDeFixtures QuandoContiver(string trecho, HttpStatusCode status, string corpo = "{}") =>
         Quando(
             uri => uri.PathAndQuery.Contains(trecho, StringComparison.OrdinalIgnoreCase),

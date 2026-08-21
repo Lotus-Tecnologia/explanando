@@ -35,11 +35,15 @@ public sealed class IngestaoPontaAPontaTests(BancoDeTestes banco)
     {
         contexto = banco.CriarContexto();
 
+        // Pagina unica: a fixture foi capturada com itens=3 e anuncia last=397. Servir uma
+        // pagina so' com esse link simula truncamento, que o cliente agora recusa — e o
+        // teste fala de ingestao, nao de paginacao.
         var camara = new ClienteCamara(new HttpClient(
-            new ManipuladorDeFixtures().QuandoContiverUmaVez("/despesas", "camara-despesas.json"))
+            new ManipuladorDeFixtures().QuandoContiverPaginaUnica("/despesas", "camara-despesas.json"))
         {
             BaseAddress = new Uri("https://dadosabertos.camara.leg.br/api/v2/"),
-        });
+        },
+            esperaEntreTentativas: TimeSpan.Zero);
 
         var brasilApi = new ClienteBrasilApi(new HttpClient(
             new ManipuladorDeFixtures().QuandoContiver("/cnpj/", "brasilapi-cnpj.json"))
@@ -159,7 +163,8 @@ public sealed class IngestaoPontaAPontaTests(BancoDeTestes banco)
                 "/despesas", System.Net.HttpStatusCode.OK, """{"dados":[],"links":[]}"""))
         {
             BaseAddress = new Uri("https://dadosabertos.camara.leg.br/api/v2/"),
-        });
+        },
+            esperaEntreTentativas: TimeSpan.Zero);
 
         var servico = new ServicoDeIngestao(
             camaraSemDados,
