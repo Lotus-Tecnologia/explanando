@@ -286,11 +286,11 @@ public sealed class ServicoDeColetaTests
         public Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken c = default) =>
             Task.FromResult<Fornecedor?>(null);
 
-        public Task<HashSet<string>> ObterHashesDeDespesasAsync(Guid parlamentarId, CancellationToken c = default) =>
+        public Task<HashSet<byte[]>> ObterHashesDeDespesasAsync(Guid parlamentarId, CancellationToken c = default) =>
             Task.FromResult(_despesas
                 .Where(d => d.ParlamentarId == parlamentarId)
                 .Select(d => d.HashUnico)
-                .ToHashSet(StringComparer.Ordinal));
+                .ToHashSet(ComparadorDeHash.Instancia));
 
         public void Adicionar(Parlamentar parlamentar) => _parlamentares.Add(parlamentar);
 

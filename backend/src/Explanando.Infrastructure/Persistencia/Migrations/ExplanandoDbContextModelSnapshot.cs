@@ -307,6 +307,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<short?>("AnoDoArquivo")
+                        .HasColumnType("smallint")
+                        .HasColumnName("ano_do_arquivo");
+
                     b.Property<string>("CodigoDocumento")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -339,9 +343,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("fornecedor_id");
 
-                    b.Property<string>("HashUnico")
+                    b.Property<byte[]>("HashUnico")
                         .IsRequired()
-                        .HasColumnType("char(64)")
+                        .HasMaxLength(16)
+                        .HasColumnType("bytea")
                         .HasColumnName("hash_unico");
 
                     b.Property<string>("NomeFornecedor")
@@ -364,16 +369,15 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("parlamentar_id");
 
+                    b.Property<bool>("TemDocumentoPublicado")
+                        .HasColumnType("boolean")
+                        .HasColumnName("tem_documento_publicado");
+
                     b.Property<string>("TipoDespesa")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("tipo_despesa");
-
-                    b.Property<string>("UrlDocumento")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("url_documento");
 
                     b.Property<decimal>("ValorDocumento")
                         .HasColumnType("numeric(18,2)")
@@ -623,6 +627,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome_parlamentar");
 
+                    b.Property<int?>("NumeroCarteira")
+                        .HasColumnType("integer")
+                        .HasColumnName("numero_carteira");
+
                     b.Property<string>("SiglaPartido")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -649,6 +657,59 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasDatabaseName("ix_parlamentares_id_externo_tipo");
 
                     b.ToTable("parlamentares", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Retencao.ConsolidadoMensal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<int>("Competencia")
+                        .HasColumnType("integer")
+                        .HasColumnName("competencia");
+
+                    b.Property<bool>("DetalheDisponivel")
+                        .HasColumnType("boolean")
+                        .HasColumnName("detalhe_disponivel");
+
+                    b.Property<Guid>("ParlamentarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parlamentar_id");
+
+                    b.Property<int>("QuantidadeDeDespesas")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade_de_despesas");
+
+                    b.Property<int>("QuantidadeDeEstornos")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade_de_estornos");
+
+                    b.Property<decimal>("TotalDocumento")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_documento");
+
+                    b.Property<decimal>("TotalGlosa")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_glosa");
+
+                    b.Property<decimal>("TotalLiquido")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_liquido");
+
+                    b.HasKey("Id")
+                        .HasName("pk_consolidados_mensais");
+
+                    b.HasIndex("ParlamentarId", "Competencia")
+                        .IsUnique()
+                        .HasDatabaseName("ix_consolidados_mensais_parlamentar_competencia");
+
+                    b.ToTable("consolidados_mensais", (string)null);
                 });
 
             modelBuilder.Entity("Explanando.Domain.Usuarios.Favorito", b =>
@@ -940,6 +1001,16 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasConstraintName("fk_mandatos_parlamentares_parlamentar_id");
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Retencao.ConsolidadoMensal", b =>
+                {
+                    b.HasOne("Explanando.Domain.Parlamentares.Parlamentar", null)
+                        .WithMany()
+                        .HasForeignKey("ParlamentarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_consolidados_mensais_parlamentares_parlamentar_id");
+                });
+
             modelBuilder.Entity("Explanando.Domain.Usuarios.Favorito", b =>
                 {
                     b.HasOne("Explanando.Domain.Parlamentares.Parlamentar", null)
@@ -950,7 +1021,7 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasConstraintName("fk_favoritos_parlamentares_parlamentar_id");
 
                     b.HasOne("Explanando.Domain.Usuarios.Usuario", null)
-                        .WithMany("Favoritos")
+                        .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -990,11 +1061,6 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
             modelBuilder.Entity("Explanando.Domain.Parlamentares.Parlamentar", b =>
                 {
                     b.Navigation("Mandatos");
-                });
-
-            modelBuilder.Entity("Explanando.Domain.Usuarios.Usuario", b =>
-                {
-                    b.Navigation("Favoritos");
                 });
 #pragma warning restore 612, 618
         }

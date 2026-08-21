@@ -1,7 +1,9 @@
 using System.Globalization;
 using Explanando.Application.Auditoria;
+using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
 using Explanando.Domain.Regras;
+using Explanando.Domain.Retencao;
 using Explanando.Infrastructure;
 using Explanando.Infrastructure.Persistencia;
 using Explanando.Worker;
@@ -190,6 +192,38 @@ switch (comando)
             return falhas.Count > 0 ? 1 : 0;
         }
 
+    case "consolidar":
+        {
+            // Sem --meses, so' consolida. A poda e' destrutiva e nunca acontece por
+            // omissao: apagar gasto publico tem de ser um ato explicito.
+            var meses = LerInteiro("--meses");
+            var janela = meses is { } m ? JanelaDeRetencao.De(m) : JanelaDeRetencao.Ilimitada;
+
+            var retencao = servicos.GetRequiredService<ServicoDeRetencao>();
+
+            Console.WriteLine(janela.GuardaTudo
+                ? "Consolidando o gasto mensal. Nenhuma despesa sera apagada."
+                : $"Consolidando e podando: preserva {meses} meses de detalhe.");
+
+            var resultado = await retencao.AplicarAsync(janela).ConfigureAwait(false);
+
+            Console.WriteLine();
+            Console.WriteLine("=== RETENCAO ===");
+            Console.WriteLine($"Parlamentares vistos    : {resultado.ParlamentaresVistos}");
+            Console.WriteLine($"Consolidados criados    : {resultado.ConsolidadosCriados}");
+            Console.WriteLine($"Consolidados atualizados: {resultado.ConsolidadosAtualizados}");
+
+            if (resultado.Podou)
+            {
+                Console.WriteLine($"Meses sem detalhe       : {resultado.MesesSemDetalhe}");
+                Console.WriteLine($"Despesas descartadas    : {resultado.DespesasDescartadas}");
+                Console.WriteLine(
+                    "  Os totais mensais sobrevivem; o detalhe nota a nota desses meses nao.");
+            }
+
+            return 0;
+        }
+
     default:
         Console.Error.WriteLine($"""
             Comando desconhecido: '{comando}'.
@@ -198,6 +232,7 @@ switch (comando)
               dotnet run -- servico                       roda como BackgroundService
               dotnet run -- coletar [--legislatura 57] [--limite N]
               dotnet run -- varrer  [--legislatura 57]
+              dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
             """);
         return 2;
 }

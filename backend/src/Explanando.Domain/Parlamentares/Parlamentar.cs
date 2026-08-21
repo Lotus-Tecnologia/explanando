@@ -59,6 +59,19 @@ public sealed class Parlamentar : Entidade
 
     public string? FotoUrl { get; private set; }
 
+    /// <summary>
+    /// Número da carteira parlamentar, usado no caminho dos documentos publicados.
+    ///
+    /// <para><b>Não vem de nenhum endpoint da API.</b> Ele só existe dentro da URL do
+    /// documento — verificado contra quatro rotas. Por isso é extraído na ingestão, da
+    /// primeira nota que traga link, e guardado aqui: sem esse passo, descartar a coluna de
+    /// URL perderia a capacidade de linkar documento para sempre.</para>
+    ///
+    /// <para>É constante por deputado — zero divergências em 10.676 URLs de 20 deputados.
+    /// Nulo enquanto nenhuma despesa com link tiver sido ingerida.</para>
+    /// </summary>
+    public int? NumeroCarteira { get; private set; }
+
     public IReadOnlyCollection<Mandato> Mandatos => _mandatos;
 
     public static Parlamentar Criar(NovoParlamentar dados)
@@ -77,6 +90,18 @@ public sealed class Parlamentar : Entidade
             Tipo = dados.Tipo,
             FotoUrl = dados.FotoUrl,
         };
+    }
+
+    /// <summary>
+    /// Registra a carteira observada numa URL de documento. Idempotente: a primeira
+    /// observação vale, porque o número é constante e reescrever a cada nota seria escrita
+    /// inútil em toda ingestão.
+    /// </summary>
+    public void RegistrarNumeroDeCarteira(int numeroCarteira)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numeroCarteira);
+
+        NumeroCarteira ??= numeroCarteira;
     }
 
     /// <summary>

@@ -54,13 +54,25 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
         builder.Property(despesa => despesa.ValorLiquido).HasColumnType("numeric(18,2)").IsRequired();
         builder.Property(despesa => despesa.ValorGlosa).HasColumnType("numeric(18,2)").IsRequired();
 
-        builder.Property(despesa => despesa.UrlDocumento).HasMaxLength(500);
+        // A URL saiu: 1.735 kB em 28.540 despesas, e inteiramente derivavel. No lugar
+        // ficam o booleano e — so' nos 2,3% em que o ano da pasta diverge do ano da nota —
+        // um smallint. Ver UrlDeDocumento.
+        builder.Property(despesa => despesa.TemDocumentoPublicado).IsRequired();
+        builder.Property(despesa => despesa.AnoDoArquivo).HasColumnType("smallint");
+
         builder.Property(despesa => despesa.CodigoLote);
         builder.Property(despesa => despesa.Parcela);
 
-        builder.Property(despesa => despesa.HashUnico).HasColumnType("char(64)").IsRequired();
+        // bytea de 16 bytes, nao char(64): o indice unico sobre esta coluna era o maior
+        // da base inteira. Ver a nota de Despesa.HashUnico.
+        builder
+            .Property(despesa => despesa.HashUnico)
+            .HasColumnType($"bytea")
+            .HasMaxLength(Despesa.TamanhoDoHash)
+            .IsRequired();
 
         builder.Ignore(despesa => despesa.TemGlosa);
+        builder.Ignore(despesa => despesa.EhEstorno);
         builder.Ignore(despesa => despesa.EhDocumentoFiscal);
         builder.Ignore(despesa => despesa.ValorParaScore);
 

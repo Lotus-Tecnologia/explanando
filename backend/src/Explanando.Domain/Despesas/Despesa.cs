@@ -52,7 +52,7 @@ public sealed class Despesa : Entidade
         TipoDespesa = string.Empty;
         CodigoDocumento = string.Empty;
         NumeroDocumento = string.Empty;
-        HashUnico = string.Empty;
+        HashUnico = [];
     }
 
     public Guid ParlamentarId { get; private set; }
@@ -90,14 +90,39 @@ public sealed class Despesa : Entidade
     /// <summary>Parte cortada pela Camara. Sinal proprio: aparece em ~1 de 100 despesas.</summary>
     public decimal ValorGlosa { get; private set; }
 
-    public string? UrlDocumento { get; private set; }
+    /// <summary>
+    /// Se a Camara publicou o arquivo do documento.
+    ///
+    /// <para>Falso em 52% das notas de tipo 0 — nao e' falha de coleta, e' ausencia na
+    /// origem. Guardar o booleano em vez da URL inteira economiza ~44 MB projetados, e o
+    /// endereco se reconstroi com <see cref="UrlDeDocumento"/>.</para>
+    /// </summary>
+    public bool TemDocumentoPublicado { get; private set; }
+
+    /// <summary>
+    /// Ano da pasta do arquivo, <b>somente quando diverge</b> do ano de
+    /// <see cref="DataDocumento"/> — 2,3% dos casos reais.
+    ///
+    /// Nulo significa "o mesmo ano da nota". Guardar a excecao em vez de derivar por regra
+    /// e' deliberado: a regra acertaria 99,95%, e o resto viraria link quebrado numa pagina
+    /// com nome e foto.
+    /// </summary>
+    public short? AnoDoArquivo { get; private set; }
 
     public long CodigoLote { get; private set; }
 
     public int Parcela { get; private set; }
 
-    /// <summary>SHA-256 hexadecimal (64 caracteres) que garante idempotencia da ingestao.</summary>
-    public string HashUnico { get; private set; }
+    /// <summary>
+    /// Identidade natural da despesa, em 16 bytes: os primeiros 128 bits do SHA-256.
+    ///
+    /// <para>Era <c>char(64)</c> hexadecimal. O indice unico sobre ela era o maior da base
+    /// — 3.560 kB sozinho, mais da metade de todos os indices de <c>despesas</c>. Truncar
+    /// para 128 bits leva a probabilidade de colisao em 732.000 registros para a ordem de
+    /// 10^-27; o hexadecimal gastava o dobro do espaco para guardar a mesma informacao
+    /// duas vezes.</para>
+    /// </summary>
+    public byte[] HashUnico { get; private set; }
 
     public bool TemGlosa => ValorGlosa > 0m;
 
@@ -165,10 +190,18 @@ public sealed class Despesa : Entidade
             ValorDocumento = dados.ValorDocumento,
             ValorLiquido = dados.ValorLiquido,
             ValorGlosa = dados.ValorGlosa,
-            UrlDocumento = dados.UrlDocumento,
             CodigoLote = dados.CodigoLote,
             Parcela = dados.Parcela,
         };
+
+        // A URL nao e' guardada: dela se extrai o que nao existe em nenhum outro lugar.
+        var analise = UrlDeDocumento.Analisar(dados.UrlDocumento);
+        despesa.TemDocumentoPublicado = analise.TemDocumento;
+
+        if (analise.AnoDoArquivo is { } ano && ano != dados.DataDocumento.Year)
+        {
+            despesa.AnoDoArquivo = (short)ano;
+        }
 
         despesa.HashUnico = CalcularHash(despesa);
         return despesa;
@@ -192,7 +225,7 @@ public sealed class Despesa : Entidade
     /// nome de fornecedor e URL do documento mudam sem que a despesa seja outra, e se
     /// entrassem aqui uma correcao na origem viraria duplicata no banco.
     /// </summary>
-    private static string CalcularHash(Despesa despesa)
+    private static byte[] CalcularHash(Despesa despesa)
     {
         var partes = string.Join(
             '|',
@@ -207,6 +240,22 @@ public sealed class Despesa : Entidade
             despesa.Parcela.ToString(CultureInfo.InvariantCulture));
 
         var digest = SHA256.HashData(Encoding.UTF8.GetBytes(partes));
-        return Convert.ToHexStringLower(digest);
+        return digest[..TamanhoDoHash];
     }
+
+    /// <summary>128 bits. Ver a nota de <see cref="HashUnico"/>.</summary>
+    public const int TamanhoDoHash = 16;
+
+    /// <summary>
+    /// O endereco publico do documento, reconstruido a partir da carteira do parlamentar.
+    /// Nulo quando a Camara nao publicou o arquivo ou quando falta a carteira.
+    /// </summary>
+    public string? UrlPublica(int? numeroCarteira) =>
+        TemDocumentoPublicado
+            ? UrlDeDocumento.Derivar(
+                CodigoTipoDocumento,
+                CodigoDocumento,
+                numeroCarteira,
+                AnoDoArquivo ?? DataDocumento.Year)
+            : null;
 }

@@ -219,7 +219,7 @@ public sealed class DespesaTests
     [Fact]
     public void Hash_cabe_na_coluna_de_64_caracteres()
     {
-        Despesa.Criar(Real()).HashUnico.Length.ShouldBe(64, "SHA-256 em hexadecimal");
+        Despesa.Criar(Real()).HashUnico.Length.ShouldBe(16, "128 bits do SHA-256");
     }
 
     /// <summary>Builder so' de teste, para que cada caso altere apenas o que lhe importa.</summary>

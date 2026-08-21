@@ -283,6 +283,123 @@ public sealed class MapeamentoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task Hash_sobrevive_ao_banco_como_dezesseis_bytes()
+    {
+        var deputado = NovoDeputado();
+        var despesa = Despesa.Criar(DadosDeDespesa(deputado.Id, $"doc-{ProximoIdExterno()}"));
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(despesa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var lida = await leitura.Despesas.SingleAsync(d => d.Id == despesa.Id);
+
+        lida.HashUnico.Length.ShouldBe(16);
+        lida.HashUnico.ShouldBe(despesa.HashUnico);
+    }
+
+    [Fact]
+    public async Task Url_do_documento_e_reconstruida_a_partir_da_carteira()
+    {
+        // A coluna url_documento nao existe mais. Este teste prova que o endereco volta
+        // identico ao que a origem trouxe — se falhar, a decisao de descartar a coluna
+        // custou os links de todas as notas.
+        const string Original =
+            "https://www.camara.leg.br/cota-parlamentar/documentos/publ/1472/2023/7502460.pdf";
+
+        var deputado = NovoDeputado();
+        deputado.RegistrarNumeroDeCarteira(1472);
+
+        var despesa = Despesa.Criar(DadosDeDespesa(deputado.Id, $"doc-{ProximoIdExterno()}") with
+        {
+            CodigoDocumento = "7502460",
+            CodigoTipoDocumento = 0,
+            DataDocumento = new DateTimeOffset(2023, 5, 10, 0, 0, 0, TimeSpan.Zero),
+            UrlDocumento = Original,
+        });
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(despesa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var lida = await leitura.Despesas.SingleAsync(d => d.Id == despesa.Id);
+        var carteira = (await leitura.Parlamentares.SingleAsync(p => p.Id == deputado.Id))
+            .NumeroCarteira;
+
+        lida.TemDocumentoPublicado.ShouldBeTrue();
+        lida.AnoDoArquivo.ShouldBeNull("2023 e' o mesmo ano da nota, entao nada a guardar");
+        lida.UrlPublica(carteira).ShouldBe(Original);
+    }
+
+    [Fact]
+    public async Task Ano_da_pasta_e_guardado_quando_diverge_do_ano_da_nota()
+    {
+        // 2,3% dos casos reais: nota de novembro ou dezembro arquivada no ano seguinte.
+        // Sem esta coluna, o link apontaria para a pasta errada.
+        const string Original =
+            "https://www.camara.leg.br/cota-parlamentar/documentos/publ/1472/2024/7502461.pdf";
+
+        var deputado = NovoDeputado();
+        deputado.RegistrarNumeroDeCarteira(1472);
+
+        var despesa = Despesa.Criar(DadosDeDespesa(deputado.Id, $"doc-{ProximoIdExterno()}") with
+        {
+            CodigoDocumento = "7502461",
+            CodigoTipoDocumento = 0,
+            DataDocumento = new DateTimeOffset(2023, 11, 20, 0, 0, 0, TimeSpan.Zero),
+            UrlDocumento = Original,
+        });
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(despesa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var lida = await leitura.Despesas.SingleAsync(d => d.Id == despesa.Id);
+
+        lida.AnoDoArquivo.ShouldBe((short)2024);
+        lida.UrlPublica(1472).ShouldBe(Original);
+    }
+
+    [Fact]
+    public async Task Nota_sem_documento_publicado_nao_produz_link()
+    {
+        // 52% das notas de tipo 0 nao tem arquivo na origem. Devolver um link para elas
+        // levaria o leitor a um 404 e a concluir que o documento foi retirado.
+        var deputado = NovoDeputado();
+        deputado.RegistrarNumeroDeCarteira(1472);
+
+        var despesa = Despesa.Criar(DadosDeDespesa(deputado.Id, $"doc-{ProximoIdExterno()}") with
+        {
+            UrlDocumento = null,
+        });
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(despesa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var lida = await leitura.Despesas.SingleAsync(d => d.Id == despesa.Id);
+
+        lida.TemDocumentoPublicado.ShouldBeFalse();
+        lida.UrlPublica(1472).ShouldBeNull();
+    }
+
+    [Fact]
     public async Task Despesa_com_fornecedor_sentinela_grava_sem_vinculo()
     {
         var deputado = NovoDeputado();

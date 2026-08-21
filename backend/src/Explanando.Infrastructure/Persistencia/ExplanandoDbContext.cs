@@ -5,6 +5,7 @@ using Explanando.Domain.Despesas;
 using Explanando.Domain.Fornecedores;
 using Explanando.Domain.Ingestao;
 using Explanando.Domain.Parlamentares;
+using Explanando.Domain.Retencao;
 using Explanando.Domain.Usuarios;
 using Explanando.Domain.Varreduras;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,8 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     public DbSet<Favorito> Favoritos => Set<Favorito>();
 
     public DbSet<SolicitacaoVarredura> SolicitacoesVarredura => Set<SolicitacaoVarredura>();
+
+    public DbSet<ConsolidadoMensal> ConsolidadosMensais => Set<ConsolidadoMensal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

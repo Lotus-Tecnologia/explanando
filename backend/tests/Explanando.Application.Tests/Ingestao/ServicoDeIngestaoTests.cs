@@ -36,6 +36,64 @@ public sealed class ServicoDeIngestaoTests
         CodigoLote = 2253045,
     };
 
+    private const string UrlComCarteira =
+        "https://www.camara.leg.br/cota-parlamentar/documentos/publ/1472/2026/7502460.pdf";
+
+    // ------------------------------------------------------------------
+    //  A carteira parlamentar: o passo irreversivel da ingestao
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Extrai_o_numero_da_carteira_da_url_do_documento()
+    {
+        // Este numero nao vem de endpoint nenhum — so' existe dentro da URL, que nao e'
+        // persistida. Se a ingestao nao o extrair aqui, ele se perde para sempre e nenhum
+        // documento volta a ter link.
+        var repositorio = new RepositorioFalso();
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1") with { UrlDocumento = UrlComCarteira }]),
+            new CadastroFalso(),
+            repositorio);
+
+        await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        repositorio.Parlamentares.Single().NumeroCarteira.ShouldBe(1472);
+    }
+
+    [Fact]
+    public async Task Deputado_sem_nenhuma_url_fica_sem_carteira_em_vez_de_com_numero_inventado()
+    {
+        var repositorio = new RepositorioFalso();
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), Despesa("2")]),
+            new CadastroFalso(),
+            repositorio);
+
+        await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        repositorio.Parlamentares.Single().NumeroCarteira.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Basta_uma_despesa_com_link_entre_muitas_sem()
+    {
+        // O caso real: 52% das notas de tipo 0 nao tem arquivo, mas todo deputado tem ao
+        // menos 153 notas com link. Uma basta.
+        var repositorio = new RepositorioFalso();
+        var servico = new ServicoDeIngestao(
+            new FonteFalsa([
+                Despesa("1"),
+                Despesa("2") with { UrlDocumento = UrlComCarteira },
+                Despesa("3"),
+            ]),
+            new CadastroFalso(),
+            repositorio);
+
+        await servico.IngerirDeputadoAsync(Deputado, Legislatura);
+
+        repositorio.Parlamentares.Single().NumeroCarteira.ShouldBe(1472);
+    }
+
     // ------------------------------------------------------------------
     //  Caminho feliz
     // ------------------------------------------------------------------
@@ -364,11 +422,11 @@ public sealed class ServicoDeIngestaoTests
         public Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken c = default) =>
             Task.FromResult(Fornecedores.Find(f => f.Documento == documento));
 
-        public Task<HashSet<string>> ObterHashesDeDespesasAsync(Guid parlamentarId, CancellationToken c = default) =>
+        public Task<HashSet<byte[]>> ObterHashesDeDespesasAsync(Guid parlamentarId, CancellationToken c = default) =>
             Task.FromResult(Despesas
                 .Where(d => d.ParlamentarId == parlamentarId)
                 .Select(d => d.HashUnico)
-                .ToHashSet(StringComparer.Ordinal));
+                .ToHashSet(ComparadorDeHash.Instancia));
 
         public void Adicionar(Parlamentar parlamentar) => Parlamentares.Add(parlamentar);
 

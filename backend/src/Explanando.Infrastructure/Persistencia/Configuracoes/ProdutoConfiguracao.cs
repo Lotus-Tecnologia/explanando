@@ -2,6 +2,7 @@ using Explanando.Domain.Auditoria;
 using Explanando.Domain.Contestacoes;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Parlamentares;
+using Explanando.Domain.Retencao;
 using Explanando.Domain.Usuarios;
 using Explanando.Domain.Varreduras;
 using Microsoft.EntityFrameworkCore;
@@ -278,6 +279,50 @@ internal sealed class HistoricoScoreConfiguracao : IEntityTypeConfiguration<Hist
             .HasOne<Parlamentar>()
             .WithMany()
             .HasForeignKey(ponto => ponto.ParlamentarId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class ConsolidadoMensalConfiguracao : IEntityTypeConfiguration<ConsolidadoMensal>
+{
+    public void Configure(EntityTypeBuilder<ConsolidadoMensal> builder)
+    {
+        builder.ToTable("consolidados_mensais");
+        builder.HasKey(consolidado => consolidado.Id);
+
+        builder.Property(consolidado => consolidado.ParlamentarId).IsRequired();
+
+        builder
+            .Property(consolidado => consolidado.Competencia)
+            .HasConversion(Conversores.Competencia)
+            .HasColumnName("competencia")
+            .IsRequired();
+
+        // Os mesmos tipos das colunas de origem em despesas: o total nao pode arredondar
+        // diferente das notas que o formaram.
+        builder.Property(c => c.TotalLiquido).HasColumnType("numeric(18,2)").IsRequired();
+        builder.Property(c => c.TotalDocumento).HasColumnType("numeric(18,2)").IsRequired();
+        builder.Property(c => c.TotalGlosa).HasColumnType("numeric(18,2)").IsRequired();
+
+        builder.Property(c => c.QuantidadeDeDespesas).IsRequired();
+        builder.Property(c => c.QuantidadeDeEstornos).IsRequired();
+        builder.Property(c => c.DetalheDisponivel).IsRequired();
+
+        builder
+            .Property(consolidado => consolidado.AtualizadoEm)
+            .HasColumnType("timestamp with time zone")
+            .IsRequired();
+
+        // Um consolidado por parlamentar e mes. Dois seriam gasto contado em dobro.
+        builder
+            .HasIndex(consolidado => new { consolidado.ParlamentarId, consolidado.Competencia })
+            .IsUnique()
+            .HasDatabaseName("ix_consolidados_mensais_parlamentar_competencia");
+
+        builder
+            .HasOne<Parlamentar>()
+            .WithMany()
+            .HasForeignKey(consolidado => consolidado.ParlamentarId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

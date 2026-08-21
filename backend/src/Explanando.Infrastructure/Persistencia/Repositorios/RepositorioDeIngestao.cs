@@ -39,7 +39,7 @@ public sealed class RepositorioDeIngestao(ExplanandoDbContext contexto) : IRepos
     /// despesas por legislatura; materializar as entidades a cada coleta seria desperdicio
     /// de memoria e de banda para uma comparacao de strings.
     /// </summary>
-    public async Task<HashSet<string>> ObterHashesDeDespesasAsync(
+    public async Task<HashSet<byte[]>> ObterHashesDeDespesasAsync(
         Guid parlamentarId,
         CancellationToken cancelamento = default)
     {
@@ -50,7 +50,7 @@ public sealed class RepositorioDeIngestao(ExplanandoDbContext contexto) : IRepos
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
-        return hashes.ToHashSet(StringComparer.Ordinal);
+        return hashes.ToHashSet(ComparadorDeHash.Instancia);
     }
 
     public void Adicionar(Parlamentar parlamentar) => contexto.Parlamentares.Add(parlamentar);

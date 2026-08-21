@@ -13,7 +13,7 @@ public interface IRepositorioDeIngestao
     Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken cancelamento = default);
 
     /// <summary>Hashes ja gravados para o parlamentar — a base da idempotencia da coleta.</summary>
-    Task<HashSet<string>> ObterHashesDeDespesasAsync(
+    Task<HashSet<byte[]>> ObterHashesDeDespesasAsync(
         Guid parlamentarId,
         CancellationToken cancelamento = default);
 
@@ -123,6 +123,15 @@ public sealed class ServicoDeIngestao(
             {
                 repetidas++;
                 continue;
+            }
+
+            // A carteira parlamentar so' existe dentro da URL do documento, que nao e'
+            // persistida. Extrai-la aqui e' a unica chance: depois desta passada, o
+            // endereco original nao existe mais em lugar nenhum.
+            if (parlamentar.NumeroCarteira is null
+                && UrlDeDocumento.Analisar(bruta.UrlDocumento).NumeroCarteira is { } carteira)
+            {
+                parlamentar.RegistrarNumeroDeCarteira(carteira);
             }
 
             var (fornecedorId, criouFornecedor, falhouEnriquecimento) = await ResolverFornecedorAsync(

@@ -11,6 +11,10 @@ internal sealed class ParlamentarConfiguracao : IEntityTypeConfiguration<Parlame
         builder.ToTable("parlamentares");
         builder.HasKey(parlamentar => parlamentar.Id);
 
+        // So' existe dentro da URL do documento, que nao e' persistida. Ver a nota da
+        // propriedade — sem esta coluna, nao ha como linkar documento nenhum.
+        builder.Property(parlamentar => parlamentar.NumeroCarteira);
+
         builder.Property(parlamentar => parlamentar.IdExterno).IsRequired();
         builder.Property(parlamentar => parlamentar.NomeCivil).HasMaxLength(200).IsRequired();
         builder.Property(parlamentar => parlamentar.NomeParlamentar).HasMaxLength(100).IsRequired();

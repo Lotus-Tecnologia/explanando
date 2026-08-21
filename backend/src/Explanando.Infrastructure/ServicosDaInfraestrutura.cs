@@ -1,5 +1,6 @@
 using Explanando.Application.Auditoria;
 using Explanando.Application.Ingestao;
+using Explanando.Application.Retencao;
 using Explanando.Domain.Regras;
 using Explanando.Infrastructure.Integracoes;
 using Explanando.Infrastructure.Persistencia;
@@ -27,6 +28,8 @@ public static class ServicosDaInfraestrutura
 
         servicos.AddScoped<IRepositorioDeVarredura, RepositorioDeVarredura>();
         servicos.AddScoped<IRepositorioDeRede, RepositorioDeRede>();
+        servicos.AddScoped<IRepositorioDeRetencao, RepositorioDeRetencao>();
+        servicos.AddSingleton<IRelogioDaRetencao, RelogioDaRetencaoDoSistema>();
         servicos.AddSingleton<IRelogioDaVarredura, RelogioDaVarreduraDoSistema>();
         servicos.AddSingleton(MotorDeRegras.Padrao());
         servicos.AddSingleton(MotorDeRede.Padrao());
@@ -35,6 +38,7 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<ServicoDeColeta>();
         servicos.AddScoped<ServicoDeVarredura>();
         servicos.AddScoped<ServicoDeVarreduraDeRede>();
+        servicos.AddScoped<ServicoDeRetencao>();
 
         return servicos;
     }
