@@ -128,6 +128,63 @@ public sealed class HistoricoScoreTests
     }
 
     // ------------------------------------------------------------------
+    //  Regravar: duas varreduras no mesmo dia
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Regravar_atualiza_os_numeros_e_a_hora_sem_mover_a_data()
+    {
+        // Cada solicitação paga dispara uma varredura, então duas no mesmo dia é o caso
+        // normal. O índice é único por (parlamentar, data): tem de regravar, não inserir.
+        var ponto = HistoricoScore.Capturar(Score(despesas: 200, flagsVermelhas: 2), 2, Agora);
+        var tarde = Agora.AddHours(5);
+        var novoScore = Score(despesas: 300, valorCada: 2_000m, flagsVermelhas: 9);
+
+        ponto.Regravar(novoScore, 2, tarde);
+
+        ponto.Referencia.ShouldBe(new DateOnly(2026, 8, 20), "continua sendo o ponto do dia");
+        ponto.CapturadoEm.ShouldBe(tarde);
+        ponto.VolumeTotalGasto.ShouldBe(novoScore.VolumeTotalGasto);
+        ponto.IndiceDeRisco.ShouldBe(novoScore.IndiceDeRisco);
+        ponto.DespesasAvaliadas.ShouldBe(300);
+        ponto.TotalFlagsVermelhas.ShouldBe(9);
+    }
+
+    [Fact]
+    public void Regravar_pode_trocar_a_versao_do_motor()
+    {
+        var ponto = HistoricoScore.Capturar(Score(), 2, Agora);
+
+        ponto.Regravar(Score(), 3, Agora.AddHours(1));
+
+        ponto.VersaoDoMotor.ShouldBe(3);
+    }
+
+    [Fact]
+    public void Regravar_recusa_score_de_outro_parlamentar()
+    {
+        // Silenciosamente aceitar seria escrever os números de um deputado na curva de
+        // outro — o pior defeito possível numa página com nome e foto.
+        var ponto = HistoricoScore.Capturar(Score(), 2, Agora);
+        var deOutro = ScoreRiscoParlamentar.Criar(
+            Guid.Parse("aaaaaaaa-0000-0000-0000-000000000000"));
+
+        var erro = Should.Throw<ArgumentException>(() => ponto.Regravar(deOutro, 2, Agora));
+
+        erro.ParamName.ShouldBe("score");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Regravar_recusa_versao_nao_positiva(int versao)
+    {
+        var ponto = HistoricoScore.Capturar(Score(), 2, Agora);
+
+        Should.Throw<ArgumentOutOfRangeException>(() => ponto.Regravar(Score(), versao, Agora));
+    }
+
+    // ------------------------------------------------------------------
     //  Amostra insuficiente
     // ------------------------------------------------------------------
 

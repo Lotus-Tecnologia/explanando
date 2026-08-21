@@ -26,12 +26,15 @@ public static class ServicosDaInfraestrutura
         servicos.AddSingleton<IRelogio, RelogioDoSistema>();
 
         servicos.AddScoped<IRepositorioDeVarredura, RepositorioDeVarredura>();
+        servicos.AddScoped<IRepositorioDeRede, RepositorioDeRede>();
         servicos.AddSingleton<IRelogioDaVarredura, RelogioDaVarreduraDoSistema>();
         servicos.AddSingleton(MotorDeRegras.Padrao());
+        servicos.AddSingleton(MotorDeRede.Padrao());
 
         servicos.AddScoped<ServicoDeIngestao>();
         servicos.AddScoped<ServicoDeColeta>();
         servicos.AddScoped<ServicoDeVarredura>();
+        servicos.AddScoped<ServicoDeVarreduraDeRede>();
 
         return servicos;
     }

@@ -160,6 +160,33 @@ switch (comando)
                 Console.WriteLine($"  {regra,-14} {quantidade,7}   ({proporcao,6:F3}% das despesas)");
             }
 
+            // Passada de fechamento: as regras que cruzam parlamentares so' podem rodar
+            // depois que todos foram varridos.
+            var rede = servicos.GetRequiredService<ServicoDeVarreduraDeRede>();
+            var resultadoDeRede = await rede.VarrerAsync().ConfigureAwait(false);
+
+            var avisoDeAmostra = resultadoDeRede.BaseSuficiente
+                ? string.Empty
+                : $"  [ABAIXO do piso de {resultadoDeRede.PisoDeParlamentares}: "
+                  + "os achados abaixo sao de amostra e nao devem ser publicados]";
+
+            Console.WriteLine();
+            Console.WriteLine("--- passada de rede (cruza parlamentares) ---");
+            Console.WriteLine(
+                $"Parlamentares na base : {resultadoDeRede.ParlamentaresNaBase}{avisoDeAmostra}");
+
+            foreach (var (regra, quantidade) in resultadoDeRede.FlagsPorRegra)
+            {
+                Console.WriteLine($"  {regra,-14} {quantidade,7}");
+            }
+
+            foreach (var falha in resultadoDeRede.Falhas)
+            {
+                Console.WriteLine($"  [FALHA]  {falha.CodigoRegra}: {falha.Motivo}");
+            }
+
+            falhas.AddRange(resultadoDeRede.Falhas);
+
             return falhas.Count > 0 ? 1 : 0;
         }
 

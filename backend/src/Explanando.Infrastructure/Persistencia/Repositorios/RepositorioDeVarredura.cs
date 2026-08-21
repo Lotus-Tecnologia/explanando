@@ -75,9 +75,21 @@ public sealed class RepositorioDeVarredura(ExplanandoDbContext contexto) : IRepo
             .ConfigureAwait(false);
     }
 
+    public Task<HistoricoScore?> ObterPontoDoHistoricoAsync(
+        Guid parlamentarId,
+        DateOnly referencia,
+        CancellationToken cancelamento = default) =>
+        // Rastreado de proposito: quando existe, o servico chama Regravar nele, e o EF
+        // precisa enxergar a alteracao.
+        contexto.HistoricoScores.FirstOrDefaultAsync(
+            ponto => ponto.ParlamentarId == parlamentarId && ponto.Referencia == referencia,
+            cancelamento);
+
     public void Adicionar(FlagAnomalia flag) => contexto.FlagsAnomalias.Add(flag);
 
     public void Adicionar(ScoreRiscoParlamentar score) => contexto.ScoresRisco.Add(score);
+
+    public void Adicionar(HistoricoScore ponto) => contexto.HistoricoScores.Add(ponto);
 
     public Task SalvarAsync(CancellationToken cancelamento = default) =>
         contexto.SaveChangesAsync(cancelamento);

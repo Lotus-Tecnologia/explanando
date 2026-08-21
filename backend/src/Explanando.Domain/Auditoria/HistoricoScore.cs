@@ -60,6 +60,35 @@ public sealed class HistoricoScore : Entidade
     }
 
     /// <summary>
+    /// Regrava o ponto do dia com números novos.
+    ///
+    /// Existe porque a varredura roda mais de uma vez no mesmo dia — cada solicitação paga
+    /// dispara uma — e o índice único é <c>(parlamentar_id, referência)</c>. Sem isto, a
+    /// segunda varredura do dia falharia por chave duplicada, ou empilharia pontos sobre a
+    /// mesma data e a curva teria degraus dentro de um dia só.
+    /// </summary>
+    public void Regravar(ScoreRiscoParlamentar score, int versaoDoMotor, DateTimeOffset momento)
+    {
+        ArgumentNullException.ThrowIfNull(score);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(versaoDoMotor);
+
+        if (score.ParlamentarId != ParlamentarId)
+        {
+            throw new ArgumentException(
+                $"Este ponto e' do parlamentar {ParlamentarId}; o score e' de "
+                + $"{score.ParlamentarId}.",
+                nameof(score));
+        }
+
+        VolumeTotalGasto = score.VolumeTotalGasto;
+        IndiceDeRisco = score.IndiceDeRisco;
+        DespesasAvaliadas = score.DespesasAvaliadas;
+        TotalFlagsVermelhas = score.TotalFlagsVermelhas;
+        VersaoDoMotor = versaoDoMotor;
+        CapturadoEm = momento;
+    }
+
+    /// <summary>
     /// Se este ponto é comparável com outro — ou seja, se a diferença entre eles diz algo
     /// sobre o parlamentar em vez de sobre o software.
     /// </summary>

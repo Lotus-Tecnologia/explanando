@@ -24,6 +24,16 @@ public interface IRepositorioDeVarredura
     Task<ScoreRiscoParlamentar?> ObterScoreAsync(Guid parlamentarId, CancellationToken cancelamento = default);
 
     /// <summary>
+    /// O ponto do historico daquele dia, se ja existir. A varredura roda mais de uma vez
+    /// no mesmo dia — cada solicitacao paga dispara uma — e o indice e' unico por
+    /// (parlamentar, data).
+    /// </summary>
+    Task<HistoricoScore?> ObterPontoDoHistoricoAsync(
+        Guid parlamentarId,
+        DateOnly referencia,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
     /// Apaga as flags das despesas informadas. A varredura recalcula do zero em vez de
     /// somar: rodar de novo com as mesmas regras nao pode dobrar o score, e uma regra
     /// afrouxada tem de conseguir <b>remover</b> um achado anterior.
@@ -33,6 +43,8 @@ public interface IRepositorioDeVarredura
     void Adicionar(FlagAnomalia flag);
 
     void Adicionar(ScoreRiscoParlamentar score);
+
+    void Adicionar(HistoricoScore ponto);
 
     Task SalvarAsync(CancellationToken cancelamento = default);
 }
@@ -59,6 +71,15 @@ public sealed record ResultadoDaVarredura
         new Dictionary<string, int>(StringComparer.Ordinal);
     public IReadOnlyList<string> RegrasSilenciosas { get; init; } = [];
     public IReadOnlyList<FalhaDeRegra> Falhas { get; init; } = [];
+
+    /// <summary>
+    /// O que a passada cobriu e o que nao cobriu.
+    ///
+    /// Viaja junto do resultado porque publicar as flags sem isto deixa o leitor supor que
+    /// o silencio de uma regra significa aprovacao, quando pode significar que ela nao teve
+    /// dado para rodar.
+    /// </summary>
+    public MetadadosDeCobertura Cobertura { get; init; } = new();
 }
 
 /// <summary>
@@ -121,6 +142,9 @@ public sealed class ServicoDeVarredura(
         score.Recalcular(
             despesas, avaliacao.Flags, relogio.Agora, _parametros.PisoAmostralParaIndiceDeRisco);
 
+        await RegistrarNoHistoricoAsync(score, avaliacao.VersaoDoMotor, cancelamento)
+            .ConfigureAwait(false);
+
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
 
         return new ResultadoDaVarredura
@@ -136,7 +160,37 @@ public sealed class ServicoDeVarredura(
             FlagsPorRegra = avaliacao.FlagsPorRegra,
             RegrasSilenciosas = avaliacao.RegrasSilenciosas,
             Falhas = avaliacao.Falhas,
+            Cobertura = avaliacao.Cobertura,
         };
+    }
+
+    /// <summary>
+    /// Fotografa os dois numeros do dia, com a versao do motor que os produziu.
+    ///
+    /// A versao e' o que impede o grafico de mentir: sem ela, um degrau na curva ficaria
+    /// indistinguivel entre "o parlamentar mudou" e "as regras mudaram".
+    /// </summary>
+    private async Task RegistrarNoHistoricoAsync(
+        ScoreRiscoParlamentar score,
+        int versaoDoMotor,
+        CancellationToken cancelamento)
+    {
+        var momento = relogio.Agora;
+        var referencia = DateOnly.FromDateTime(momento.UtcDateTime);
+
+        var existente = await repositorio
+            .ObterPontoDoHistoricoAsync(score.ParlamentarId, referencia, cancelamento)
+            .ConfigureAwait(false);
+
+        if (existente is null)
+        {
+            repositorio.Adicionar(HistoricoScore.Capturar(score, versaoDoMotor, momento));
+            return;
+        }
+
+        // Regrava em vez de inserir: o indice e' unico por dia, e a segunda varredura do
+        // mesmo dia falharia por chave duplicada.
+        existente.Regravar(score, versaoDoMotor, momento);
     }
 }
 

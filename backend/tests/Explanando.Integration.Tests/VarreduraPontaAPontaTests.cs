@@ -55,16 +55,19 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
         }
     }
 
-    private sealed class RelogioFixo : IRelogioDaVarredura
+    private sealed class RelogioFixo(DateTimeOffset? agora = null) : IRelogioDaVarredura
     {
-        public DateTimeOffset Agora { get; } = new(2026, 8, 19, 12, 0, 0, TimeSpan.Zero);
+        public DateTimeOffset Agora { get; } =
+            agora ?? new DateTimeOffset(2026, 8, 19, 12, 0, 0, TimeSpan.Zero);
     }
 
-    private ServicoDeVarredura MontarServico(out ExplanandoDbContext contexto)
+    private ServicoDeVarredura MontarServico(
+        out ExplanandoDbContext contexto,
+        DateTimeOffset? agora = null)
     {
         contexto = banco.CriarContexto();
         return new ServicoDeVarredura(
-            new RepositorioDeVarredura(contexto), MotorDeRegras.Padrao(), new RelogioFixo());
+            new RepositorioDeVarredura(contexto), MotorDeRegras.Padrao(), new RelogioFixo(agora));
     }
 
     /// <summary>
@@ -234,6 +237,122 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
             resultado.AmostraSuficiente.ShouldBeFalse();
             resultado.TaxaDeDespesasSinalizadas.ShouldBe(0m);
             resultado.RegrasSilenciosas.Count.ShouldBe(11);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Historico: a curva de tendencia da pagina de perfil
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Varredura_fotografa_os_dois_numeros_no_historico()
+    {
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+        var servico = MontarServico(out var contexto);
+
+        ResultadoDaVarredura resultado;
+
+        await using (contexto)
+        {
+            resultado = await servico.VarrerAsync(parlamentarId);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var ponto = await leitura.HistoricoScores.SingleAsync(h => h.ParlamentarId == parlamentarId);
+
+        ponto.Referencia.ShouldBe(new DateOnly(2026, 8, 19));
+        ponto.VolumeTotalGasto.ShouldBe(resultado.VolumeTotalGasto);
+        ponto.IndiceDeRisco.ShouldBe(resultado.IndiceDeRisco);
+        ponto.VersaoDoMotor.ShouldBe(MotorDeRegras.VersaoAtual);
+    }
+
+    [Fact]
+    public async Task Duas_varreduras_no_mesmo_dia_regravam_o_mesmo_ponto()
+    {
+        // Cada solicitacao paga dispara uma varredura, entao duas no mesmo dia e' o caso
+        // normal. Inserir de novo violaria o indice unico; empilhar daria degraus dentro
+        // de um dia so'.
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+
+        var manha = new DateTimeOffset(2026, 8, 19, 9, 0, 0, TimeSpan.Zero);
+        var tarde = new DateTimeOffset(2026, 8, 19, 17, 0, 0, TimeSpan.Zero);
+
+        var primeira = MontarServico(out var contextoA, manha);
+
+        await using (contextoA)
+        {
+            await primeira.VarrerAsync(parlamentarId);
+        }
+
+        var segunda = MontarServico(out var contextoB, tarde);
+
+        await using (contextoB)
+        {
+            await segunda.VarrerAsync(parlamentarId);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var pontos = await leitura.HistoricoScores
+            .Where(h => h.ParlamentarId == parlamentarId)
+            .ToListAsync();
+
+        pontos.Count.ShouldBe(1);
+        pontos[0].CapturadoEm.ShouldBe(tarde, "a segunda varredura regravou a primeira");
+    }
+
+    [Fact]
+    public async Task Dias_diferentes_produzem_pontos_diferentes()
+    {
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+
+        var dia19 = new DateTimeOffset(2026, 8, 19, 12, 0, 0, TimeSpan.Zero);
+        var dia20 = new DateTimeOffset(2026, 8, 20, 12, 0, 0, TimeSpan.Zero);
+
+        var primeira = MontarServico(out var contextoA, dia19);
+
+        await using (contextoA)
+        {
+            await primeira.VarrerAsync(parlamentarId);
+        }
+
+        var segunda = MontarServico(out var contextoB, dia20);
+
+        await using (contextoB)
+        {
+            await segunda.VarrerAsync(parlamentarId);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var pontos = await leitura.HistoricoScores
+            .Where(h => h.ParlamentarId == parlamentarId)
+            .OrderBy(h => h.Referencia)
+            .ToListAsync();
+
+        pontos.Count.ShouldBe(2);
+        pontos[0].EhComparavelCom(pontos[1]).ShouldBeTrue("mesma versao do motor");
+    }
+
+    // ------------------------------------------------------------------
+    //  Cobertura
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Resultado_da_varredura_carrega_o_que_nao_foi_avaliado()
+    {
+        // Sem a tabela da CEAP semeada e sem opcao pelo MEI conhecida, duas regras nao
+        // tem como rodar — e o resultado precisa dizer isso, nao ficar em silencio.
+        var parlamentarId = await SemearParlamentarComProblemaAsync();
+        var servico = MontarServico(out var contexto);
+
+        await using (contexto)
+        {
+            var resultado = await servico.VarrerAsync(parlamentarId);
+
+            resultado.Cobertura.PorRegra.Count.ShouldBe(11);
+            resultado.Cobertura.DespesasAvaliadas.ShouldBe(resultado.DespesasAvaliadas);
+            resultado.Cobertura.SemDado.ShouldNotBeEmpty();
+            resultado.Cobertura.VersaoDoMotor.ShouldBe(MotorDeRegras.VersaoAtual);
+            resultado.Cobertura.Resumo().ShouldContain("ausência de dado");
         }
     }
 
