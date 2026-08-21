@@ -117,4 +117,34 @@ public sealed record ParametrosDoMotor
 
     /// <summary>Valor a partir do qual alimentacao ou hospedagem em recesso merece nota.</summary>
     public decimal ValorMinimoParaGastoEmRecesso { get; init; } = 1_000m;
+
+    // ---------------------------------------------------------------
+    //  REG_NET_004 — concentracao partidaria
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Quantos parlamentares distintos o mesmo fornecedor precisa atender para que a
+    /// concentracao signifique alguma coisa.
+    ///
+    /// Dois sao coincidencia banal — dois gabinetes vizinhos usam a mesma grafica. Tres
+    /// ja e' um padrao que vale descrever, sem ainda ser afirmacao sobre nada.
+    /// </summary>
+    public int MinimoDeParlamentaresParaConcentracao { get; init; } = 3;
+
+    /// <summary>
+    /// Idade maxima do fornecedor para a concentracao contar. Empresa antiga atendendo
+    /// varios deputados do mesmo partido e' fornecedor consolidado do meio politico, nao
+    /// sinal — e o texto da regra fala em empresa <b>recem-criada</b>.
+    ///
+    /// Mais folgado que os 90 dias de REG_KYB_003 de proposito: aqui a janela precisa
+    /// cobrir a data de abertura contra a <i>primeira</i> nota de varios parlamentares,
+    /// que naturalmente se espalham por mais tempo.
+    /// </summary>
+    public int DiasParaFornecedorRecemCriadoNaRede { get; init; } = 365;
+
+    /// <summary>
+    /// Valor minimo somado por parlamentar para a relacao entrar na conta. Sem ele, uma
+    /// nota de R$ 30 de estacionamento faria o fornecedor "atender" o gabinete.
+    /// </summary>
+    public decimal ValorMinimoPorParlamentarNaConcentracao { get; init; } = 1_000m;
 }

@@ -14,6 +14,11 @@ public sealed class RegraFracionamento : IRegraAnomalia
 
     public string Descricao => "Múltiplas notas do mesmo fornecedor no mesmo mês.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Compara despesas entre si; nao depende de fonte externa.
+    public DadoExigido Exige =>
+        DadoExigido.Nenhum;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -63,6 +68,12 @@ public sealed class RegraGastoNoTetoDaCota : IRegraAnomalia
 
     public string Descricao => "Gasto mensal próximo do teto da cota da UF.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // So' 17% das despesas da base real caem num periodo com teto configurado. A tabela
+    // da CEAP cobre 2026 em diante; 2023 a 2025 ainda nao.
+    public DadoExigido Exige =>
+        DadoExigido.TetoDaCota;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -111,6 +122,11 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
     public string Codigo => "REG_TX_003";
 
     public string Descricao => "Valor idêntico ao centavo por meses consecutivos.";
+
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Serie historica do proprio parlamentar.
+    public DadoExigido Exige =>
+        DadoExigido.Nenhum;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
@@ -184,6 +200,11 @@ public sealed class RegraPicoDeConsumo : IRegraAnomalia
     public string Codigo => "REG_TX_004";
 
     public string Descricao => "Gasto de um tipo de despesa muito acima da média histórica.";
+
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Serie historica do proprio parlamentar.
+    public DadoExigido Exige =>
+        DadoExigido.Nenhum;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

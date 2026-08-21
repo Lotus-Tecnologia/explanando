@@ -17,6 +17,13 @@ public sealed class RegraCnaeDivergente : IRegraAnomalia
 
     public string Descricao => "Ramo de atividade do fornecedor destoa do tipo de despesa.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Precisa do ramo do fornecedor E do tipo na tabela curada: falta um dos dois e a
+    // regra nao tem com o que comparar.
+    public DadoExigido Exige =>
+        DadoExigido.CadastroDoFornecedor | DadoExigido.CnaeDoFornecedor
+        | DadoExigido.TipoNaTabelaCurada;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -62,6 +69,11 @@ public sealed class RegraSituacaoCadastralIrregular : IRegraAnomalia
 
     public string Descricao => "Nota emitida após irregularidade cadastral do fornecedor.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Sem situacao cadastral conhecida nao ha o que comparar com a data da nota.
+    public DadoExigido Exige =>
+        DadoExigido.CadastroDoFornecedor | DadoExigido.SituacaoDoFornecedor;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -103,6 +115,11 @@ public sealed class RegraEmpresaRecemNascida : IRegraAnomalia
     public string Codigo => "REG_KYB_003";
 
     public string Descricao => "Fornecedor recém-aberto com faturamento expressivo.";
+
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // A idade da empresa e' a regra inteira.
+    public DadoExigido Exige =>
+        DadoExigido.CadastroDoFornecedor | DadoExigido.AberturaDoFornecedor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
@@ -159,6 +176,12 @@ public sealed class RegraMeiAcimaDoTeto : IRegraAnomalia
 
     public string Descricao => "Fornecedor MEI recebeu acima do teto legal da categoria.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // A que mais sofre: 65% dos fornecedores da base real nao tem a opcao pelo MEI
+    // informada, e o silencio dela nunca significou ausencia de achado.
+    public DadoExigido Exige =>
+        DadoExigido.CadastroDoFornecedor | DadoExigido.OpcaoPeloMei;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -205,6 +228,11 @@ public sealed class RegraNotaFiscalInicial : IRegraAnomalia
     public string Codigo => "REG_KYB_005";
 
     public string Descricao => "Notas com numeração inicial, sugerindo cliente pioneiro.";
+
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // O numero da nota vem na propria despesa.
+    public DadoExigido Exige =>
+        DadoExigido.Nenhum;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

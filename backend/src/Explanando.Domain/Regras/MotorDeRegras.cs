@@ -26,6 +26,14 @@ public sealed record ResultadoDaAvaliacao
     /// <summary>Versao do motor que produziu este resultado. Ver MotorDeRegras.VersaoAtual.</summary>
     public int VersaoDoMotor { get; init; }
 
+    /// <summary>
+    /// O que a passada cobriu, regra a regra.
+    ///
+    /// Publicar as flags sem isto deixa o leitor supor que o silencio de uma regra
+    /// significa aprovacao, quando pode significar que ela nao teve dado para rodar.
+    /// </summary>
+    public MetadadosDeCobertura Cobertura { get; init; } = new();
+
     public int TotalDeDespesasAvaliadas { get; init; }
 
     /// <summary>
@@ -69,9 +77,10 @@ public sealed class MotorDeRegras(
     /// <list type="bullet">
     /// <item><b>1</b> — 11 regras, calibragem inicial (Etapa 04).</item>
     /// <item><b>2</b> — tabela CNAE calibrada contra 28.540 despesas reais (Etapa 04b).</item>
+    /// <item><b>3</b> — REG_NET_004 (concentracao partidaria) e metadados de cobertura.</item>
     /// </list>
     /// </summary>
-    public const int VersaoAtual = 2;
+    public const int VersaoAtual = 3;
 
     /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
     public int Versao { get; } = versao;
@@ -101,8 +110,15 @@ public sealed class MotorDeRegras(
         var flags = new List<FlagAnomalia>();
         var porRegra = new Dictionary<string, int>(StringComparer.Ordinal);
         var silenciosas = new List<string>();
+        var cobertura = new List<CoberturaDaRegra>();
 
         var falhas = new List<FalhaDeRegra>();
+
+        // Uma passada so' sobre as despesas, reaproveitada por todas as regras: medir a
+        // disponibilidade dentro de cada regra faria 11 varreduras onde basta uma.
+        var disponibilidade = contexto.Despesas
+            .Select(despesa => DisponibilidadeDeDados.Em(contexto, despesa))
+            .ToList();
 
         foreach (var regra in regras)
         {
@@ -119,6 +135,14 @@ public sealed class MotorDeRegras(
             {
                 // Uma regra com defeito nao pode apagar os achados das outras dez.
                 falhas.Add(new FalhaDeRegra(regra.Codigo, erro.Message));
+
+                cobertura.Add(new CoberturaDaRegra
+                {
+                    Codigo = regra.Codigo,
+                    Situacao = SituacaoDaRegra.Falhou,
+                    MotivoDaFalha = erro.Message,
+                });
+
                 continue;
             }
 
@@ -131,12 +155,15 @@ public sealed class MotorDeRegras(
 
             flags.AddRange(doRegra);
             porRegra[regra.Codigo] = doRegra.Count;
+            cobertura.Add(Medir(regra, doRegra.Count, disponibilidade));
 
             if (doRegra.Count == 0)
             {
                 silenciosas.Add(regra.Codigo);
             }
         }
+
+        var competencias = contexto.Despesas.Select(despesa => despesa.Competencia).ToList();
 
         return new ResultadoDaAvaliacao
         {
@@ -145,7 +172,80 @@ public sealed class MotorDeRegras(
             RegrasSilenciosas = silenciosas,
             Falhas = falhas,
             VersaoDoMotor = Versao,
+            Cobertura = new MetadadosDeCobertura
+            {
+                PorRegra = cobertura,
+                DespesasAvaliadas = contexto.Despesas.Count,
+                PrimeiraCompetencia = competencias.Count == 0 ? null : competencias.Min(),
+                UltimaCompetencia = competencias.Count == 0 ? null : competencias.Max(),
+                PisoAmostral = contexto.Parametros.PisoAmostralParaIndiceDeRisco,
+                VersaoDoMotor = Versao,
+            },
             TotalDeDespesasAvaliadas = contexto.Despesas.Count,
         };
+    }
+
+    /// <summary>
+    /// Conta em quantas despesas a regra tinha todo o dado de que declara precisar, e
+    /// traduz isso na situacao que a pagina vai exibir.
+    /// </summary>
+    private static CoberturaDaRegra Medir(
+        IRegraAnomalia regra,
+        int flagsEmitidas,
+        List<DadoExigido> disponibilidade)
+    {
+        var exigido = regra.Exige;
+        var comDado = 0;
+        var ausente = DadoExigido.Nenhum;
+
+        foreach (var disponivel in disponibilidade)
+        {
+            var faltando = exigido & ~disponivel;
+
+            if (faltando == DadoExigido.Nenhum)
+            {
+                comDado++;
+            }
+            else
+            {
+                ausente |= faltando;
+            }
+        }
+
+        var semDado = disponibilidade.Count - comDado;
+
+        return new CoberturaDaRegra
+        {
+            Codigo = regra.Codigo,
+            DespesasComDado = comDado,
+            DespesasSemDado = semDado,
+            FlagsEmitidas = flagsEmitidas,
+            DadoAusente = ausente,
+            Situacao = Classificar(flagsEmitidas, comDado, semDado, disponibilidade.Count),
+        };
+    }
+
+    private static SituacaoDaRegra Classificar(int flags, int comDado, int semDado, int total)
+    {
+        // Sem despesa nenhuma nao ha o que cobrir; nao e' falta de dado da regra.
+        if (total == 0)
+        {
+            return SituacaoDaRegra.SemAchados;
+        }
+
+        if (comDado == 0)
+        {
+            return SituacaoDaRegra.SemDado;
+        }
+
+        // Emitiu vem antes de CoberturaParcial de proposito: o que a regra achou e' um
+        // fato sobre as despesas que ela examinou, independente de quantas pulou. A
+        // extensao do que ficou de fora esta em DespesasSemDado, para quem quiser ler.
+        if (flags > 0)
+        {
+            return SituacaoDaRegra.Emitiu;
+        }
+
+        return semDado > 0 ? SituacaoDaRegra.CoberturaParcial : SituacaoDaRegra.SemAchados;
     }
 }

@@ -49,6 +49,11 @@ public sealed class RegraGastoForaDaBaseEleitoral : IRegraAnomalia
 
     public string Descricao => "Gasto presencial fora da base eleitoral e de Brasília.";
 
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Sem UF do fornecedor nao ha distancia a medir.
+    public DadoExigido Exige =>
+        DadoExigido.CadastroDoFornecedor | DadoExigido.EnderecoDoFornecedor;
+
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -99,6 +104,11 @@ public sealed class RegraGastoEmRecesso : IRegraAnomalia
     public string Codigo => "REG_GEO_003";
 
     public string Descricao => "Alimentação ou hospedagem expressiva durante o recesso.";
+
+    /// <summary>Ver IRegraAnomalia.Exige.</summary>
+    // Calendario legislativo e data da nota, so'.
+    public DadoExigido Exige =>
+        DadoExigido.Nenhum;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

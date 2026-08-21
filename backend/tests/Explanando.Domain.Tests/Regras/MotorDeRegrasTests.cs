@@ -239,6 +239,8 @@ public sealed class MotorDeRegrasTests
 
         public string Descricao => "Regra de teste que sempre estoura.";
 
+        public DadoExigido Exige => DadoExigido.Nenhum;
+
         public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto) =>
             throw new InvalidOperationException("Regra com defeito proposital.");
     }

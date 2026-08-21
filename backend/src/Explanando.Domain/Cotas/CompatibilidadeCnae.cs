@@ -159,6 +159,14 @@ public static class CompatibilidadeCnae
         Tabela.TryGetValue(Normalizar(tipoDespesa), out var prefixos) ? prefixos : [];
 
     /// <summary>
+    /// Se a tabela curada cobre este tipo de despesa. Quando nao cobre, REG_KYB_001 nao
+    /// tem base para opinar — e o relatorio de cobertura precisa dizer isso, em vez de
+    /// deixar o silencio passar por aprovacao.
+    /// </summary>
+    public static bool ConheceOTipo(string? tipoDespesa) =>
+        PrefixosPara(tipoDespesa ?? string.Empty).Count > 0;
+
+    /// <summary>
     /// Julga se o ramo do fornecedor combina com o tipo de despesa.
     ///
     /// So' devolve <see cref="ResultadoDeCompatibilidade.Incompativel"/> quando ha' base

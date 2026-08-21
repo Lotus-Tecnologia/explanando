@@ -94,5 +94,19 @@ public interface IRegraAnomalia
     /// <summary>O que a regra procura, em uma frase, para documentacao e telemetria.</summary>
     string Descricao { get; }
 
+    /// <summary>
+    /// O dado externo sem o qual esta regra nao consegue opinar sobre uma despesa.
+    ///
+    /// <para>Declarado, e nao inferido do corpo de <see cref="Avaliar"/>, porque e' o que
+    /// permite ao motor distinguir "examinei e nao achei" de "nao tive como examinar" sem
+    /// que cada regra precise instrumentar o proprio laco. Regra que se vira so' com a
+    /// despesa declara <see cref="DadoExigido.Nenhum"/>.</para>
+    ///
+    /// <para>E' obrigatorio de proposito: uma regra nova que nao pensasse nisso entraria
+    /// no relatorio de cobertura afirmando 100%, e um silencio por falta de dado passaria
+    /// por aprovacao.</para>
+    /// </summary>
+    DadoExigido Exige { get; }
+
     IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto);
 }
