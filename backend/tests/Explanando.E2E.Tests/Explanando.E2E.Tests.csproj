@@ -7,10 +7,14 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Explanando.Api\Explanando.Api.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Application\Explanando.Application.csproj" />
+    <ProjectReference Include="..\..\src\Explanando.Infrastructure\Explanando.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

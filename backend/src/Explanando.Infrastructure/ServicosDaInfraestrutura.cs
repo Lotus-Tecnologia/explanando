@@ -1,9 +1,11 @@
 using Explanando.Application.Auditoria;
+using Explanando.Application.Consultas;
 using Explanando.Application.Ingestao;
 using Explanando.Application.Retencao;
 using Explanando.Domain.Regras;
 using Explanando.Infrastructure.Integracoes;
 using Explanando.Infrastructure.Persistencia;
+using Explanando.Infrastructure.Persistencia.Consultas;
 using Explanando.Infrastructure.Persistencia.Repositorios;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,6 +41,10 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<ServicoDeVarredura>();
         servicos.AddScoped<ServicoDeVarreduraDeRede>();
         servicos.AddScoped<ServicoDeRetencao>();
+
+        // O lado de leitura. Registrado aqui e nao no projeto Api porque a Api e' so'
+        // composicao: quem sabe que a consulta roda sobre EF Core e' a infraestrutura.
+        servicos.AddScoped<IConsultasPublicas, ConsultasPublicasEfCore>();
 
         return servicos;
     }

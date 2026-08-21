@@ -1,0 +1,47 @@
+namespace Explanando.Application.Consultas;
+
+/// <summary>
+/// As consultas que a API pública faz. É o lado de <b>leitura</b> do CQRS.
+///
+/// <para>Devolve modelos de leitura, nunca entidades de domínio. Duas razões, e a segunda é
+/// a que importa:</para>
+///
+/// <list type="number">
+/// <item>Entidade de escrita carrega invariante e comportamento que a tela não usa, e
+/// serializá-la acopla o contrato público ao modelo interno.</item>
+/// <item><b>Dado pessoal não sai por acidente.</b> Projetar campo a campo obriga a decidir
+/// explicitamente o que é publicado. Uma entidade serializada inteira vaza o que for
+/// acrescentado a ela depois, sem ninguém revisar.</item>
+/// </list>
+/// </summary>
+public interface IConsultasPublicas
+{
+    /// <summary>
+    /// O ranking, na ordenação pedida.
+    ///
+    /// <para>Quem está abaixo do piso amostral <b>sai do ranking de risco</b> — em qualquer
+    /// ordenação por densidade — mas continua no de volume, que não depende de amostra.
+    /// Ordenar por um índice que não se sustenta seria publicar ruído com nome e foto.</para>
+    /// </summary>
+    Task<Pagina<ItemDoRanking>> RanquearAsync(
+        OrdenacaoDoRanking ordenacao,
+        int pagina,
+        int itensPorPagina,
+        CancellationToken cancelamento = default);
+
+    /// <summary>O perfil, ou nulo se o parlamentar não existe.</summary>
+    Task<PerfilDoParlamentar?> ObterPerfilAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default);
+
+    /// <summary>As despesas do parlamentar, filtradas e paginadas.</summary>
+    Task<Pagina<ItemDeDespesa>> ListarDespesasAsync(
+        Guid parlamentarId,
+        FiltroDeDespesas filtro,
+        CancellationToken cancelamento = default);
+
+    /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
+    Task<ItemDeDespesa?> ObterDespesaAsync(
+        Guid despesaId,
+        CancellationToken cancelamento = default);
+}
