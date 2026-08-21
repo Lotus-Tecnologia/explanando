@@ -38,8 +38,18 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 
 ## Escopo do V1
 
-Definido no [ADR-0002](../decisoes/ADR-0002-escopo-v1-fatia-vertical.md): fatia vertical
-completa, **somente Câmara dos Deputados**, da ingestão à página pública de ranking.
+Definido no [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md): **o V1 é o plano de
+execução inteiro** — Câmara e Senado, motor determinístico e Camada 2, página pública, API
+B2B, painel Pro, contestação do gabinete, varredura paga e cards virais.
 
-Fora do V1: Senado, pagamento PIX, Camada 2 (LLM), API B2B, painel SaaS Pro, contestação do
-gabinete e cards virais.
+O [ADR-0002](../decisoes/ADR-0002-escopo-v1-fatia-vertical.md), que recortava o V1 numa
+fatia vertical só da Câmara, foi substituído em 2026-08-20. O recorte não foi abandonado por
+otimismo: ele foi **construído e verificado** primeiro. A fatia rodou contra 28.540 despesas
+reais de 20 deputados antes de o escopo se alargar, e é esse risco já pago que torna a
+decisão defensável.
+
+**O que continua fora, e não por escolha:** quatro regras da especificação não têm fonte de
+dado pública que as sustente hoje — `REG_NET_001` (doação cruzada) depende de carga do TSE,
+`REG_NET_002` respondeu 405 em quatro rotas, `REG_NET_003` não tem fonte, e `REG_GEO_001`
+exige local e hora que a despesa não traz. Alargar o escopo não cria dado que não existe; o
+ADR-0011 registra cada uma com o motivo.

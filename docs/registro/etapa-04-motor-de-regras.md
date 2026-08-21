@@ -1,6 +1,6 @@
 # Etapa 04 — Motor de regras determinísticas
 
-**Início:** 2026-08-19 · **Conclusão:** 2026-08-19 · **Situação:** ✅ Concluída
+**Início:** 2026-08-19 · **Conclusão:** 2026-08-19 · **Reaberta e concluída sob o novo escopo:** 2026-08-20 · **Situação:** ✅ Concluída
 
 ---
 
@@ -182,16 +182,83 @@ A entrada existia e era inalcançável — `REG_KYB_001` se absteria em silênci
 "aquisição ou loc. de software". Pego pelo teste que exige prefixo não vazio para todo tipo
 coberto.
 
+## 5-bis. Reabertura de 2026-08-20 — o que o ADR-0011 trouxe para esta etapa
+
+O [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md) moveu a fronteira do V1 para o
+plano de execução inteiro. Três itens que estavam na tabela de pendências como "depois"
+passaram a ser parte da etapa, e foram implementados.
+
+### 5-bis.1 `REG_NET_004` — a décima segunda regra
+
+Ganhou `ContextoDeRede` e `MotorDeRede` próprios. A separação não é cerimônia: fracionamento,
+pico e padrão mensal só fazem sentido contra o histórico da mesma pessoa, enquanto
+concentração só existe *entre* pessoas. Espremer as duas no mesmo contexto obrigaria a
+varredura de um único deputado a carregar a base inteira em memória.
+
+Três condições precisam coincidir — fornecedor recém-aberto, três ou mais parlamentares, e
+exclusividade partidária literal. Nenhuma isolada significa coisa alguma: empresa nova é
+rotina, fornecedor que atende vários gabinetes é rotina, e deputados de um partido
+contratarem perto uns dos outros é rotina. Um único parlamentar de outro partido desliga a
+regra, o que é a postura do [ADR-0007](../decisoes/ADR-0007-postura-permissiva-do-motor.md)
+aplicada ao caso em que o erro seria mais caro: aqui a flag não fala de uma nota, fala de um
+arranjo entre pessoas. Por isso também o grau de confiança é 0,7 e não 1,0.
+
+Marca **uma** despesa por parlamentar, a de maior valor com aquele fornecedor. Marcar todas
+transformaria um achado só em centenas de linhas idênticas e inflaria o peso do parlamentar
+no índice por um fato único.
+
+`ResultadoDeRede` carrega `PisoDeParlamentares = 100`. Sobre uma base de 20 deputados,
+"exclusividade partidária" é aritmética e não padrão — a Câmara tem 513 —, e o número viaja
+junto do resultado para que ninguém publique achado de amostra.
+
+### 5-bis.2 Metadados de cobertura — o motor passa a dizer o que **não** avaliou
+
+Era a pendência "medir e exibir a taxa de abstenção", e a calibragem provou que não era
+refinamento: 65% dos fornecedores não têm `opcao_pelo_mei` informada e só 17% das despesas
+caem num período com teto de cota configurado, então duas das onze regras ficaram mudas as
+28.540 despesas inteiras. `RegrasSilenciosas` tratava isso como igual a "examinei e não achei
+nada". Publicar aquele silêncio como "nenhum indicador encontrado" seria o produto afirmando
+mais do que sabe — exatamente o que o
+[ADR-0004](../decisoes/ADR-0004-nomenclatura-tecnica.md) existe para impedir.
+
+A solução é declarativa: cada regra declara em `IRegraAnomalia.Exige` o dado externo de que
+depende (`DadoExigido`, um enum de flags), e o motor mede, numa passada só sobre as despesas,
+quantas o têm. Declarado em vez de inferido do corpo do laço porque assim **uma regra nova é
+obrigada a pensar no assunto** — sem isso ela entraria no relatório afirmando 100% de
+cobertura, e um silêncio por falta de dado passaria por aprovação.
+
+`CoberturaDaRegra` distingue cinco desfechos: `Emitiu`, `SemAchados`, `CoberturaParcial`,
+`SemDado` e `Falhou`. `SilencioEhConclusivo` é a propriedade que a UI consulta antes de
+escrever qualquer frase. `MetadadosDeCobertura` carrega ainda o período coberto, o piso
+amostral do [ADR-0009](../decisoes/ADR-0009-dois-numeros-nao-um.md) e um `Resumo()` pronto no
+vocabulário de compliance — para que nenhum consumidor da API redija a própria frase e
+escreva "nada irregular encontrado".
+
+### 5-bis.3 Versão do motor na flag
+
+`FlagAnomalia.VersaoDoMotor`, carimbada pelo motor ao recolher o resultado. É o que permite a
+notificação distinguir achado novo por **despesa nova** de achado novo por **regra alterada**;
+só o primeiro é notícia sobre o parlamentar. A recalibragem da tabela CNAE levou `REG_KYB_001`
+de 1.477 para 297 flags de uma vez: em produção, todo mundo que tivesse favoritado teria
+recebido alerta sobre uma mudança que não teve nada a ver com o político.
+
+`HistoricoScore.EhComparavelCom` usa a mesma versão para recusar comparar dois pontos do
+gráfico produzidos por motores diferentes.
+
+Versão em **3**: 1 é a calibragem inicial, 2 a tabela CNAE contra dado real, 3 esta etapa.
+
 ## 6. Pendências
 
 | Pendência | Impacto | Observação |
 |---|---|---|
-| `REG_NET_004` (concentração partidária) não implementada | Médio | Única das 12 que cruza parlamentares; o contexto atual é por parlamentar e ela precisa de uma passada global |
-| Calibragem dos limiares nunca foi confrontada com dado real | Alto | Os valores de `ParametrosDoMotor` são estimativas; só uma coleta real dirá se produzem sinal ou ruído |
-| Limites da CEAP de 2023 a 2025 | Médio | `REG_TX_002` só alcança 2026 até que sejam levantados nos Atos da Mesa |
+| ~~`REG_NET_004` não implementada~~ | — | ✅ 2026-08-20; ver 5-bis.1 |
+| ~~Medir e exibir a taxa de abstenção do motor~~ | — | ✅ 2026-08-20; ver 5-bis.2 |
+| ~~Calibragem dos limiares nunca confrontada com dado real~~ | — | ✅ Etapa 04b, contra 28.540 despesas |
+| ~~Nenhuma coleta real executada~~ | — | ✅ Etapa 04b, 20 deputados |
+| `REG_NET_004` nunca rodou contra base real | **Alto** | Os três limiares dela são as únicas estimativas não calibradas que restam. A base de 20 deputados da Etapa 04b está abaixo do piso de 100 e não serve para validá-la |
+| Limites da CEAP de 2023 a 2025 | Médio | `REG_TX_002` só alcança 2026 até que sejam levantados nos Atos da Mesa. Hoje isso aparece honestamente como `SemDado` em 83% das despesas |
 | Confirmar a vigência assumida (2026-01-01) | Baixo | A suposição erra para menos; ver 5.2 |
-| Medir e exibir a taxa de abstenção do motor | Médio | Se `REG_KYB_001` se abstiver em 80% das despesas, a tabela está pobre e isso tem de ser visível |
-| Nenhuma coleta real executada contra os 513 deputados | Médio | Depois do motor, para não popular o banco duas vezes |
+| `REG_NET_001`, `REG_NET_002`, `REG_NET_003`, `REG_GEO_001` | Alto | Sem fonte de dado pública que as sustente. Alargar o escopo não cria dado que não existe; o [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md) registra o motivo de cada uma |
 
 ## 7. Próxima etapa
 

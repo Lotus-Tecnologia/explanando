@@ -31,7 +31,14 @@ O V1 é uma **fatia vertical completa**, da ingestão à página pública, restr
 - Motor determinístico com as regras que os dados disponíveis sustentam.
 - Score de risco e ranking público.
 
-**Fora do V1:** Senado, pagamento PIX, Camada 2 (LLM), API B2B, painel SaaS Pro, contestação
+> [!IMPORTANT]
+> **Esta decisão foi substituída pelo [ADR-0011](ADR-0011-v1-e-o-plano-inteiro.md)**
+> em 2026-08-20. O V1 passou a ser o plano de execução inteiro. A lista abaixo deixou
+> de valer; o registro fica porque o raciocínio que a produziu continua sendo o motivo
+> de o ADR-0011 ser defensável — a fatia vertical foi construída e a hipótese central
+> foi verificada contra 28.540 despesas reais antes de o escopo se alargar.
+
+**Fora do V1 (histórico, não vale mais):** Senado, pagamento PIX, Camada 2 (LLM), API B2B, painel SaaS Pro, contestação
 do gabinete e cards virais.
 
 ## Alternativas descartadas

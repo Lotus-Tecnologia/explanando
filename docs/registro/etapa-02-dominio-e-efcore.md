@@ -210,7 +210,7 @@ que `dotnet tool restore` funcione no CI.
 | `limites_cota` existe mas está **vazia** — os 27 valores precisam de curadoria | Alto para `REG_TX_002` | Etapa 04 — **precisa de decisão sua** |
 | Tabela CNAE × tipo de despesa (24 linhas) não existe | Alto para `REG_KYB_001` | Etapa 04 — **precisa de decisão sua** |
 | Calendário de recesso legislativo | Médio para `REG_GEO_003` | Etapa 04 |
-| `HistoricoScore` não modelado | Nenhum no V1 mínimo | Quando a página de perfil tiver gráfico de tendência |
+| ~~`HistoricoScore` não modelado~~ | — | ✅ Resolvida em 2026-08-20, com a versão do motor junto para o degrau do gráfico não confundir mudança do parlamentar com mudança do software |
 | CI (GitHub Actions) rodando build + testes | Médio | Próximo commit — o remote já existe |
 | `Application.Tests` e `E2E.Tests` ainda vazios | Nenhum | Etapas 03 e 05 |
 | Ferramentas do EF (10.0.3) atrás do runtime (10.0.4) | Baixo | Quando incomodar |

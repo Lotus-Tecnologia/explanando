@@ -120,12 +120,13 @@ regra do V1, e armazenar dado pessoal sem finalidade viola o princípio da neces
 (art. 6º, III) — o mínimo necessário para a finalidade declarada. O que o V1 consome do detalhe
 é `nomeCivil` e `ultimoStatus` (nome eleitoral, partido, UF, situação, foto).
 
-### Outros endpoints úteis (fora do V1)
+### Outros endpoints úteis
 
 `GET /deputados/{id}/orgaos` responde `200` — são as comissões de que o parlamentar participa.
 É exatamente o insumo que a Camada 2 (LLM) precisa para avaliar "pertinência do gasto versus a
-atuação do parlamentar", conforme o documento de Visão e Escopo §3. Anotado para quando a
-Camada 2 entrar.
+atuação do parlamentar", conforme o documento de Visão e Escopo §3. A Camada 2 entrou no
+escopo pelo [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md), então este endpoint
+deixou de ser anotação de futuro e virou insumo pendente de ingestão.
 
 **Não existe endpoint de secretários parlamentares.** `/servidores`, `/secretarios`,
 `/deputados/{id}/secretarios` e `/deputados/{id}/servidores` respondem `405`, que é o que essa
@@ -200,10 +201,10 @@ persistido.
 | `REG_KYB_003` Empresa recém-nascida | ✅ | `data_inicio_atividade` |
 | `REG_KYB_004` MEI acima do teto | ⚠️ | Campos existem, mas vieram `null` no CNPJ da amostra (não é MEI). Validar contra um MEI real |
 | `REG_KYB_005` Nota inicial | ✅ | `numDocumento`, 100% preenchido |
-| `REG_NET_001` Doação cruzada | ⚠️ | Só com 6 dígitos + nome. Probabilístico, e depende do TSE (fora do V1) |
+| `REG_NET_001` Doação cruzada | ⚠️ | Só com 6 dígitos + nome. Probabilístico, e depende de carga do TSE — que entrou no escopo pelo [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md) mas ainda não tem spike de contrato |
 | `REG_NET_002` Vínculo de gabinete | ❌ | Sem fonte: não há endpoint de secretários |
 | `REG_NET_003` Mesmo endereço | ⚠️ | Endereço do fornecedor é estruturado; falta o do escritório de apoio. Possível inferir pelo fornecedor do tipo de despesa 1 |
-| `REG_NET_004` Concentração partidária | ✅ | `siglaPartido` + base completa. Regra agregada, roda ao fim da ingestão |
+| `REG_NET_004` Concentração partidária | ✅ | `siglaPartido` + base completa. Regra agregada, roda ao fim da ingestão. **Implementada em 2026-08-20**, com piso de 100 parlamentares na base |
 | `REG_TX_001` Fracionamento | ✅ | `ano`, `mes`, fornecedor, `valorLiquido` |
 | `REG_TX_002` Cravado no limite | ⚠️ | Limite CEAP por UF não vem na API. Exige tabela curada de 27 valores |
 | `REG_TX_003` Padrão mensal idêntico | ✅ | `valorLiquido` exato por fornecedor e mês |
