@@ -47,6 +47,18 @@ public sealed record ResultadoDaColeta
     /// ruim ou se o dominio esta rigido demais.
     /// </summary>
     public IReadOnlyList<(string Motivo, int Ocorrencias)> MotivosDeRejeicao { get; init; } = [];
+
+    /// <summary>
+    /// A passada foi <b>interrompida</b> porque a fonte parecia fora do ar.
+    ///
+    /// <para>Verdadeiro quando um numero seguido de deputados voltou com alerta de sanidade
+    /// — em exercicio e zero despesas. Um deputado assim e' plausivel; dez seguidos nao
+    /// sao, e significam que o problema esta na origem.</para>
+    ///
+    /// <para>Nao e' o mesmo que <see cref="Falhas"/>: ali estao erros que a fonte admitiu.
+    /// Aqui a fonte respondeu 200 e mentiu.</para>
+    /// </summary>
+    public bool InterrompidaPorFonteSuspeita { get; init; }
 }
 
 /// <summary>
@@ -74,6 +86,20 @@ public sealed class ServicoDeColeta(
     public static TimeSpan ValidadeDoCheckpoint => TimeSpan.FromHours(24);
 
     /// <summary>
+    /// Quantos alertas de sanidade <b>seguidos</b> derrubam a passada.
+    ///
+    /// <para>Existe por um episodio real. Em 2026-08-21 a rota <c>/despesas</c> da Camara
+    /// passou a responder <c>200</c> com lista vazia para todo deputado, enquanto as demais
+    /// rotas da mesma API seguiam normais. A coleta marchou por 508 deputados em 26 minutos,
+    /// gravou 497 checkpoints com alerta e martelou uma API que ja estava caida.</para>
+    ///
+    /// <para>Dez e' folgado de proposito: um deputado recem-empossado com zero despesas e'
+    /// plausivel, dois em sequencia sao possiveis, dez seguidos nao acontecem por acaso. Com
+    /// este limite, aquele episodio teria parado em ~30 segundos em vez de 26 minutos.</para>
+    /// </summary>
+    public const int MaximoDeAlertasSeguidos = 10;
+
+    /// <summary>
     /// Percorre os deputados da fonte.
     ///
     /// <paramref name="maxDeputados"/> limita quantos sao visitados. Existe para amostragem
@@ -94,6 +120,8 @@ public sealed class ServicoDeColeta(
         var novas = 0;
         var rejeitadas = 0;
         var naoEnriquecidos = 0;
+        var alertasSeguidos = 0;
+        var interrompida = false;
         var motivos = new Dictionary<string, int>(StringComparer.Ordinal);
 
         await foreach (var deputado in fonte.ListarDeputadosAsync(cancelamento).ConfigureAwait(false))
@@ -148,10 +176,26 @@ public sealed class ServicoDeColeta(
             await RegistrarCheckpointAsync(
                 checkpoint, deputado.IdExterno, legislatura, resultado, cancelamento)
                 .ConfigureAwait(false);
+
+            // O checkpoint com alerta nao blinda o deputado — AindaVale o recusa —, entao
+            // parar aqui nao perde nada: a proxima passada retenta todos eles.
+            alertasSeguidos = resultado.TemAlerta ? alertasSeguidos + 1 : 0;
+
+            if (alertasSeguidos >= MaximoDeAlertasSeguidos)
+            {
+                interrompida = true;
+                falhas.Add(
+                    $"Coleta interrompida: {alertasSeguidos} deputados seguidos voltaram em "
+                    + "exercicio e sem nenhuma despesa. Isso e' falha da origem, nao ausencia "
+                    + "de gasto — insistir so' produz checkpoint ruim e carga numa API que ja "
+                    + "esta degradada.");
+                break;
+            }
         }
 
         return new ResultadoDaColeta
         {
+            InterrompidaPorFonteSuspeita = interrompida,
             DeputadosVisitados = visitados,
             DeputadosPulados = pulados,
             DespesasNovas = novas,

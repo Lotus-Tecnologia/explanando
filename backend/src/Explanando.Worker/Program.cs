@@ -93,6 +93,19 @@ switch (comando)
                 Console.WriteLine($"  [FALHA]  {falha}");
             }
 
+            if (resultado.InterrompidaPorFonteSuspeita)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "*** COLETA INTERROMPIDA: a origem respondeu 200 com lista vazia em "
+                    + "sequencia. ***");
+                Console.WriteLine(
+                    "    Nenhum dado foi perdido — os checkpoints com alerta serao "
+                    + "retentados na proxima passada.");
+                Console.WriteLine("    Rode de novo quando /despesas voltar a responder.");
+                return 2;
+            }
+
             return resultado.Falhas.Count > 0 ? 1 : 0;
         }
 

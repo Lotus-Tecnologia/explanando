@@ -39,13 +39,99 @@ public sealed class ServicoDeColetaTests
     private static (ServicoDeColeta Coleta, CheckpointsFalsos Checkpoints) Montar(
         IReadOnlyList<DeputadoDaFonte> deputados,
         IReadOnlyList<DespesaDaFonte>? despesas = null,
-        Func<int, bool>? falhaEm = null)
+        Func<int, bool>? falhaEm = null,
+        Func<int, bool>? vazioEm = null)
     {
-        var fonte = new FonteFalsa(deputados, despesas ?? [Despesa("1")], falhaEm);
+        var fonte = new FonteFalsa(deputados, despesas ?? [Despesa("1")], falhaEm, vazioEm);
         var checkpoints = new CheckpointsFalsos();
         var ingestao = new ServicoDeIngestao(fonte, new CadastroVazio(), new RepositorioEmMemoria());
 
         return (new ServicoDeColeta(fonte, ingestao, checkpoints, new RelogioFixo(Agora)), checkpoints);
+    }
+
+    // ------------------------------------------------------------------
+    //  Disjuntor: a fonte respondeu 200 e mentiu
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Interrompe_quando_a_fonte_devolve_vazio_para_todo_mundo()
+    {
+        // O episodio de 2026-08-21: a rota /despesas da Camara passou a responder 200 com
+        // lista vazia para todo deputado, enquanto as outras rotas da mesma API seguiam
+        // normais. Sem o disjuntor, a coleta marchou por 508 deputados em 26 minutos.
+        var deputados = Enumerable.Range(1, 100).Select(i => Deputado(i)).ToList();
+
+        var (coleta, checkpoints) = Montar(deputados, vazioEm: _ => true);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.InterrompidaPorFonteSuspeita.ShouldBeTrue();
+        resultado.DeputadosVisitados.ShouldBe(ServicoDeColeta.MaximoDeAlertasSeguidos);
+        checkpoints.Registrados.Count.ShouldBe(
+            ServicoDeColeta.MaximoDeAlertasSeguidos,
+            "os 90 restantes nem foram tentados");
+    }
+
+    [Fact]
+    public async Task Nao_interrompe_quando_os_alertas_sao_esparsos()
+    {
+        // Um deputado recem-empossado sem despesa e' plausivel. So' a SEQUENCIA denuncia
+        // a origem — por isso o contador zera a cada deputado que traz dado.
+        var deputados = Enumerable.Range(1, 60).Select(i => Deputado(i)).ToList();
+
+        // Um em cada tres volta vazio: 20 alertas no total, nunca 10 seguidos.
+        var (coleta, _) = Montar(deputados, vazioEm: id => id % 3 == 0);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.InterrompidaPorFonteSuspeita.ShouldBeFalse();
+        resultado.DeputadosVisitados.ShouldBe(60);
+        resultado.Alertas.Count.ShouldBe(20);
+    }
+
+    [Fact]
+    public async Task Deputado_fora_de_exercicio_sem_despesa_nao_conta_como_alerta()
+    {
+        // Quem nao esta em exercicio pode legitimamente nao ter gasto nenhum. Contar isso
+        // como sinal de fonte quebrada derrubaria a coleta por dado correto.
+        var deputados = Enumerable.Range(1, 30)
+            .Select(i => Deputado(i, emExercicio: false))
+            .ToList();
+
+        var (coleta, _) = Montar(deputados, vazioEm: _ => true);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.InterrompidaPorFonteSuspeita.ShouldBeFalse();
+        resultado.DeputadosVisitados.ShouldBe(30);
+    }
+
+    [Fact]
+    public async Task Interrupcao_deixa_os_checkpoints_retentaveis()
+    {
+        // Parar so' e' seguro porque o checkpoint com alerta nao blinda o deputado:
+        // AindaVale o recusa, e a proxima passada tenta todos de novo.
+        var deputados = Enumerable.Range(1, 20).Select(i => Deputado(i)).ToList();
+
+        var (coleta, checkpoints) = Montar(deputados, vazioEm: _ => true);
+
+        await coleta.ColetarTudoAsync(Legislatura);
+
+        checkpoints.Registrados.ShouldAllBe(
+            c => !c.AindaVale(Agora, ServicoDeColeta.ValidadeDoCheckpoint));
+    }
+
+    [Fact]
+    public async Task A_falha_registrada_explica_que_o_problema_e_da_origem()
+    {
+        var deputados = Enumerable.Range(1, 20).Select(i => Deputado(i)).ToList();
+
+        var (coleta, _) = Montar(deputados, vazioEm: _ => true);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.Falhas.ShouldNotBeEmpty();
+        resultado.Falhas[^1].ShouldContain("falha da origem");
     }
 
     [Fact]
@@ -214,7 +300,8 @@ public sealed class ServicoDeColetaTests
     private sealed class FonteFalsa(
         IReadOnlyList<DeputadoDaFonte> deputados,
         IReadOnlyList<DespesaDaFonte> despesas,
-        Func<int, bool>? falhaEm) : IFonteDeParlamentares
+        Func<int, bool>? falhaEm,
+        Func<int, bool>? vazioEm = null) : IFonteDeParlamentares
     {
         public async IAsyncEnumerable<DeputadoDaFonte> ListarDeputadosAsync(
             [EnumeratorCancellation] CancellationToken cancelamento = default)
@@ -238,6 +325,13 @@ public sealed class ServicoDeColetaTests
             if (falhaEm?.Invoke(idExterno) == true)
             {
                 throw new HttpRequestException($"Falha simulada para o deputado {idExterno}.");
+            }
+
+            // Devolve lista vazia sem erro: e' exatamente o que a rota /despesas da Camara
+            // fez em 2026-08-21 — HTTP 200 com "dados": [].
+            if (vazioEm?.Invoke(idExterno) == true)
+            {
+                yield break;
             }
 
             foreach (var despesa in despesas)
