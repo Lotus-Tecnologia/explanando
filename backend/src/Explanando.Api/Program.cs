@@ -13,6 +13,13 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddProblemDetails();
 
+// Enum sai por NOME, nao por numero. "situacao": 4 obriga o consumidor a conhecer a ordem
+// de um enum C# que ele nao ve — e a ordem pode mudar. "situacao": "SemDado" e'
+// auto-descritivo, e e' o que separa um contrato publico de um vazamento de detalhe interno.
+builder.Services.ConfigureHttpJsonOptions(opcoes =>
+    opcoes.SerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter()));
+
 // A API e' publica e sem autenticacao. O navegador precisa poder consumi-la de qualquer
 // origem — e' dado publico —, mas so' por leitura.
 builder.Services.AddCors(opcoes => opcoes.AddDefaultPolicy(politica => politica

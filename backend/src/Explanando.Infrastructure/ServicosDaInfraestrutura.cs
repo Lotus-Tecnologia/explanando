@@ -7,6 +7,7 @@ using Explanando.Infrastructure.Integracoes;
 using Explanando.Infrastructure.Persistencia;
 using Explanando.Infrastructure.Persistencia.Consultas;
 using Explanando.Infrastructure.Persistencia.Repositorios;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Explanando.Infrastructure;
@@ -42,9 +43,27 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<ServicoDeVarreduraDeRede>();
         servicos.AddScoped<ServicoDeRetencao>();
 
-        // O lado de leitura. Registrado aqui e nao no projeto Api porque a Api e' so'
-        // composicao: quem sabe que a consulta roda sobre EF Core e' a infraestrutura.
-        servicos.AddScoped<IConsultasPublicas, ConsultasPublicasEfCore>();
+        // O lado de leitura, com cache por cima. Registrado aqui e nao no projeto Api
+        // porque a Api e' so' composicao: quem sabe que a consulta roda sobre EF Core, e
+        // que o ranking e' cacheado, e' a infraestrutura.
+        servicos.AddScoped<ConsultasPublicasEfCore>();
+        servicos.AddScoped<IConsultasPublicas>(provedor => new ConsultasComCache(
+            provedor.GetRequiredService<ConsultasPublicasEfCore>(),
+            provedor.GetRequiredService<HybridCache>()));
+
+        // Sem Redis configurado, o HybridCache roda so' em memoria — que e' o certo para
+        // desenvolvimento e teste. Em producao a string de conexao liga o distribuido sem
+        // que nenhuma consulta mude.
+        var redis = Environment.GetEnvironmentVariable("EXPLANANDO_REDIS");
+
+        if (!string.IsNullOrWhiteSpace(redis))
+        {
+            servicos.AddStackExchangeRedisCache(opcoes => opcoes.Configuration = redis);
+        }
+
+#pragma warning disable EXTEXP0018 // HybridCache continua em pre-visualizacao no .NET 10.
+        servicos.AddHybridCache();
+#pragma warning restore EXTEXP0018
 
         return servicos;
     }

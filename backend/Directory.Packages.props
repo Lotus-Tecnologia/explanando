@@ -20,6 +20,17 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup Label="Cache">
+    <!--
+      HybridCache no lugar do StackExchange.Redis cru: ele da' cache em memoria E
+      distribuido pela mesma interface, com protecao contra estouro de rebanho. Em
+      desenvolvimento roda so' em memoria; em producao ganha o Redis por registro, sem que
+      o codigo da consulta mude.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.3" />
+  </ItemGroup>
+
   <ItemGroup Label="Api">
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
 

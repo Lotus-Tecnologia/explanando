@@ -49,7 +49,14 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Despesa com link de comprovante reconstruível.</summary>
     public Guid DespesaComComprovante { get; private set; }
 
-    public static JsonSerializerOptions Json { get; } = new(JsonSerializerDefaults.Web);
+    /// <summary>
+    /// As mesmas opcoes que a API usa para escrever. Se o teste desserializasse com outras,
+    /// ele provaria que o SEU JSON funciona, nao que o da API funciona.
+    /// </summary>
+    public static JsonSerializerOptions Json { get; } = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+    };
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
