@@ -10,8 +10,7 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 ## 1. Onde estamos
 
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
-apontar inconsistências financeiras. As etapas 00 a 05 estão concluídas e a **06 (frontend)
-está em andamento**.
+apontar inconsistências financeiras. As etapas 00 a 06 estão concluídas. A **07 (observabilidade e deploy)** é a próxima.
 
 O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão → motor de regras
 → varredura → consolidação → API → interface.
@@ -22,11 +21,11 @@ O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão �
 | 02 Domínio e EF Core · 03 Ingestão | ✅ |
 | 04 Motor · 04b Calibragem · 04c Armazenamento · 04d Coleta completa | ✅ |
 | 05 API pública de leitura | ✅ |
-| **06 Frontend Next.js** | 🚧 **em andamento — ver §4** |
-| 07 Observabilidade e deploy | ⬜ |
+| 06 Frontend Next.js | ✅ |
+| **07 Observabilidade e deploy** | ⬜ **próxima** |
 
-**Testes:** 666 no backend (417 domínio, 54 aplicação, 163 integração, 10 arquitetura, 22
-ponta a ponta) + 17 no frontend.
+**Testes:** 676 no backend (417 domínio, 54 aplicação, 163 integração, 10 arquitetura, 32
+ponta a ponta) + 93 no frontend.
 
 ---
 
@@ -203,73 +202,53 @@ npm test         # 17 testes
 
 ## 4. Onde paramos exatamente
 
-**Último commit:** `c9b5726 — Etapa 06: o frontend, com a taxonomia do ADR-0013 em componente
-testado`. Árvore limpa, tudo empurrado.
+A Etapa 06 está concluída no recorte **"o que a API de leitura sustenta"** — registro completo
+em [etapa-06-frontend.md](docs/registro/etapa-06-frontend.md).
 
-### O que já existe no frontend
+### O que a interface entrega
 
 ```
-frontend/src/
-  app/
-    layout.tsx                     link "pular para o conteúdo", rodapé com ressalva
-    page.tsx                       ranking com as três ordenações
-    parlamentares/[id]/page.tsx    perfil + cobertura + despesas com achados
-    globals.css                    tokens do ADR-0013 em @theme
-  componentes/
-    TagDeGravidade.tsx             três níveis, com forma e aria-label
-    Abstencao.tsx                  TagDeAbstencao + BlocoDeCobertura
-    Comprovante.tsx                botão/tag + ValoresDaDespesa + formatarReais
-    componentes.test.tsx           17 testes
-  lib/
-    contrato.ts                    espelho tipado da API
-    api.ts                         cliente com revalidação de 300 s
+frontend/src/app/
+  page.tsx                       ranking por volume — ESTÁTICO
+  ranking/[ordenacao]/           índice e gravidade — ESTÁTICOS
+  parlamentares/[id]/            perfil — 513 páginas SSG, com metadata própria
+  parlamentares/[id]/despesas/   listagem completa, barra de filtros e paginação
+  despesas/[id]/                 o endereço público de uma despesa
+  sitemap.ts · robots.ts         516 URLs anunciadas
+  not-found.tsx · error.tsx      404 e limite de erro
 ```
 
-**Verificado contra a base real**: o perfil renderiza literalmente *"3 de 11 regras não
-puderam ser aplicadas integralmente por ausência de dado público. A ausência de indicador nelas
-não significa ausência de achado."*, e as tags "Não avaliado" e "Sem indicadores" convivem na
-mesma lista.
+| | Antes | Depois |
+|---|---|---|
+| Home `/` | dinâmica | **estática** |
+| Perfis | dinâmicos | **513 SSG** |
+| Ordenações | 1 página com `?ordenar=` | **3 rotas indexáveis** |
+| `Cache-Control` | ausente | `public, max-age=60, s-maxage=300, stale-while-revalidate=600` |
 
-### Os três próximos passos, na ordem em que eu ia codar
+Conferido contra a base real: `/` lista 513 e `/ranking/indice` lista 498 — os 15 que o
+ADR-0009 exclui, com a frase que impede lê-los como "sem achado".
 
-**1. `generateStaticParams` para ISR nas 513 páginas de parlamentar** — *o mais importante*
+### O backend mudou em quatro pontos, e um deles era bug
 
-Hoje `/parlamentares/[id]` é `ƒ (Dynamic)`, renderizada sob demanda. O ADR-0001 diz que
-**páginas indexadas no Google são o motor de crescimento** e que é a **CDN, não o Redis, que
-absorve o pico viral**. Sem pré-renderização estática, a premissa de custo do projeto não se
-sustenta num pico.
+1. **O filtro por tipo de despesa rodava depois da paginação.** `Total` contava o que o filtro
+   descartava e as páginas do fim vinham vazias. Passou para o SQL, com três testes E2E.
+2. **`ObterDespesaAsync` não devolvia o parlamentar** — a página de uma despesa não teria como
+   dizer de quem ela é. Entrou `DespesaDetalhada`, com a `Casa` junto.
+3. **`PerfilDoParlamentar.TiposDeDespesa`**, para a barra de filtros não oferecer opção que
+   devolve lista vazia.
+4. **`Cache-Control`** nos endpoints de leitura, com `no-store` em erro.
 
-Em `frontend/src/app/parlamentares/[id]/page.tsx`:
+> Nenhuma migration nova — o esquema não mudou.
 
-```tsx
-export async function generateStaticParams() {
-  const pagina = await ranquear("volume", 1, 513);
-  return pagina.itens.map((p) => ({ id: p.id }));
-}
-```
+### O que ficou fora, e por quê
 
-Cuidado: o build passa a exigir a API no ar. Vale um fallback que devolva `[]` quando a API não
-responder, para o build não quebrar em CI sem backend.
+| Item | Motivo |
+|---|---|
+| Card viral (`html2canvas`) | Client-side, não depende de backend. Cabe numa etapa própria |
+| Favoritar, contestar, pagar | Exigem autenticação, gateway e endpoints de escrita |
+| Tag do Senado com dado real | A base tem só a Câmara; o caminho está coberto por teste unitário |
 
-Falta também `metadata` por parlamentar (`generateMetadata`) — título e descrição próprios são
-o que torna a página indexável de verdade.
-
-**2. Listagem completa de despesas com filtros laterais e paginação**
-
-Hoje o perfil mostra só as 25 primeiras despesas **com achado**. Falta:
-
-- Rota `/parlamentares/[id]/despesas`
-- Sidebar fixa à esquerda (padrão Portal da Transparência): ano, tipo de despesa, com/sem
-  indicador
-- Paginação — a API já devolve `total` e `totalDePaginas`
-- A API já aceita `?ano=&mes=&tipo=&comFlag=&pagina=&itens=`; **nada de backend é necessário**
-
-**3. Cabeçalhos de cache HTTP na API**
-
-`Cache-Control` nos endpoints de leitura. A CDN do ADR-0001 só absorve o pico se a resposta
-disser que pode ser cacheada — hoje não diz. Fica em `EndpointsPublicos.cs`.
-
-### Pendências maiores, fora da Etapa 06
+### Pendências maiores
 
 | Pendência | Impacto | Nota |
 |---|---|---|

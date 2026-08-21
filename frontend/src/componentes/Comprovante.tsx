@@ -1,4 +1,5 @@
 import type { ItemDeDespesa } from "@/lib/contrato";
+import { formatarReais } from "@/lib/formato";
 
 /**
  * O botão de comprovante — ou a explicação de por que ele não existe.
@@ -12,7 +13,13 @@ import type { ItemDeDespesa } from "@/lib/contrato";
  * das notas. Nos dois casos, o espaço vazio onde o link deveria estar seria lido como falha
  * da plataforma.
  */
-export function Comprovante({ despesa }: { despesa: ItemDeDespesa }) {
+export function Comprovante({
+  despesa,
+  casa,
+}: {
+  despesa: ItemDeDespesa;
+  casa?: string;
+}) {
   if (despesa.urlDocumento) {
     return (
       <a
@@ -27,16 +34,28 @@ export function Comprovante({ despesa }: { despesa: ItemDeDespesa }) {
     );
   }
 
+  // A frase muda com a casa, e a diferença não é cosmética.
+  //
+  // No Senado a ausência é **estrutural**: nenhum dos treze campos da CEAPS é URL, para nota
+  // nenhuma. Na Câmara ela é **daquela nota**: 70,5% das despesas têm link. Escrever "a
+  // Câmara não disponibiliza" seria falso, e escrever só "a fonte" no Senado devolve a
+  // suspeita de falha para a plataforma — que é exatamente o que o ADR-0012 §1 evita.
+  const frase = casa?.includes("Senado")
+    ? "Senado não disponibiliza o comprovante"
+    : casa?.includes("Câmara")
+      ? "Comprovante não publicado para esta nota"
+      : "A fonte oficial não disponibiliza o comprovante";
+
   // Tag inativa: sem hover, sem cursor de link, sem prometer clique. Um link que dá 404
   // afirma que o documento sumiu.
   return (
     <span
       className="inline-flex items-center gap-1.5 border border-borda-suave bg-abstencao-fundo px-3 py-1.5 text-xs font-semibold text-abstencao-texto"
       role="note"
-      aria-label="A fonte oficial não disponibiliza o comprovante desta despesa"
+      aria-label={`${frase} — a ausência é da origem do dado, não da plataforma`}
     >
       <span aria-hidden="true">🚫</span>
-      Fonte não disponibiliza o comprovante
+      {frase}
     </span>
   );
 }
@@ -71,10 +90,7 @@ export function ValoresDaDespesa({ despesa }: { despesa: ItemDeDespesa }) {
   );
 }
 
-export function formatarReais(valor: number): string {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
-}
+// A formatação mora em `lib/formato.ts` porque a meta description também precisa dela, e ela
+// é montada antes de qualquer componente existir. O reexporte preserva o ponto de importação
+// que o resto da interface já usa.
+export { formatarReais };

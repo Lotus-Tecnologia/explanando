@@ -112,6 +112,15 @@ export interface PerfilDoParlamentar {
   cobertura: CoberturaDeRegra[];
   regrasConclusivas: number;
   regrasSemDado: number;
+
+  /**
+   * Os tipos que este parlamentar de fato teve — as opções da barra de filtros.
+   *
+   * Vem da API, e não de uma lista fixa aqui, porque o catálogo muda por Ato da Mesa e uma
+   * cópia no frontend envelheceria em silêncio. E porque uma opção que devolve lista vazia
+   * faz o leitor concluir que não houve gasto.
+   */
+  tiposDeDespesa: string[];
 }
 
 export interface FlagDaDespesa {
@@ -157,4 +166,26 @@ export interface ItemDeDespesa {
 
   flags: FlagDaDespesa[];
   maiorGravidade: Gravidade | null;
+}
+
+/** Quem gastou. O mínimo que a página de uma despesa precisa dizer. */
+export interface ParlamentarDaDespesa {
+  id: string;
+  nomeParlamentar: string;
+  siglaPartido: string;
+  uf: string;
+
+  /**
+   * A casa por extenso. Decide a frase da tag de comprovante ausente: o ADR-0012 §1 exige
+   * atribuir a ausência ao Senado **nominalmente**, e não a "a fonte".
+   */
+  casa: string;
+
+  fotoUrl: string | null;
+}
+
+/** Uma despesa com o parlamentar a que ela pertence. É o que o endereço público dela devolve. */
+export interface DespesaDetalhada {
+  despesa: ItemDeDespesa;
+  parlamentar: ParlamentarDaDespesa;
 }

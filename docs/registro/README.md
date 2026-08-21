@@ -36,8 +36,8 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 04c | Armazenamento antes da coleta | ✅ Concluída | [etapa-04c-armazenamento.md](etapa-04c-armazenamento.md) |
 | 04d | Coleta completa e primeira varredura da base | ✅ Concluída | [etapa-04d-coleta-completa.md](etapa-04d-coleta-completa.md) |
 | 05 | API pública | ✅ Concluída | [etapa-05-api-publica.md](etapa-05-api-publica.md) |
-| 06 | Frontend Next.js | ⏳ Próxima | — |
-| 07 | Observabilidade e deploy | ⬜ Não iniciada | — |
+| 06 | Frontend Next.js | ✅ Concluída | [etapa-06-frontend.md](etapa-06-frontend.md) |
+| 07 | Observabilidade e deploy | ⏳ Próxima | — |
 
 ## Incidentes
 

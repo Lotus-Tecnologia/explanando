@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Rodape } from "@/componentes/Rodape";
+import { URL_BASE } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -9,9 +11,17 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Explanando — gastos da cota parlamentar",
+  // O template deixa cada página nomear a si mesma sem repetir a marca à mão — e 513 páginas
+  // com o mesmo título competiriam entre si no índice.
+  title: {
+    default: "Explanando — gastos da cota parlamentar",
+    template: "%s · Explanando",
+  },
   description:
     "Dados públicos de gastos da cota parlamentar, com indicadores de um motor de regras determinístico. Descreve inconsistências; não imputa conduta.",
+
+  // Base absoluta: sem ela o Next resolve os canônicos contra localhost no build.
+  metadataBase: new URL(URL_BASE),
 };
 
 export default function RootLayout({
@@ -33,13 +43,7 @@ export default function RootLayout({
 
         <div id="conteudo">{children}</div>
 
-        <footer className="mx-auto max-w-7xl border-t border-borda-suave px-4 py-6 text-xs text-texto-suave">
-          <p>
-            Dados obtidos das APIs de dados abertos da Câmara dos Deputados e da Receita
-            Federal (via BrasilAPI). Os indicadores apontam inconsistências entre registros
-            públicos e <strong>não caracterizam, por si, irregularidade</strong>.
-          </p>
-        </footer>
+        <Rodape />
       </body>
     </html>
   );
