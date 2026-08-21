@@ -38,6 +38,12 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 06 | Frontend Next.js | ⬜ Não iniciada | — |
 | 07 | Observabilidade e deploy | ⬜ Não iniciada | — |
 
+## Incidentes
+
+| Data | O quê | Registro |
+|---|---|---|
+| 2026-08-21 | `/despesas` da Câmara respondeu 200 com lista vazia; 497 de 508 deputados vieram zerados | [incidente-2026-08-21-despesas-vazia.md](incidente-2026-08-21-despesas-vazia.md) |
+
 ## Escopo do V1
 
 Definido no [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md): **o V1 é o plano de
