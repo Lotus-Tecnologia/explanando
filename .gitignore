@@ -48,3 +48,10 @@ docker/volumes/
 *.db
 *.db-shm
 *.db-wal
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+frontend/.turbo/

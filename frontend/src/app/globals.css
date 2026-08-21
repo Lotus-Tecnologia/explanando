@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/*
+  Os tokens do ADR-0013. Cada valor foi calculado, não estimado — seis reprovaram na
+  revisão, três deles propostos depois de o problema já ter sido apontado nos outros.
+
+  O Tailwind v4 configura por CSS, e não pelo `tailwind.config.js` que o documento de
+  identidade visual descrevia. O efeito é o mesmo: `--color-x` aqui gera `text-x`, `bg-x` e
+  `border-x` como utilitários.
+*/
+@theme {
+  /* Superfícies */
+  --color-fundo: #ffffff;
+  --color-surface: #f8fafc;
+
+  /*
+    Duas bordas, e a diferença importa. A estrutural cumpre 4,76:1 porque separa cabeçalho
+    de dado — informação necessária à compreensão. A suave fica em 1,48 de propósito: o
+    separador entre linhas é redundante, já que a zebra carrega a separação.
+  */
+  --color-borda-estrutural: #64748b;
+  --color-borda-suave: #cbd5e1;
+
+  /* Tipografia — 9,72 e 10,35 contra branco */
+  --color-titulo: #064e3b;
+  --color-titulo-hover: #053e2f;
+  --color-texto: #334155;
+  --color-texto-suave: #475569;
+
+  /*
+    Só elemento NÃO textual: barra de gráfico, ícone, borda de destaque. Branco sobre este
+    verde dá 3,77 e reprova para texto — foi por isso que o botão de ação usa --color-titulo.
+  */
+  --color-acento: #059669;
+  --color-realce: #d1fae5;
+
+  /* A matriz de risco. Vermelho fica estritamente com os 3,3% de gravidade alta. */
+  --color-baixa-fundo: #f8fafc;
+  --color-baixa-texto: #334155;
+  --color-media-fundo: #fef3c7;
+  --color-media-texto: #78350f;
+  --color-alta-fundo: #fee2e2;
+  --color-alta-texto: #991b1b;
+  --color-abstencao-fundo: #f1f5f9;
+  --color-abstencao-texto: #475569;
+
+  --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+  Sem bloco de tema escuro. O design se compromete com texto escuro sobre fundo claro — é a
+  estética de portal de transparência, e alternar inverteria o significado das cores de
+  risco, que são o único lugar onde a cor carrega informação.
+*/
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+}
+
+/*
+  Valores financeiros com largura fixa por dígito. Sem isto a tabela "treme" ao rolar,
+  porque cada linha alinha os números num lugar diferente.
+*/
+.numeros {
+  font-variant-numeric: tabular-nums;
+}
