@@ -27,11 +27,20 @@ builder.Services.AddCors(opcoes => opcoes.AddDefaultPolicy(politica => politica
     .AllowAnyHeader()
     .WithMethods("GET", "HEAD", "OPTIONS")));
 
+// A API e' publica e sem autenticacao, entao o unico freio possivel e' por origem. Ver
+// LimitacaoDeTaxa: o teto e' generoso para quem le e apertado para quem raspa.
+builder.Services.AdicionarLimitacaoDeTaxa(builder.Configuration);
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseCors();
+
+// Depois do CORS: o preflight do navegador nao deve consumir cota de leitura.
+app.UseRateLimiter();
+
+LimitacaoDeTaxa.AvisarSeFaltaChaveInterna(app);
 
 if (app.Environment.IsDevelopment())
 {

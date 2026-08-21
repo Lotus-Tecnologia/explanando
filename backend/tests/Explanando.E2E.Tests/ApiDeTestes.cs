@@ -58,12 +58,27 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
     };
 
+    /// <summary>
+    /// A conexão do contêiner, para um segundo host de teste apontar para a mesma base.
+    ///
+    /// <para>Quem precisa disso é a suíte de limitação de taxa: ela sobe a API com um teto
+    /// minúsculo, e subir outro Postgres só para isso custaria mais que o teste inteiro.</para>
+    /// </summary>
+    public string ConexaoDeTeste => _container.GetConnectionString();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.UseSetting("ConnectionStrings:Explanando", _container.GetConnectionString());
         builder.UseEnvironment("Development");
+
+        // Teto alto de propósito: esta suíte tem dezenas de testes batendo na mesma API, e
+        // no TestServer todos chegam sem IP — ou seja, na mesma partição. Um teto realista
+        // aqui faria os testes derrubarem uns aos outros conforme a suíte crescesse. Quem
+        // prova a limitação é `ApiComTetoBaixo`, com um teto que cabe num teste.
+        builder.UseSetting("RateLimit:Capacidade", "100000");
+        builder.UseSetting("RateLimit:PorMinuto", "100000");
     }
 
     public async Task InitializeAsync()

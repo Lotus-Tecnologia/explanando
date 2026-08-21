@@ -86,6 +86,7 @@ function apiFalsa(total: number) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("coletarIdsParaPreRender", () => {
@@ -512,5 +513,58 @@ describe("montarConsulta", () => {
 
   it("limpar um filtro o tira da URL", () => {
     expect(montarConsulta(ler({ ano: "2024" }), { ano: null })).toBe("");
+  });
+});
+
+// ── A chave interna do renderizador ──────────────────────────────────────────────────────
+
+describe("cabecalho interno", () => {
+  function cabecalhosDe(fetchFalso: ReturnType<typeof vi.fn>) {
+    return fetchFalso.mock.calls.map(
+      ([, opcoes]) => (opcoes as RequestInit | undefined)?.headers as Record<string, string>,
+    );
+  }
+
+  it("sem chave configurada, nao inventa cabecalho nenhum", async () => {
+    vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "");
+    const { fetchFalso } = apiFalsa(10);
+
+    await ranquearTudo("volume");
+
+    for (const cabecalhos of cabecalhosDe(fetchFalso)) {
+      expect(cabecalhos["X-Explanando-Interno"]).toBeUndefined();
+    }
+  });
+
+  it("com chave, identifica-se em toda requisicao", async () => {
+    // O build busca 516 paginas de um IP so. Sem se identificar, o nosso proprio
+    // renderizador esbarra no teto publico — e a falha aparece como build quebrado.
+    vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "segredo");
+    const { fetchFalso } = apiFalsa(513);
+
+    await ranquearTudo("volume");
+
+    const cabecalhos = cabecalhosDe(fetchFalso);
+    expect(cabecalhos).toHaveLength(3);
+
+    for (const cabecalho of cabecalhos) {
+      expect(cabecalho["X-Explanando-Interno"]).toBe("segredo");
+    }
+  });
+
+  it("le a variavel a cada chamada, e nao uma vez na importacao", async () => {
+    // Prova que a chave NAO e' embutida no pacote. Variavel lida na importacao seria
+    // congelada no build — e uma chave congelada num pacote que vai para o navegador
+    // deixaria de ser segredo.
+    vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "primeira");
+    const primeira = apiFalsa(10);
+    await ranquearTudo("volume");
+    expect(cabecalhosDe(primeira.fetchFalso)[0]!["X-Explanando-Interno"]).toBe("primeira");
+
+    vi.unstubAllGlobals();
+    vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "segunda");
+    const segunda = apiFalsa(10);
+    await ranquearTudo("volume");
+    expect(cabecalhosDe(segunda.fetchFalso)[0]!["X-Explanando-Interno"]).toBe("segunda");
   });
 });

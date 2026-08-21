@@ -10,7 +10,9 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 ## 1. Onde estamos
 
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
-apontar inconsistências financeiras. As etapas 00 a 06 estão concluídas. A **07 (observabilidade e deploy)** é a próxima.
+apontar inconsistências financeiras. As etapas 00 a 06 estão concluídas. A **07 (observabilidade e deploy)** está em andamento:
+a limitação de taxa da API está pronta; falta a varredura mensal agendada, a política de
+privacidade e o desdobramento em si.
 
 O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão → motor de regras
 → varredura → consolidação → API → interface.
@@ -22,7 +24,7 @@ O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão �
 | 04 Motor · 04b Calibragem · 04c Armazenamento · 04d Coleta completa | ✅ |
 | 05 API pública de leitura | ✅ |
 | 06 Frontend Next.js | ✅ |
-| **07 Observabilidade e deploy** | ⬜ **próxima** |
+| **07 Observabilidade e deploy** | 🚧 **em andamento — limitação de taxa feita** |
 
 **Testes:** 676 no backend (417 domínio, 54 aplicação, 163 integração, 10 arquitetura, 32
 ponta a ponta) + 93 no frontend.
@@ -257,7 +259,6 @@ ADR-0009 exclui, com a frase que impede lê-los como "sem achado".
 | **Cliente do Senado** | Médio | Conversor e 68 testes prontos ([Etapa 01b](docs/registro/etapa-01b-contratos-senado.md)). Falta decidir a interface: `IFonteDeParlamentares` é por parlamentar, mas a CEAPS é **por ano, para todos de uma vez** |
 | Catalogar os 4 tipos que apareceram | Baixo | Grafia exata registrada na [Etapa 04c](docs/registro/etapa-04c-armazenamento.md) §3.5 |
 | Escritas (favoritar, contestar, varredura paga) | Médio | Entidades existem; falta autenticação e pagamento |
-| Limitação de taxa na API | Médio | Sem autenticação, só o teto de 200 itens/página protege |
 | `REG_NET_004` recalibrar | Médio | Os três limiares nunca foram confrontados com base grande |
 
 ---

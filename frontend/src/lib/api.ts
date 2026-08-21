@@ -29,10 +29,33 @@ class ErroDaApi extends Error {
   }
 }
 
+/**
+ * Como o nosso renderizador se identifica para a API.
+ *
+ * A API pública tem teto por origem, e **este processo é o cliente mais pesado que existe
+ * por IP**: o build busca as três páginas de ranking e os 513 perfis de um endereço só, com
+ * onze processos em paralelo. Sem se identificar, o primeiro deploy esbarra no próprio
+ * limite — e a falha apareceria como build quebrado, longe da causa.
+ *
+ * A variável **não** leva o prefixo `NEXT_PUBLIC_`, e isso é o ponto: o Next embute as que
+ * levam dentro do pacote que vai para o navegador, e uma chave embutida num pacote público
+ * deixa de ser chave. Toda chamada daqui roda no servidor.
+ *
+ * Lida a cada chamada, e não uma vez na importação, para que continue sendo variável de
+ * ambiente de verdade — congelá-la na importação é meio caminho para embuti-la.
+ */
+function cabecalhos(): HeadersInit {
+  const chave = process.env.EXPLANANDO_CHAVE_INTERNA;
+
+  return chave
+    ? { Accept: "application/json", "X-Explanando-Interno": chave }
+    : { Accept: "application/json" };
+}
+
 async function buscar<T>(caminho: string): Promise<T | null> {
   const resposta = await fetch(`${BASE}${caminho}`, {
     next: { revalidate: SEGUNDOS_DE_REVALIDACAO },
-    headers: { Accept: "application/json" },
+    headers: cabecalhos(),
   });
 
   // 404 é resposta legítima — parlamentar que não existe —, e não falha. Confundir as duas
