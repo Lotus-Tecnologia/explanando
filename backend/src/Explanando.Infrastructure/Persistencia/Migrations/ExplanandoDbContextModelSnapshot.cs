@@ -321,6 +321,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("codigo_lote");
 
+                    b.Property<short>("CodigoTipoDespesa")
+                        .HasColumnType("smallint")
+                        .HasColumnName("codigo_tipo_despesa");
+
                     b.Property<int>("CodigoTipoDocumento")
                         .HasColumnType("integer")
                         .HasColumnName("codigo_tipo_documento");
@@ -373,11 +377,10 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("tem_documento_publicado");
 
-                    b.Property<string>("TipoDespesa")
-                        .IsRequired()
+                    b.Property<string>("TipoDespesaNaoCatalogado")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("tipo_despesa");
+                        .HasColumnName("tipo_despesa_nao_catalogado");
 
                     b.Property<decimal>("ValorDocumento")
                         .HasColumnType("numeric(18,2)")

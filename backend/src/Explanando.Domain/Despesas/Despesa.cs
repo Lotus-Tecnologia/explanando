@@ -49,7 +49,6 @@ public sealed class Despesa : Entidade
         // EF Core.
         DocumentoFornecedor = CpfCnpj.Criar(null);
         NomeFornecedor = string.Empty;
-        TipoDespesa = string.Empty;
         CodigoDocumento = string.Empty;
         NumeroDocumento = string.Empty;
         HashUnico = [];
@@ -70,7 +69,25 @@ public sealed class Despesa : Entidade
 
     public Competencia Competencia { get; private set; }
 
-    public string TipoDespesa { get; private set; }
+    /// <summary>Código do tipo no <see cref="CatalogoDeTiposDeDespesa"/>. Zero = fora do catálogo.</summary>
+    public short CodigoTipoDespesa { get; private set; }
+
+    /// <summary>
+    /// O nome por extenso, guardado <b>apenas</b> quando o tipo não está no catálogo.
+    ///
+    /// Nulo em praticamente toda linha. É o que garante que um tipo novo criado por Ato da
+    /// Mesa no meio de uma coleta de doze horas não custe uma única despesa.
+    /// </summary>
+    public string? TipoDespesaNaoCatalogado { get; private set; }
+
+    /// <summary>
+    /// O tipo por extenso, venha do catálogo ou da coluna de exceção. É o que as regras e a
+    /// tela leem — nenhuma delas sabe que existe um código por baixo.
+    /// </summary>
+    public string TipoDespesa =>
+        CatalogoDeTiposDeDespesa.NomeDe(CodigoTipoDespesa)
+        ?? TipoDespesaNaoCatalogado
+        ?? string.Empty;
 
     public string CodigoDocumento { get; private set; }
 
@@ -182,7 +199,6 @@ public sealed class Despesa : Entidade
             DocumentoFornecedor = dados.DocumentoFornecedor,
             NomeFornecedor = dados.NomeFornecedor.Trim(),
             Competencia = dados.Competencia,
-            TipoDespesa = dados.TipoDespesa.Trim(),
             CodigoDocumento = dados.CodigoDocumento.Trim(),
             NumeroDocumento = dados.NumeroDocumento.Trim(),
             CodigoTipoDocumento = dados.CodigoTipoDocumento,
@@ -193,6 +209,17 @@ public sealed class Despesa : Entidade
             CodigoLote = dados.CodigoLote,
             Parcela = dados.Parcela,
         };
+
+        var tipo = dados.TipoDespesa.Trim();
+        despesa.CodigoTipoDespesa = CatalogoDeTiposDeDespesa.CodigoDe(tipo);
+
+        // So' guarda o texto quando o catalogo nao conhece o tipo. Ver a nota da classe do
+        // catalogo: recusar o desconhecido custaria despesa, e despesa perdida e' gasto
+        // publico que a pagina deixa de mostrar.
+        if (despesa.CodigoTipoDespesa == CatalogoDeTiposDeDespesa.NaoCatalogado)
+        {
+            despesa.TipoDespesaNaoCatalogado = tipo;
+        }
 
         // A URL nao e' guardada: dela se extrai o que nao existe em nenhum outro lugar.
         var analise = UrlDeDocumento.Analisar(dados.UrlDocumento);

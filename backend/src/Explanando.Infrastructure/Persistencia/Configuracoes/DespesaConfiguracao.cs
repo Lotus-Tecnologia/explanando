@@ -37,7 +37,12 @@ internal sealed class DespesaConfiguracao : IEntityTypeConfiguration<Despesa>
             .HasColumnName("competencia")
             .IsRequired();
 
-        builder.Property(despesa => despesa.TipoDespesa).HasMaxLength(100).IsRequired();
+        // Um smallint no lugar de repetir a mesma frase seiscentas mil vezes: eram
+        // 34,6 bytes por linha, ~25 MB projetados. A coluna de excecao fica nula em
+        // praticamente toda linha. Ver CatalogoDeTiposDeDespesa.
+        builder.Property(despesa => despesa.CodigoTipoDespesa).HasColumnType("smallint").IsRequired();
+        builder.Property(despesa => despesa.TipoDespesaNaoCatalogado).HasMaxLength(100);
+        builder.Ignore(despesa => despesa.TipoDespesa);
         builder.Property(despesa => despesa.CodigoDocumento).HasMaxLength(50).IsRequired();
 
         // Base de REG_KYB_005 (nota inicial). Ausente da especificacao original.

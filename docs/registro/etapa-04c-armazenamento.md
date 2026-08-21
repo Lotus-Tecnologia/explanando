@@ -20,7 +20,7 @@ repetem entre gabinetes.
 |---|---|
 | "744 MB para uma legislatura" | ~526 MB antes das otimizações; a extrapolação linear inflava |
 | "as otimizações economizam ~43%" | **28%** na tabela `despesas` (624 → 450 bytes por despesa) |
-| "não cabe nos 512 MB do tier gratuito" | **Cabe:** ~435 MB projetados, ~85% de utilização |
+| "não cabe nos 512 MB do tier gratuito" | **Cabe:** ~381 MB projetados, 74% de utilização |
 | "a coleta leva 1,5 a 3 horas" | **~12,6 horas.** 88,6 s por deputado, medido em 5 |
 
 A última é a mais consequente na prática: a coleta é uma tarefa noturna, não de uma tarde. E
@@ -94,11 +94,42 @@ de vez.
 (+~37 MB) e a 58 começa em seguida — a válvula existe para quando isso apertar, e existir
 agora evita descobrir que ela falta com o banco cheio.
 
-## 4. O que ficou de fora, e por quê
+### 3.4 `tipo_despesa` → código de catálogo
 
-`tipo_despesa` → tabela de referência rende ~23 MB de uma folga de ~77 MB, atravessa o motor
-de regras e 20 arquivos de teste. E, ao contrário da URL, **pode ser normalizado por migration
-a qualquer momento sem perder nada** — é essa assimetria que torna adiá-lo seguro.
+Dezesseis frases repetidas 5.843 vezes custavam 34,6 bytes por linha. Viraram um `smallint`.
+
+O ponto de projeto é o que acontece com um tipo **que a Câmara criar depois**. A lista da CEAP
+é definida por Ato da Mesa e muda; um `enum` — ou um catálogo que recusasse o desconhecido —
+rejeitaria despesas no meio de uma coleta de doze horas, e cada rejeição é gasto público que a
+página deixa de mostrar. Aqui o desconhecido cai numa coluna de texto que fica nula em
+praticamente toda linha: custa o mesmo que custava antes e não perde nada. `Despesa.TipoDespesa`
+continua devolvendo a string, então nenhuma regra e nenhum teste souberam da mudança.
+
+Catalogados apenas os **dezesseis com grafia verificada** em dado real — inclusive o ponto
+final de uns e a vírgula deslocada de outro. A tabela curada de CNAE conhece outros oito, mas só
+na forma normalizada sem acento; reconstruir a grafia original seria invenção. Eles esperam
+aparecer numa coleta, sem custo algum enquanto isso.
+
+Um teste amarra o catálogo à tabela de CNAE: tipo catalogado com grafia que `REG_KYB_001` não
+reconhece faria a regra se abster em silêncio sobre todas as despesas dele.
+
+A migration **converte** o dado existente em vez de descartá-lo — 16 casos de `CASE`, verificados
+contra as 5.843 despesas já coletadas: todas mapearam, nenhuma sobrou.
+
+## 4. O ganho acumulado
+
+| Esquema | Bytes por despesa |
+|---|---|
+| Original | 624 |
+| Depois de `hash_unico` e da URL | 450 (−28%) |
+| Depois do catálogo de tipos | **376 (−40%)** |
+
+Projeção para 513 deputados (732 mil despesas): **~381 MB**, contra o limite de 512 MB. Folga
+de ~131 MB, ou 26%.
+
+Medir exige `VACUUM FULL`: `DROP COLUMN` no Postgres não devolve espaço, e o `UPDATE` da
+conversão deixa a tabela com o dobro do tamanho até a compactação. Antes disso o número aparecia
+como 794 bytes por despesa, pior que o original.
 
 ## 5. Verificação de ponta a ponta
 
@@ -107,22 +138,23 @@ Banco recriado do zero, 5 deputados coletados no esquema novo:
 | | |
 |---|---|
 | Despesas | 5.843, zero rejeitadas |
-| Bytes por despesa | 450 (era 624) |
+| Bytes por despesa | **376** (era 624) |
 | Carteira extraída | 5 de 5 deputados |
 | Notas precisando de `ano_do_arquivo` | 87 (1,5%) |
 | Flags | 193 (3,3%), zero falhas de regra |
 | Consolidados mensais | 215 |
+| Tipos de despesa convertidos | 16 de 16, nenhum fora do catálogo |
 | Aviso de amostra na passada de rede | disparou corretamente (5 < piso de 100) |
 
-Suíte em **516 testes**.
+Suíte em **533 testes**.
 
 ## 6. Pendências
 
 | Pendência | Impacto | Observação |
 |---|---|---|
 | A coleta completa leva ~12,6 h | Operacional | Tarefa noturna. Quase toda espera pelo limitador da BrasilAPI |
-| Folga de ~77 MB e encolhendo | Médio | A legislatura 57 vai até jan/2027. A poda resolve, mas custa detalhe |
-| `tipo_despesa` normalizado | Baixo | ~23 MB, sem urgência e sem risco de perda |
+| Folga de ~131 MB e encolhendo | Baixo | A legislatura 57 vai até jan/2027 (+~30 MB). A poda resolve, mas custa detalhe |
+| Oito tipos da CEAP sem grafia verificada | Baixo | Caem na coluna de texto sem perda. `SELECT DISTINCT tipo_despesa_nao_catalogado FROM despesas` depois da coleta os revela |
 | `REG_NET_004` nunca rodou em base acima do piso | Alto | Só a coleta completa resolve |
 
 ## 7. Próxima etapa
