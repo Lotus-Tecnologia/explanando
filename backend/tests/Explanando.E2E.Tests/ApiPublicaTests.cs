@@ -176,8 +176,10 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     [Fact]
     public async Task Despesa_com_comprovante_traz_a_url_reconstruida()
     {
-        var despesa = await LerAsync<ItemDeDespesa>(
+        var detalhe = await LerAsync<DespesaDetalhada>(
             await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaComComprovante}"));
+
+        var despesa = detalhe.Despesa;
 
         despesa.TemDocumentoPublicado.ShouldBeTrue();
         despesa.UrlDocumento.ShouldNotBeNullOrWhiteSpace();
@@ -189,8 +191,10 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     {
         // Um link que dá 404 afirma que o documento sumiu. A ausência é da origem, e a
         // interface exibe a tag do ADR-0012 §1 no lugar do botão.
-        var despesa = await LerAsync<ItemDeDespesa>(
+        var detalhe = await LerAsync<DespesaDetalhada>(
             await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaSemComprovante}"));
+
+        var despesa = detalhe.Despesa;
 
         despesa.TemDocumentoPublicado.ShouldBeFalse();
         despesa.UrlDocumento.ShouldBeNull();
@@ -199,11 +203,11 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     [Fact]
     public async Task O_cnpj_sai_formatado_e_nunca_cru()
     {
-        var despesa = await LerAsync<ItemDeDespesa>(
+        var detalhe = await LerAsync<DespesaDetalhada>(
             await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaComComprovante}"));
 
-        despesa.DocumentoFornecedor.ShouldContain(".");
-        despesa.DocumentoFornecedor.ShouldContain("/");
+        detalhe.Despesa.DocumentoFornecedor.ShouldContain(".");
+        detalhe.Despesa.DocumentoFornecedor.ShouldContain("/");
     }
 
     [Fact]
@@ -282,6 +286,151 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
         flag.Descricao.ShouldNotBeNullOrWhiteSpace();
         flag.GrauDeConfianca.ShouldBeGreaterThan(0m);
         flag.VersaoDoMotor.ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Filtro_por_tipo_conta_so_o_que_sobreviveu_ao_filtro()
+    {
+        // A semente tem 120 despesas de consultoria e 1 de passagem aérea. Se o total vier
+        // 121, o filtro rodou depois da contagem — e a tela diria "1 de 121", o que é a
+        // mesma classe de mentira que o mês sem ano devolve 400 para evitar.
+        var pagina = await LerAsync<Pagina<ItemDeDespesa>>(
+            await Cliente.GetAsync(
+                $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas"
+                + $"?tipo={Uri.EscapeDataString("PASSAGEM AÉREA - SIGEPA")}&itens=200"));
+
+        pagina.Total.ShouldBe(1);
+        pagina.Itens.Count.ShouldBe(1);
+        pagina.Itens.ShouldAllBe(d => d.TipoDespesa == "PASSAGEM AÉREA - SIGEPA");
+    }
+
+    [Fact]
+    public async Task Filtro_por_tipo_alcanca_alem_da_primeira_pagina()
+    {
+        // Filtrando em memória depois do Take, a página 12 viria vazia e o leitor concluiria
+        // que o parlamentar parou de gastar.
+        var pagina = await LerAsync<Pagina<ItemDeDespesa>>(
+            await Cliente.GetAsync(
+                $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas"
+                + $"?tipo={Uri.EscapeDataString("CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.")}"
+                + "&itens=10&pagina=12"));
+
+        pagina.Total.ShouldBe(120);
+        pagina.TotalDePaginas.ShouldBe(12);
+        pagina.Itens.Count.ShouldBe(10);
+    }
+
+    [Fact]
+    public async Task Filtro_por_tipo_desconhecido_devolve_lista_vazia_e_nao_a_base_inteira()
+    {
+        var pagina = await LerAsync<Pagina<ItemDeDespesa>>(
+            await Cliente.GetAsync(
+                $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas"
+                + $"?tipo={Uri.EscapeDataString("TIPO QUE NAO EXISTE")}&itens=200"));
+
+        pagina.Total.ShouldBe(0);
+        pagina.Itens.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task A_despesa_diz_de_quem_ela_e()
+    {
+        // A página de uma despesa é o endereço que um link compartilhado abre. Sem o
+        // parlamentar, ela mostra um valor e uma regra pairando no ar — e o ADR-0004 se
+        // apoia justamente no contrário: achado atribuído, com a fonte ao alcance do clique.
+        var detalhe = await LerAsync<DespesaDetalhada>(
+            await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaComComprovante}"));
+
+        detalhe.Parlamentar.Id.ShouldBe(api.ParlamentarRanqueado);
+        detalhe.Parlamentar.NomeParlamentar.ShouldBe("Deputada Ranqueada");
+        detalhe.Parlamentar.SiglaPartido.ShouldNotBeNullOrWhiteSpace();
+        detalhe.Parlamentar.Uf.ShouldBe("AP");
+    }
+
+    [Fact]
+    public async Task A_casa_viaja_com_a_despesa_porque_a_tag_de_comprovante_depende_dela()
+    {
+        // O ADR-0012 §1 exige atribuir a ausência do comprovante ao Senado nominalmente.
+        // Sem a casa no payload, a interface só consegue dizer "a fonte" — genérico, e
+        // genérico devolve a suspeita de falha para a plataforma.
+        var detalhe = await LerAsync<DespesaDetalhada>(
+            await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaSemComprovante}"));
+
+        detalhe.Parlamentar.Casa.ShouldBe("Câmara dos Deputados");
+    }
+
+    [Fact]
+    public async Task O_perfil_lista_os_tipos_de_despesa_que_o_parlamentar_teve()
+    {
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
+
+        perfil.TiposDeDespesa.ShouldBe(
+            ["CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.", "PASSAGEM AÉREA - SIGEPA"],
+            ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task Todo_tipo_que_o_perfil_oferece_devolve_despesa_ao_ser_filtrado()
+    {
+        // A invariante que sustenta a barra de filtros: uma opção que devolve lista vazia
+        // faz o leitor concluir que não há gasto, quando o que houve foi opção mal montada.
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
+
+        perfil.TiposDeDespesa.ShouldNotBeEmpty();
+
+        foreach (var tipo in perfil.TiposDeDespesa)
+        {
+            var pagina = await LerAsync<Pagina<ItemDeDespesa>>(
+                await Cliente.GetAsync(
+                    $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas"
+                    + $"?tipo={Uri.EscapeDataString(tipo)}&itens=1"));
+
+            pagina.Total.ShouldBeGreaterThan(0, $"o tipo '{tipo}' não devolveu despesa alguma");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Cache HTTP: é a CDN que absorve o pico (ADR-0001)
+    // ------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("/api/v1/parlamentares")]
+    public async Task A_leitura_declara_que_pode_ser_cacheada(string caminho)
+    {
+        // Sem este cabeçalho a CDN não guarda nada, e cada acesso do pico viral atravessa
+        // até o Postgres. A premissa de custo do ADR-0001 depende dele existir.
+        var resposta = await Cliente.GetAsync(caminho);
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var cache = resposta.Headers.CacheControl.ShouldNotBeNull();
+        cache.Public.ShouldBeTrue();
+        cache.SharedMaxAge.ShouldBe(TimeSpan.FromSeconds(300));
+    }
+
+    [Fact]
+    public async Task O_perfil_e_as_despesas_tambem_declaram_cache()
+    {
+        var perfil = await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}");
+        var despesas = await Cliente.GetAsync(
+            $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas");
+
+        perfil.Headers.CacheControl.ShouldNotBeNull().Public.ShouldBeTrue();
+        despesas.Headers.CacheControl.ShouldNotBeNull().Public.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task A_resposta_de_erro_nunca_e_cacheada()
+    {
+        // Um 404 cacheado por cinco minutos sobrevive ao parlamentar passar a existir — e
+        // um 400 cacheado ensina a CDN a repetir a recusa para quem corrigiu o filtro.
+        var inexistente = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");
+        var filtroRuim = await Cliente.GetAsync("/api/v1/parlamentares?ordenar=inventada");
+
+        inexistente.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
+        filtroRuim.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
     }
 
     [Fact]

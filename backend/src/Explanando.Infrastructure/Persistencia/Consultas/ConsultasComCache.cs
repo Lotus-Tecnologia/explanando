@@ -68,7 +68,7 @@ public sealed class ConsultasComCache(IConsultasPublicas interna, HybridCache ca
         CancellationToken cancelamento = default) =>
         interna.ListarDespesasAsync(parlamentarId, filtro, cancelamento);
 
-    public Task<ItemDeDespesa?> ObterDespesaAsync(
+    public Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,
         CancellationToken cancelamento = default) =>
         interna.ObterDespesaAsync(despesaId, cancelamento);

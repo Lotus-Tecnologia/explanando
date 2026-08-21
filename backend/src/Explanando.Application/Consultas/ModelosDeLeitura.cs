@@ -149,6 +149,17 @@ public sealed record PerfilDoParlamentar
     /// </summary>
     public IReadOnlyList<CoberturaDeRegra> Cobertura { get; init; } = [];
 
+    /// <summary>
+    /// Os tipos de despesa que este parlamentar de fato teve, para montar a barra de
+    /// filtros.
+    ///
+    /// <para>Vem daqui, e não de uma lista fixa na interface, por dois motivos. O catálogo
+    /// muda por Ato da Mesa e uma cópia no frontend envelheceria em silêncio; e uma opção
+    /// de filtro que devolve lista vazia faz o leitor concluir que não houve gasto, quando
+    /// o que houve foi opção mal montada.</para>
+    /// </summary>
+    public IReadOnlyList<string> TiposDeDespesa { get; init; } = [];
+
     /// <summary>Quantas regras produziram resultado interpretável.</summary>
     public int RegrasConclusivas => Cobertura.Count(regra => regra.SilencioEhConclusivo);
 
@@ -199,6 +210,38 @@ public sealed record ItemDeDespesa
 
     /// <summary>A gravidade mais alta entre as flags, para a interface pintar a linha.</summary>
     public Gravidade? MaiorGravidade => Flags.Count == 0 ? null : Flags.Max(f => f.Gravidade);
+}
+
+/// <summary>Quem gastou, o mínimo que a página de uma despesa precisa dizer.</summary>
+public sealed record ParlamentarDaDespesa
+{
+    public required Guid Id { get; init; }
+    public required string NomeParlamentar { get; init; }
+    public required string SiglaPartido { get; init; }
+    public required string Uf { get; init; }
+
+    /// <summary>
+    /// A casa. Não é enfeite: o <c>ADR-0012</c> §1 exige que a ausência de comprovante seja
+    /// atribuída ao Senado <b>nominalmente</b>, e sem este campo a interface só consegue
+    /// dizer "a fonte" — genérico, e genérico devolve a suspeita de falha para a plataforma.
+    /// </summary>
+    public required string Casa { get; init; }
+
+    public string? FotoUrl { get; init; }
+}
+
+/// <summary>
+/// Uma despesa com o parlamentar a que ela pertence.
+///
+/// <para>É o que o endereço público de uma despesa precisa. Sozinha, a despesa mostra um
+/// valor e um código de regra pairando no ar — e o <c>ADR-0004</c> se apoia no contrário:
+/// o achado é atribuído a uma regra nomeada, sobre um gasto de alguém, com o documento
+/// oficial ao alcance do clique.</para>
+/// </summary>
+public sealed record DespesaDetalhada
+{
+    public required ItemDeDespesa Despesa { get; init; }
+    public required ParlamentarDaDespesa Parlamentar { get; init; }
 }
 
 /// <summary>Filtros da listagem de despesas.</summary>

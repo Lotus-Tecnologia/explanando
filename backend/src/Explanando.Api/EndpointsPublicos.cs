@@ -18,7 +18,7 @@ public static class EndpointsPublicos
     {
         ArgumentNullException.ThrowIfNull(rotas);
 
-        var grupo = rotas.MapGroup(Prefixo).WithTags("Público");
+        var grupo = rotas.MapGroup(Prefixo).WithTags("Público").ComCacheDeLeitura();
 
         grupo.MapGet("/parlamentares", RanquearAsync)
             .WithName("Ranquear")

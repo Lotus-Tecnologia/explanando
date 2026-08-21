@@ -41,7 +41,7 @@ public interface IConsultasPublicas
         CancellationToken cancelamento = default);
 
     /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
-    Task<ItemDeDespesa?> ObterDespesaAsync(
+    Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,
         CancellationToken cancelamento = default);
 }

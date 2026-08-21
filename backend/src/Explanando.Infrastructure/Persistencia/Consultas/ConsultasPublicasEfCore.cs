@@ -143,6 +143,31 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
+        // DISTINCT sobre o codigo (smallint) e a coluna de excecao, e nao sobre o nome:
+        // o nome nao existe no banco, e' derivado do catalogo. Sai barato porque o indice
+        // por parlamentar ja recorta a varredura.
+        var tiposBrutos = await contexto.Despesas
+            .AsNoTracking()
+            .Where(despesa => despesa.ParlamentarId == parlamentarId)
+            .Select(despesa => new
+            {
+                despesa.CodigoTipoDespesa,
+                despesa.TipoDespesaNaoCatalogado,
+            })
+            .Distinct()
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var tipos = tiposBrutos
+            .Select(bruto =>
+                CatalogoDeTiposDeDespesa.NomeDe(bruto.CodigoTipoDespesa)
+                ?? bruto.TipoDespesaNaoCatalogado)
+            .Where(nome => !string.IsNullOrWhiteSpace(nome))
+            .Select(nome => nome!)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(nome => nome, StringComparer.Ordinal)
+            .ToList();
+
         var score = cabecalho.score;
         var temAmostra = score is not null && score.AmostraSuficiente;
 
@@ -154,9 +179,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             NomeCivil = cabecalho.parlamentar.NomeCivil,
             SiglaPartido = cabecalho.parlamentar.SiglaPartido,
             Uf = cabecalho.parlamentar.Uf,
-            Casa = cabecalho.parlamentar.Tipo == TipoParlamentar.Senador
-                ? "Senado Federal"
-                : "Câmara dos Deputados",
+            Casa = NomeDaCasa(cabecalho.parlamentar.Tipo),
             FotoUrl = cabecalho.parlamentar.FotoUrl,
 
             VolumeTotalGasto = score?.VolumeTotalGasto ?? 0m,
@@ -172,6 +195,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
 
             SerieMensal = serie,
             Cobertura = [.. cobertura.Select(Traduzir)],
+            TiposDeDespesa = tipos,
         };
     }
 
@@ -199,6 +223,22 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                     && d.Competencia <= Domain.Comum.Competencia.Criar(ano, 12));
         }
 
+        // O tipo e' filtrado NO BANCO, e nao em memoria depois da paginacao. Filtrar depois
+        // do Take deixaria o Total contando o que o filtro descartou — a tela diria "1 de
+        // 121" — e as paginas do fim viriam vazias, o que o leitor lê como "parou de gastar".
+        // E' a mesma classe de mentira que faz o mes sem ano devolver 400 em vez de ignorar.
+        if (!string.IsNullOrWhiteSpace(filtro.TipoDespesa))
+        {
+            var nome = filtro.TipoDespesa.Trim();
+            var codigo = ResolverCodigoDoTipo(nome);
+
+            // Fora do catalogo, a comparacao vai na coluna de excecao — onde a ingestao
+            // preserva a grafia original de um tipo que a Camara criou depois.
+            consulta = codigo == CatalogoDeTiposDeDespesa.NaoCatalogado
+                ? consulta.Where(d => d.TipoDespesaNaoCatalogado == nome)
+                : consulta.Where(d => d.CodigoTipoDespesa == codigo);
+        }
+
         if (filtro.ComFlag is { } comFlag)
         {
             consulta = comFlag
@@ -224,9 +264,6 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
-        // O filtro por tipo fica em memoria de proposito: TipoDespesa e' derivado do
-        // catalogo e nao existe como coluna. Filtrar no banco exigiria traduzir o nome
-        // para codigo aqui, o que duplicaria o catalogo em SQL.
         var carteira = await contexto.Parlamentares
             .AsNoTracking()
             .Where(p => p.Id == parlamentarId)
@@ -235,9 +272,6 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ConfigureAwait(false);
 
         var itens = pagina
-            .Where(linha => filtro.TipoDespesa is null
-                || string.Equals(linha.despesa.TipoDespesa, filtro.TipoDespesa,
-                    StringComparison.OrdinalIgnoreCase))
             .Select(linha => Traduzir(linha.despesa, linha.flags, carteira))
             .ToList();
 
@@ -250,7 +284,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         };
     }
 
-    public async Task<ItemDeDespesa?> ObterDespesaAsync(
+    public async Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,
         CancellationToken cancelamento = default)
     {
@@ -271,14 +305,73 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
-        var carteira = await contexto.Parlamentares
+        var autor = await contexto.Parlamentares
             .AsNoTracking()
             .Where(p => p.Id == despesa.ParlamentarId)
-            .Select(p => p.NumeroCarteira)
+            .Select(p => new
+            {
+                p.Id,
+                p.NomeParlamentar,
+                p.SiglaPartido,
+                p.Uf,
+                p.Tipo,
+                p.FotoUrl,
+                p.NumeroCarteira,
+            })
             .FirstOrDefaultAsync(cancelamento)
             .ConfigureAwait(false);
 
-        return Traduzir(despesa, flags, carteira);
+        // Despesa sem parlamentar nao existe: a FK e' obrigatoria. Se acontecesse, seria
+        // melhor devolver 404 do que publicar um achado sem dono.
+        if (autor is null)
+        {
+            return null;
+        }
+
+        return new DespesaDetalhada
+        {
+            Despesa = Traduzir(despesa, flags, autor.NumeroCarteira),
+            Parlamentar = new ParlamentarDaDespesa
+            {
+                Id = autor.Id,
+                NomeParlamentar = autor.NomeParlamentar,
+                SiglaPartido = autor.SiglaPartido,
+                Uf = autor.Uf,
+                Casa = NomeDaCasa(autor.Tipo),
+                FotoUrl = autor.FotoUrl,
+            },
+        };
+    }
+
+    /// <summary>O nome por extenso da casa, escrito num lugar só.</summary>
+    private static string NomeDaCasa(TipoParlamentar tipo) =>
+        tipo == TipoParlamentar.Senador ? "Senado Federal" : "Câmara dos Deputados";
+
+    /// <summary>
+    /// O codigo do tipo, tolerando diferenca de caixa no nome.
+    ///
+    /// <para>O catalogo casa por <see cref="StringComparer.Ordinal"/>, que e' o certo para a
+    /// ingestao — grafia exata, inclusive o ponto final que uns tipos tem e outros nao. Mas
+    /// aqui o nome chega de um consumidor da API, que pode te-lo reescrito. Resolver a caixa
+    /// em C#, antes da consulta, evita depender do collation do banco (que e' <c>C</c>,
+    /// ordinal) e mantem a comparacao em SQL sobre um <c>smallint</c>.</para>
+    /// </summary>
+    private static short ResolverCodigoDoTipo(string nome)
+    {
+        var codigo = CatalogoDeTiposDeDespesa.CodigoDe(nome);
+
+        if (codigo != CatalogoDeTiposDeDespesa.NaoCatalogado)
+        {
+            return codigo;
+        }
+
+        var equivalente = CatalogoDeTiposDeDespesa.Nomes
+            .FirstOrDefault(catalogado =>
+                string.Equals(catalogado, nome, StringComparison.OrdinalIgnoreCase));
+
+        return equivalente is null
+            ? CatalogoDeTiposDeDespesa.NaoCatalogado
+            : CatalogoDeTiposDeDespesa.CodigoDe(equivalente);
     }
 
     private static ItemDeDespesa Traduzir(
