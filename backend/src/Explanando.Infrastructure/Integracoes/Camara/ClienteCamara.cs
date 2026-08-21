@@ -144,6 +144,23 @@ public sealed class ClienteCamara(HttpClient http, TimeSpan? esperaEntreTentativ
             // So' a primeira pagina traz a contagem confiavel; as seguintes tambem trazem,
             // mas guardar a primeira basta e evita que uma resposta degradada no meio
             // rebaixe o total.
+            // Resposta com dado SEM link `last` e' anomalia, nao pagina unica. Medido: 14 de
+            // 14 respostas saudaveis trazem `last`, inclusive as de uma pagina so', onde ele
+            // vem como `last=1`. A resposta degradada de 2026-08-21 trazia apenas `self`.
+            //
+            // Estourar aqui e' assimetricamente melhor: se algum caso legitimo sem `last`
+            // existir, o deputado entra em retentativa e isso aparece como falha na coleta.
+            // O erro oposto — aceitar — publicaria dado truncado em silencio, que ninguem
+            // detecta.
+            if (paginasLidas == 0 && pagina.TotalDePaginas is null)
+            {
+                throw new InvalidOperationException(
+                    $"Resposta suspeita para o deputado {idExterno}: veio com "
+                    + $"{pagina.Dados.Count} registros mas sem o link 'last', que a origem "
+                    + "sempre envia quando esta saudavel. Descartando para nao publicar "
+                    + "gasto possivelmente truncado.");
+            }
+
             totalDePaginas ??= pagina.TotalDePaginas;
             paginasLidas++;
 

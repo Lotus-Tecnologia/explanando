@@ -71,11 +71,21 @@ internal sealed class ManipuladorDeFixtures : HttpMessageHandler
                 var corpo = Fixtures.Ler(arquivoDeFixture);
                 var abre = corpo.IndexOf("\"links\"", StringComparison.Ordinal);
 
-                var soDados = abre < 0
-                    ? corpo
-                    : corpo[..abre] + "\"links\":[]}";
+                // Os links viram os de uma pagina unica REAL — com `last` apontando para a
+                // pagina 1. Medido contra a API: 14 de 14 respostas saudaveis trazem `last`,
+                // e a de pagina unica traz `last=1`. Zerar os links simularia a resposta
+                // degradada, que o cliente agora recusa.
+                const string LinksDePaginaUnica =
+                    "\"links\":["
+                    + "{\"rel\":\"self\",\"href\":\"https://x/despesas?pagina=1\"},"
+                    + "{\"rel\":\"first\",\"href\":\"https://x/despesas?pagina=1\"},"
+                    + "{\"rel\":\"last\",\"href\":\"https://x/despesas?pagina=1\"}]}";
 
-                return new RespostaFalsa(HttpStatusCode.OK, soDados);
+                var paginaUnica = abre < 0
+                    ? corpo
+                    : corpo[..abre] + LinksDePaginaUnica;
+
+                return new RespostaFalsa(HttpStatusCode.OK, paginaUnica);
             });
 
     public ManipuladorDeFixtures QuandoContiver(string trecho, HttpStatusCode status, string corpo = "{}") =>

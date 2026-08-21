@@ -184,14 +184,14 @@ public sealed class ClienteCamaraTests
     }
 
     [Fact]
-    public async Task Sem_link_last_nao_ha_o_que_conferir()
+    public async Task Pagina_unica_legitima_traz_last_igual_a_um()
     {
-        // Resposta de pagina unica nao traz `last`. Exigir a conferencia nesse caso
-        // rejeitaria dado bom.
+        // Medido contra a API real: 14 de 14 respostas saudaveis trazem `last`, inclusive
+        // as de uma pagina so'. Aline Gurgel, com 24 despesas, vem com `last=1`.
         var manipulador = new ManipuladorDeFixtures().Quando(
             uri => uri.PathAndQuery.Contains("/despesas", StringComparison.Ordinal),
             _ => new ManipuladorDeFixtures.RespostaFalsa(
-                System.Net.HttpStatusCode.OK, Pagina(3, 1, proxima: null, ultima: null)));
+                System.Net.HttpStatusCode.OK, Pagina(3, 1, proxima: null, ultima: 1)));
 
         var despesas = new List<Explanando.Application.Ingestao.DespesaDaFonte>();
 
@@ -201,6 +201,33 @@ public sealed class ClienteCamaraTests
         }
 
         despesas.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task Dado_sem_link_last_e_recusado_como_suspeito()
+    {
+        // Este teste substitui um anterior cuja premissa estava ERRADA. Eu supunha que
+        // resposta de pagina unica nao trouxesse `last`, e tratava a ausencia como normal.
+        // A medicao contra a API real desmentiu: `last` vem sempre, e a resposta degradada
+        // de 2026-08-21 era justamente a que trazia so' `self`.
+        //
+        // Com a premissa corrigida, a ausencia de `last` deixa de ser caso benigno e passa
+        // a ser o sinal que fecha a ultima brecha de truncamento silencioso.
+        var manipulador = new ManipuladorDeFixtures().Quando(
+            uri => uri.PathAndQuery.Contains("/despesas", StringComparison.Ordinal),
+            _ => new ManipuladorDeFixtures.RespostaFalsa(
+                System.Net.HttpStatusCode.OK, Pagina(3, 1, proxima: null, ultima: null)));
+
+        var erro = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await foreach (var d in Cliente(manipulador)
+                .ListarDespesasAsync(136811, LegislaturaCorrente))
+            {
+                _ = d;
+            }
+        });
+
+        erro.Message.ShouldContain("sem o link 'last'");
     }
 
     // ------------------------------------------------------------------
@@ -440,15 +467,23 @@ public sealed class ClienteCamaraTests
             "valorDocumento": 10.0, "valorLiquido": 10.0, "valorGlosa": 0.0,
             "cnpjCpfFornecedor": "36826246000164", "codLote": 1, "parcela": 0
           }],
-          "links": [{"rel":"next","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?volta=1"}]
+          "links": [
+            {"rel":"next","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?volta=1"},
+            {"rel":"last","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?pagina=2"}
+          ]
         }
         """;
 
     private static string PaginaCom(string codigoDocumento, bool proxima)
     {
+        // `last` entra nas duas paginas porque a origem real sempre o envia — e o cliente
+        // agora recusa resposta com dado que nao o traga.
+        const string Ultima =
+            """{"rel":"last","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?idLegislatura=57&itens=100&pagina=2"}""";
+
         var links = proxima
-            ? """[{"rel":"next","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?idLegislatura=57&itens=100&pagina=2"}]"""
-            : "[]";
+            ? $$"""[{"rel":"next","href":"https://dadosabertos.camara.leg.br/api/v2/deputados/204379/despesas?idLegislatura=57&itens=100&pagina=2"},{{Ultima}}]"""
+            : $$"""[{{Ultima}}]""";
 
         return $$"""
             {
