@@ -59,6 +59,20 @@ public sealed record ResultadoDaColeta
     /// Aqui a fonte respondeu 200 e mentiu.</para>
     /// </summary>
     public bool InterrompidaPorFonteSuspeita { get; init; }
+
+    /// <summary>
+    /// A <b>listagem</b> de deputados falhou no meio, e a passada cobriu menos gente do que
+    /// deveria.
+    ///
+    /// <para>Diferente de <see cref="Falhas"/> em deputado individual: ali um deputado se
+    /// perde e os outros seguem. Aqui a fonte parou de entregar a propria lista, entao nao
+    /// se sabe sequer quem ficou de fora.</para>
+    ///
+    /// <para>Nao e' hipotese: em 2026-08-21 o circuit breaker do Polly abriu durante a
+    /// paginacao da lista, a excecao escapou pela enumeracao — que era o unico ponto do laco
+    /// sem protecao — e derrubou a coleta em 482 de 513, descartando ate' o resumo final.</para>
+    /// </summary>
+    public bool ListagemIncompleta { get; init; }
 }
 
 /// <summary>
@@ -122,10 +136,43 @@ public sealed class ServicoDeColeta(
         var naoEnriquecidos = 0;
         var alertasSeguidos = 0;
         var interrompida = false;
+        var listagemIncompleta = false;
         var motivos = new Dictionary<string, int>(StringComparer.Ordinal);
 
-        await foreach (var deputado in fonte.ListarDeputadosAsync(cancelamento).ConfigureAwait(false))
+        // Enumeracao manual, e nao `await foreach`, porque a falha precisa ser capturada
+        // separadamente do corpo do laco. Um `try` em volta do foreach inteiro nao distingue
+        // "a fonte parou de listar" de "este deputado deu problema", e as duas exigem
+        // desfechos diferentes: a primeira encerra a passada, a segunda pula um.
+        var enumerador = fonte.ListarDeputadosAsync(cancelamento).GetAsyncEnumerator(cancelamento);
+
+        try
         {
+        while (true)
+        {
+            DeputadoDaFonte deputado;
+
+            try
+            {
+                if (!await enumerador.MoveNextAsync().ConfigureAwait(false))
+                {
+                    break;
+                }
+
+                deputado = enumerador.Current;
+            }
+            catch (Exception erro) when (erro is not OperationCanceledException)
+            {
+                // A fonte parou de entregar a lista. Encerrar a passada aqui preserva tudo
+                // que ja' foi coletado e o resumo — antes desta guarda, a excecao subia ate'
+                // Main e a coleta inteira morria sem sequer imprimir o que tinha feito.
+                listagemIncompleta = true;
+                falhas.Add(
+                    $"A listagem de deputados falhou apos {tentados} tentativas: "
+                    + $"{erro.Message} Os deputados ja' coletados estao salvos; os demais "
+                    + "serao alcancados na proxima passada.");
+                break;
+            }
+
             // Conta TENTATIVAS, nao sucessos: um deputado que falha tambem consumiu
             // requisicoes da fonte. Contar so' os visitados fazia o laco seguir alem do
             // teto — a primeira coleta real pediu 2 deputados e tentou 3.
@@ -192,10 +239,16 @@ public sealed class ServicoDeColeta(
                 break;
             }
         }
+        }
+        finally
+        {
+            await enumerador.DisposeAsync().ConfigureAwait(false);
+        }
 
         return new ResultadoDaColeta
         {
             InterrompidaPorFonteSuspeita = interrompida,
+            ListagemIncompleta = listagemIncompleta,
             DeputadosVisitados = visitados,
             DeputadosPulados = pulados,
             DespesasNovas = novas,

@@ -40,13 +40,62 @@ public sealed class ServicoDeColetaTests
         IReadOnlyList<DeputadoDaFonte> deputados,
         IReadOnlyList<DespesaDaFonte>? despesas = null,
         Func<int, bool>? falhaEm = null,
-        Func<int, bool>? vazioEm = null)
+        Func<int, bool>? vazioEm = null,
+        int? falhaNaListagemApos = null)
     {
-        var fonte = new FonteFalsa(deputados, despesas ?? [Despesa("1")], falhaEm, vazioEm);
+        var fonte = new FonteFalsa(
+            deputados, despesas ?? [Despesa("1")], falhaEm, vazioEm, falhaNaListagemApos);
         var checkpoints = new CheckpointsFalsos();
         var ingestao = new ServicoDeIngestao(fonte, new CadastroVazio(), new RepositorioEmMemoria());
 
         return (new ServicoDeColeta(fonte, ingestao, checkpoints, new RelogioFixo(Agora)), checkpoints);
+    }
+
+    // ------------------------------------------------------------------
+    //  A fonte para de entregar a propria lista
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Falha_na_listagem_preserva_o_que_ja_foi_coletado()
+    {
+        // Aconteceu em producao: o circuit breaker do Polly abriu durante a paginacao da
+        // lista, a excecao escapou pela enumeracao — o unico ponto do laco sem protecao —
+        // e derrubou a coleta em 482 de 513, descartando ate' o resumo final.
+        var deputados = Enumerable.Range(1, 20).Select(i => Deputado(i)).ToList();
+
+        var (coleta, checkpoints) = Montar(deputados, falhaNaListagemApos: 7);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.ListagemIncompleta.ShouldBeTrue();
+        resultado.DeputadosVisitados.ShouldBe(7, "os sete que a fonte chegou a entregar");
+        resultado.DespesasNovas.ShouldBe(7);
+        checkpoints.Registrados.Count.ShouldBe(7, "e os sete estao com checkpoint");
+    }
+
+    [Fact]
+    public async Task Falha_na_listagem_e_registrada_com_o_que_fazer_a_respeito()
+    {
+        var deputados = Enumerable.Range(1, 20).Select(i => Deputado(i)).ToList();
+
+        var (coleta, _) = Montar(deputados, falhaNaListagemApos: 3);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.Falhas.ShouldNotBeEmpty();
+        resultado.Falhas[^1].ShouldContain("listagem de deputados falhou");
+        resultado.Falhas[^1].ShouldContain("proxima passada");
+    }
+
+    [Fact]
+    public async Task Listagem_que_termina_normalmente_nao_e_marcada_como_incompleta()
+    {
+        var (coleta, _) = Montar([Deputado(1), Deputado(2)]);
+
+        var resultado = await coleta.ColetarTudoAsync(Legislatura);
+
+        resultado.ListagemIncompleta.ShouldBeFalse();
+        resultado.DeputadosVisitados.ShouldBe(2);
     }
 
     // ------------------------------------------------------------------
@@ -301,13 +350,24 @@ public sealed class ServicoDeColetaTests
         IReadOnlyList<DeputadoDaFonte> deputados,
         IReadOnlyList<DespesaDaFonte> despesas,
         Func<int, bool>? falhaEm,
-        Func<int, bool>? vazioEm = null) : IFonteDeParlamentares
+        Func<int, bool>? vazioEm = null,
+        int? falhaNaListagemApos = null) : IFonteDeParlamentares
     {
         public async IAsyncEnumerable<DeputadoDaFonte> ListarDeputadosAsync(
             [EnumeratorCancellation] CancellationToken cancelamento = default)
         {
+            var entregues = 0;
+
             foreach (var deputado in deputados)
             {
+                // Simula o que aconteceu de verdade: a paginacao da lista quebra no meio,
+                // depois de ja' ter entregue parte dos deputados.
+                if (entregues == falhaNaListagemApos)
+                {
+                    throw new HttpRequestException("A listagem de deputados quebrou.");
+                }
+
+                entregues++;
                 yield return deputado;
             }
 

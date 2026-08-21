@@ -93,6 +93,17 @@ switch (comando)
                 Console.WriteLine($"  [FALHA]  {falha}");
             }
 
+            if (resultado.ListagemIncompleta)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "*** LISTAGEM INCOMPLETA: a fonte parou de entregar a lista de "
+                    + "deputados. ***");
+                Console.WriteLine(
+                    "    O que foi coletado esta salvo. Rode de novo para alcancar o resto.");
+                return 3;
+            }
+
             if (resultado.InterrompidaPorFonteSuspeita)
             {
                 Console.WriteLine();
