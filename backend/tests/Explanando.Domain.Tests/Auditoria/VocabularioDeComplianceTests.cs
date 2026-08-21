@@ -78,4 +78,63 @@ public sealed class VocabularioDeComplianceTests
     {
         VocabularioDeCompliance.ContemTermoProibido(vazio).ShouldBeFalse();
     }
+
+    // ------------------------------------------------------------------
+    //  O lava-jato: dado da origem nao e' vocabulario nosso
+    // ------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("MOREIRA LAVAGEM E POLIMENTOS LTDA")]
+    [InlineData("ESQUILOS LAVAGEM AUTOMOTIVA LTDA")]
+    [InlineData("RODO SERVICE LAVAGEM E CONSERVACAO LTDA")]
+    public void Razao_social_citada_nao_derruba_a_descricao(string razaoSocial)
+    {
+        // Os tres derrubaram REG_KYB_001 seis vezes na varredura dos 513 deputados, porque
+        // "lavagem" esta na lista por causa de lavagem de dinheiro. Seis achados legitimos
+        // se perderam por causa do ramo de atividade do fornecedor.
+        var descricao =
+            $"Alerta de compliance: a despesa de 'COMBUSTÍVEIS E LUBRIFICANTES.' foi paga a "
+            + $"'{razaoSocial}', cujo ramo registrado na Receita Federal (CNAE 4520005) "
+            + "pertence a outra atividade econômica.";
+
+        VocabularioDeCompliance.ContemTermoProibido(descricao).ShouldBeFalse();
+        Should.NotThrow(() =>
+            VocabularioDeCompliance.GarantirVocabularioTecnico(descricao, "descricao"));
+    }
+
+    [Fact]
+    public void Termo_proibido_FORA_das_aspas_continua_sendo_recusado()
+    {
+        // O que a guarda existe para pegar. A isencao vale so' para o dado citado.
+        VocabularioDeCompliance
+            .ContemTermoProibido("Indício de fraude na despesa paga a 'EMPRESA X LTDA'.")
+            .ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Aspa_sem_par_fecha_no_fim_do_texto()
+    {
+        // Razao social truncada deixaria o resto exposto e reintroduziria o problema pela
+        // borda.
+        VocabularioDeCompliance
+            .ContemTermoProibido("Despesa paga a 'MOREIRA LAVAGEM E POLIMENTOS")
+            .ShouldBeFalse();
+    }
+
+    [Fact]
+    public void A_isencao_e_por_aspas_e_nao_por_lista_de_palavras()
+    {
+        // Nao adianta catalogar "lavagem automotiva": a proxima empresa se chama outra
+        // coisa. A isencao precisa valer para qualquer nome que a origem entregue.
+        VocabularioDeCompliance
+            .ContemTermoProibido("Fornecedor 'DESVIO E ROUBO TRANSPORTES LTDA' com CNAE alheio.")
+            .ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Texto_sem_aspa_nenhuma_segue_a_regra_de_sempre()
+    {
+        VocabularioDeCompliance.ContemTermoProibido("Padrão de lavagem de dinheiro").ShouldBeTrue();
+        VocabularioDeCompliance.ContemTermoProibido("Inconsistência financeira").ShouldBeFalse();
+    }
 }

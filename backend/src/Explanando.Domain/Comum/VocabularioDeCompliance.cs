@@ -54,6 +54,25 @@ public static class VocabularioDeCompliance
     /// </summary>
     private static readonly string[] ExpressoesPermitidas = ["desvio padrao"];
 
+    /// <summary>
+    /// Se o texto viola o ADR-0004.
+    ///
+    /// <para><b>Trecho entre aspas simples nao e' examinado</b>, porque nao e' vocabulario
+    /// nosso: e' dado da origem interpolado na frase — razao social, tipo de despesa. A
+    /// regra existe para conter o que o PRODUTO afirma, e o nome de uma empresa que existe
+    /// no mundo nao e' escolha de palavra nossa.</para>
+    ///
+    /// <para>Descoberto rodando contra os 513 deputados: tres lava-jatos — "MOREIRA LAVAGEM
+    /// E POLIMENTOS LTDA", "ESQUILOS LAVAGEM AUTOMOTIVA LTDA" e "RODO SERVICE LAVAGEM E
+    /// CONSERVACAO LTDA" — derrubaram REG_KYB_001 seis vezes, porque "lavagem" esta na lista
+    /// de proibidos por causa de <i>lavagem de dinheiro</i>. Seis achados legitimos foram
+    /// perdidos por causa do ramo de atividade do fornecedor.</para>
+    ///
+    /// <para>O preco disso e' que alguem poderia evadir o filtro pondo o termo entre aspas.
+    /// E' aceitavel: isto e' guarda contra <b>descuido</b> de redacao, nao barreira de
+    /// seguranca, e quotar "fraude" de proposito seria violacao consciente do ADR — coisa
+    /// que revisao de codigo pega e que filtro nenhum impediria.</para>
+    /// </summary>
     public static bool ContemTermoProibido(string? texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -61,7 +80,7 @@ public static class VocabularioDeCompliance
             return false;
         }
 
-        var normalizado = Normalizar(texto);
+        var normalizado = Normalizar(RemoverCitacoes(texto));
 
         // Remove as expressoes tecnicas permitidas antes de procurar os termos proibidos,
         // para que o "desvio" de "desvio padrao" nao seja contado.
@@ -92,6 +111,38 @@ public static class VocabularioDeCompliance
                 + $"'{string.Join("', '", TermosPreferidos)}'. Texto recebido: '{texto}'.",
                 nomeDoParametro);
         }
+    }
+
+    /// <summary>
+    /// Troca por espaco tudo que estiver entre aspas simples. Ver a nota de
+    /// <see cref="ContemTermoProibido"/>.
+    ///
+    /// Aspa sem par fecha no fim do texto: um trecho citado pela metade continua sendo dado
+    /// da origem, e deixar o resto exposto reintroduziria o problema pela borda.
+    /// </summary>
+    private static string RemoverCitacoes(string texto)
+    {
+        if (!texto.Contains('\'', StringComparison.Ordinal))
+        {
+            return texto;
+        }
+
+        var construtor = new StringBuilder(texto.Length);
+        var dentro = false;
+
+        foreach (var caractere in texto)
+        {
+            if (caractere == '\'')
+            {
+                dentro = !dentro;
+                construtor.Append(' ');
+                continue;
+            }
+
+            construtor.Append(dentro ? ' ' : caractere);
+        }
+
+        return construtor.ToString();
     }
 
     /// <summary>

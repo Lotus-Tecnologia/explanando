@@ -186,6 +186,22 @@ switch (comando)
                 Console.WriteLine($"  {regra,-14} {quantidade,7}   ({proporcao,6:F3}% das despesas)");
             }
 
+            // Falha de regra e' defeito a investigar, nunca ruido: a passada fica
+            // incompleta naquele codigo e ninguem descobre pelo total. Imprimir so' a
+            // contagem, como era antes, escondia exatamente o que precisa ser lido.
+            if (falhas.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("--- falhas de regra (a passada esta incompleta nelas) ---");
+
+                foreach (var grupo in falhas
+                    .GroupBy(falha => $"{falha.CodigoRegra}: {falha.Motivo}", StringComparer.Ordinal)
+                    .OrderByDescending(grupo => grupo.Count()))
+                {
+                    Console.WriteLine($"  {grupo.Count(),5}x  {grupo.Key}");
+                }
+            }
+
             // Passada de fechamento: as regras que cruzam parlamentares so' podem rodar
             // depois que todos foram varridos.
             var rede = servicos.GetRequiredService<ServicoDeVarreduraDeRede>();
