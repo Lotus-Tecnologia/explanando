@@ -1,5 +1,6 @@
 using System.Globalization;
 using Explanando.Application.Auditoria;
+using Explanando.Application.Ciclo;
 using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
 using Explanando.Domain.Regras;
@@ -16,6 +17,7 @@ var comando = args.Length > 0 ? args[0].ToLowerInvariant() : "servico";
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AdicionarInfraestrutura(conexao);
+builder.Services.AdicionarObservabilidade(builder.Configuration, "explanando-worker");
 
 // O EF Core registra cada INSERT em nivel Information. Numa coleta de milhares de despesas
 // isso enterra o resumo em dezenas de milhares de linhas de SQL.
@@ -232,6 +234,70 @@ switch (comando)
             return falhas.Count > 0 ? 1 : 0;
         }
 
+    case "ciclo-mensal":
+        {
+            // A passada completa e gratuita do ADR-0010 §4: coleta, varre, cruza a rede e
+            // consolida. E' o comando que um agendador externo dispara — Cloud Scheduler
+            // chamando um Cloud Run Job, que sobe, trabalha e morre. Um servico de pe
+            // esperando um mes passar contradiz o scale-to-zero em que o custo do projeto
+            // se apoia.
+            var forcar = Array.IndexOf(args, "--forcar") >= 0;
+            var ciclo = servicos.GetRequiredService<ServicoDeCicloMensal>();
+
+            var relogio = new System.Diagnostics.Stopwatch();
+            relogio.Start();
+
+            var resultado = forcar
+                ? await ciclo.ExecutarAsync(legislatura).ConfigureAwait(false)
+                : await ciclo
+                    .ExecutarSeVencidoAsync(legislatura, CicloDeAtualizacao.IntervaloPadrao)
+                    .ConfigureAwait(false);
+
+            relogio.Stop();
+
+            if (!resultado.Executou)
+            {
+                Console.WriteLine($"""
+
+                    === CICLO MENSAL ===
+                    Nada a fazer: a base inteira foi varrida ha menos de {CicloDeAtualizacao.IntervaloPadrao.TotalDays:F0} dias.
+
+                    O vencimento olha para o parlamentar MAIS ATRASADO, e nao para o mais
+                    recente: com o mais recente, uma varredura paga por mes manteria a base
+                    "atualizada" para sempre enquanto os outros 512 envelheciam.
+
+                    Use --forcar para rodar assim mesmo.
+                    """);
+
+                return 0;
+            }
+
+            Console.WriteLine($"""
+
+                === CICLO MENSAL ===
+                Despesas novas      : {resultado.Coleta?.DespesasNovas ?? 0}
+                Parlamentares       : {resultado.ParlamentaresVarridos}
+                Flags emitidas      : {resultado.FlagsEmitidas}
+                Consolidados        : {resultado.Retencao?.ConsolidadosCriados ?? 0} criados, {resultado.Retencao?.ConsolidadosAtualizados ?? 0} atualizados
+                Falhas de regra     : {resultado.Falhas.Count}
+                Tempo               : {relogio.Elapsed:hh\:mm\:ss}
+                """);
+
+            if (resultado.ColetaIncompleta)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "*** A COLETA FICOU INCOMPLETA. A varredura rodou sobre o que existe no "
+                    + "banco, ***");
+                Console.WriteLine(
+                    "    mas o dado esta mais velho do que este resumo sugere. Rode de novo.");
+
+                return 2;
+            }
+
+            return resultado.Falhas.Count > 0 ? 1 : 0;
+        }
+
     case "consolidar":
         {
             // Sem --meses, so' consolida. A poda e' destrutiva e nunca acontece por
@@ -273,6 +339,7 @@ switch (comando)
               dotnet run -- coletar [--legislatura 57] [--limite N]
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
+              dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
             """);
         return 2;
 }

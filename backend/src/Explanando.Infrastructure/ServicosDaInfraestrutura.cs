@@ -1,3 +1,4 @@
+using Explanando.Application.Ciclo;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Consultas;
 using Explanando.Application.Ingestao;
@@ -42,6 +43,12 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<ServicoDeVarredura>();
         servicos.AddScoped<ServicoDeVarreduraDeRede>();
         servicos.AddScoped<ServicoDeRetencao>();
+
+        // A passada mensal do ADR-0010 §4. Nao tem tabela propria: a agenda le a data da
+        // varredura mais antiga em scores_risco, que a propria varredura grava.
+        servicos.AddScoped<IRepositorioDoCiclo, RepositorioDoCiclo>();
+        servicos.AddScoped<AgendaDoCicloMensal>();
+        servicos.AddScoped<ServicoDeCicloMensal>();
 
         // O lado de leitura, com cache por cima. Registrado aqui e nao no projeto Api
         // porque a Api e' so' composicao: quem sabe que a consulta roda sobre EF Core, e

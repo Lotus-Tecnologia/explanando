@@ -11,8 +11,8 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
 apontar inconsistências financeiras. As etapas 00 a 06 estão concluídas. A **07 (observabilidade e deploy)** está em andamento:
-a limitação de taxa da API está pronta; falta a varredura mensal agendada, a política de
-privacidade e o desdobramento em si.
+limitação de taxa, varredura mensal e OpenTelemetry estão prontos. Falta empacotar (Dockerfile
+e CI), desdobrar (Neon, Cloud Run, Cloudflare) e publicar a política de privacidade.
 
 O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão → motor de regras
 → varredura → consolidação → API → interface.
@@ -24,10 +24,10 @@ O pipeline inteiro roda de ponta a ponta sobre dado real: coleta → ingestão �
 | 04 Motor · 04b Calibragem · 04c Armazenamento · 04d Coleta completa | ✅ |
 | 05 API pública de leitura | ✅ |
 | 06 Frontend Next.js | ✅ |
-| **07 Observabilidade e deploy** | 🚧 **em andamento — limitação de taxa feita** |
+| **07 Observabilidade e deploy** | 🚧 **em andamento — falta empacotar e desdobrar** |
 
-**Testes:** 676 no backend (417 domínio, 54 aplicação, 163 integração, 10 arquitetura, 32
-ponta a ponta) + 93 no frontend.
+**Testes:** 695 no backend (423 domínio, 54 aplicação, 167 integração, 10 arquitetura, 41
+ponta a ponta) + 96 no frontend.
 
 ---
 

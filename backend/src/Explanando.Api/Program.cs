@@ -9,6 +9,7 @@ var conexao = builder.Configuration.GetConnectionString("Explanando")
     ?? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev";
 
 builder.Services.AdicionarInfraestrutura(conexao);
+builder.Services.AdicionarObservabilidade(builder.Configuration, "explanando-api");
 builder.Services.AddOpenApi();
 
 builder.Services.AddProblemDetails();
