@@ -4,6 +4,17 @@ using Explanando.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// O Cloud Run — e Railway, e Heroku — injeta a porta em PORT e espera o contêiner escutando
+// nela. O ASP.NET Core nao le PORT: ele le ASPNETCORE_HTTP_PORTS/ASPNETCORE_URLS. Sem esta
+// ponte, mudar a porta do contêiner no painel faz o deploy falhar com "failed to start and
+// listen on the port defined by the PORT variable" — erro que aponta para a plataforma
+// quando a causa e' nossa. A imagem chiseled nao tem shell para expandir a variavel no
+// ENTRYPOINT, entao a ponte precisa ser aqui.
+if (Environment.GetEnvironmentVariable("PORT") is { Length: > 0 } porta)
+{
+    builder.WebHost.UseUrls($"http://+:{porta}");
+}
+
 var conexao = builder.Configuration.GetConnectionString("Explanando")
     ?? Environment.GetEnvironmentVariable("EXPLANANDO_CONEXAO")
     ?? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev";
