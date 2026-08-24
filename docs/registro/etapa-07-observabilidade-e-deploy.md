@@ -239,11 +239,107 @@ não repeti-lo é conferir com `grep -rn "_sequencia) + " tests/Explanando.Integ
 
 ---
 
-## 5. O que falta nesta etapa
+## 5. As decisões de produto, e o que elas destravaram — ✅
+
+O [ADR-0014](../decisoes/ADR-0014-lacuna-camada-2-e-base-legal.md) fechou sete pontas que
+bloqueavam blocos inteiros do plano. Duas consequências entraram nesta etapa.
+
+### 5.1 A lacuna ganhou dono na tela
+
+A decisão §1 — *"exibiremos que o governo não disponibilizou esta informação"* — mudou três
+frases. Elas pareciam equivalentes e não eram:
+
+| Antes | Agora |
+|---|---|
+| "Comprovante não publicado para esta nota" | "**A Câmara** não publicou o comprovante desta nota" |
+| "A fonte oficial não disponibiliza o comprovante" | "**O governo** não disponibilizou este comprovante" |
+| "…não puderam ser aplicadas por ausência de dado público." | "…**O que falta aqui não é análise: é dado que o poder público não publicou.**" |
+
+A precisão do [ADR-0012](../decisoes/ADR-0012-assimetria-camara-senado.md) §1 continua: na
+Câmara a ausência é **daquela nota** (ela publica 70,5%), no Senado é **estrutural**. Dizer "a
+Câmara não disponibiliza" seria falso.
+
+> **Parte do item 1 já estava pronta.** `RegraGastoNoTetoDaCota` já abortava e reportava
+> `SemDado` quando o período não tem limite, com teste unitário e de cobertura. E **não** se
+> semeou limite provisório para 2023–2025: um teto inventado produziria flags contra pessoas
+> nomeadas com base em número que ninguém publicou.
+
+### 5.2 A Política de Privacidade foi publicada
+
+Rota `/privacidade`, estática e no sitemap, com o que o ADR-0014 §5 decidiu: **legítimo
+interesse, art. 7º, IX**, prazo de **15 dias úteis**, e o Encarregado por nome *e* canal — que
+é o que o art. 41, § 1º pede, e que só o e-mail não cumpria.
+
+A página declara também **o que não é coletado** — CPF do parlamentar, data e município de
+nascimento, redes sociais, faixa etária do sócio —, porque necessidade (art. 6º, III) também
+se prova pelo que falta. E que o CPF do sócio chega mascarado da própria fonte.
+
+> **Nota de manutenção:** a palavra "fraude" aparece na página, em "prevenção à fraude". É o
+> termo da própria LGPD para a finalidade do art. 7º, IX, não imputação sobre parlamentar
+> nomeado. É a mesma situação de "desvio padrão", que o documento de Negócios lista como termo
+> *obrigatório* contendo um termo *proibido*. Trocá-la mudaria a base legal declarada.
+
+---
+
+## 6. Empacotamento — ✅ concluído
+
+Um `Dockerfile` com dois alvos (`api` e `worker`), e não dois arquivos: as camadas de restore e
+build são idênticas, e separá-las faria o cache reconstruir tudo duas vezes por deploy.
+
+Base `noble-chiseled-extra` — sem gerenciador de pacotes, sem shell, sem ICU. Cabe porque a
+solution roda com `InvariantGlobalization=true` desde a Etapa 00; a imagem sem ICU não é
+economia de bytes, é a consequência coerente daquela decisão. Roda como não-root.
+
+**API 288 MB · worker 253 MB.**
+
+### 6.1 Verificado, e não presumido
+
+A imagem da API subiu contra o Postgres real e respondeu:
+
+```
+saude:   {"situacao":"ok"}
+ranking: 513 parlamentares | Pompeo de Mattos
+cache:   public, max-age=60, s-maxage=300, stale-while-revalidate=600
+```
+
+`docker exec … id` falha com *"executable file not found"* — confirmação de que a imagem não
+tem shell. O worker rodou o `ciclo-mensal` e respondeu "nada a fazer", como no host.
+
+### 6.2 Duas armadilhas que só o contêiner mostra
+
+**O `.editorconfig` não viajava no contexto de build.** É ele que marca
+`src/**/Migrations/*.cs` como `generated_code = true`. Sem ele lá dentro, os analisadores
+reprovam o código que o próprio EF Core gera (CA1861/CA1825) e, com `TreatWarningsAsErrors`,
+o build do contêiner falha **enquanto o local passa**. É por isso que o CI agora constrói as
+imagens: essa classe de erro não aparece de outro jeito.
+
+**Toda subida logava um erro que não era erro.** O Npgsql tenta criptografia GSS por padrão e
+carrega `libgssapi_krb5` — que a imagem chiseled não tem. A conexão funciona, o Npgsql cai
+para o caminho sem GSS sozinho, mas o log diz:
+
+```
+Cannot load library libgssapi_krb5.so.2
+Error: libgssapi_krb5.so.2: cannot open shared object file
+```
+
+Neste projeto isso é defeito, não ruído tolerável: foi um `Falhas: 0` tecnicamente correto e
+completamente enganoso que produziu o incidente de 2026-08-21, e quem depura uma falha real
+não pode gastar tempo nesta linha. A string de conexão passa a receber
+`Gss Encryption Mode=Disable` quando quem configurou não disse nada a respeito — quem precisar
+de Kerberos declara e a escolha é respeitada.
+
+> A **primeira** versão dessa correção não funcionou, e o contêiner mostrou:
+> `NpgsqlConnectionStringBuilder.ContainsKey` responde `true` para chave conhecida mesmo
+> quando ela não foi informada, então a condição nunca era satisfeita. A verificação passou a
+> ser sobre a string crua. **Duas linhas para zero**, medido nas duas vezes.
+
+---
+
+## 7. O que falta nesta etapa
 
 | Item | Situação |
 |---|---|
-| **Política de Privacidade publicada** | ⬜ Não é código. O rodapé já nomeia o Encarregado; falta a política, e a base legal citada no ADR-0010 §2 está trocada (art. 7º, VI é exercício de direitos em processo; o provável é legítimo interesse, art. 7º, IX, que exige avaliação documentada) |
-| **Dockerfile e CI de deploy** | ⬜ Nada empacota a API nem o worker hoje |
+| **Avaliação de legítimo interesse documentada** | ⬜ A ANPD pode solicitá-la quando a base é o art. 7º, IX. A política está publicada; a avaliação que a sustenta, não |
+| **Revisão jurídica da política publicada** | ⬜ As decisões estão tomadas e implementadas; o parecer confirma que a redação as reflete |
 | **Neon, Cloud Run, Cloudflare** | ⬜ Precisa de contas e segredos. No desdobramento, `RateLimit:AtrasDeProxy` vira `true`, `RateLimit:ChaveInterna` precisa existir dos dois lados, e `OTEL_EXPORTER_OTLP_ENDPOINT` aponta para o coletor |
 | **Agendar o `ciclo-mensal`** | ⬜ O comando existe e está verificado; falta o Cloud Scheduler que o dispara |

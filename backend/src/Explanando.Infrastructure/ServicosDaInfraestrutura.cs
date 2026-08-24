@@ -19,11 +19,51 @@ namespace Explanando.Infrastructure;
 /// </summary>
 public static class ServicosDaInfraestrutura
 {
+    /// <summary>
+    /// Desliga a negociação de GSS quando quem configurou não disse nada a respeito.
+    ///
+    /// <para>O Npgsql tenta criptografia GSS por padrão, e para isso carrega
+    /// <c>libgssapi_krb5</c>. As imagens deste projeto são <c>chiseled</c> — sem gerenciador
+    /// de pacotes e sem essa biblioteca —, por coerência com o
+    /// <c>InvariantGlobalization=true</c> decidido na Etapa 00. O resultado é uma linha
+    /// <c>Error: libgssapi_krb5.so.2: cannot open shared object file</c> em <b>toda</b>
+    /// subida de contêiner.</para>
+    ///
+    /// <para>A conexão funciona: o Npgsql cai para o caminho sem GSS sozinho. Mas o log diz
+    /// "Error" para uma coisa que não é erro — e neste projeto isso é defeito conhecido, não
+    /// ruído tolerável: foi um <c>Falhas: 0</c> tecnicamente correto e completamente
+    /// enganoso que produziu o incidente de 2026-08-21. Alguém depurando uma falha de
+    /// verdade não pode gastar tempo nesta linha.</para>
+    ///
+    /// <para>Só preenche o que estiver <b>ausente</b>: quem precisar de Kerberos declara na
+    /// própria string e a escolha é respeitada.</para>
+    /// </summary>
+    private static string NormalizarConexao(string stringDeConexao)
+    {
+        // A string crua, e nao ContainsKey do construtor: o construtor responde `true` para
+        // chave conhecida mesmo quando ela nao foi informada, entao a condicao nunca era
+        // satisfeita e a normalizacao nao acontecia. Medido — a linha do krb5 continuou
+        // aparecendo depois da primeira versao deste metodo.
+        var jaDeclarado = stringDeConexao.Contains("gss", StringComparison.OrdinalIgnoreCase);
+
+        if (jaDeclarado)
+        {
+            return stringDeConexao;
+        }
+
+        var construtor = new Npgsql.NpgsqlConnectionStringBuilder(stringDeConexao)
+        {
+            GssEncryptionMode = Npgsql.GssEncryptionMode.Disable,
+        };
+
+        return construtor.ConnectionString;
+    }
+
     public static IServiceCollection AdicionarInfraestrutura(
         this IServiceCollection servicos,
         string stringDeConexao)
     {
-        servicos.AdicionarPersistencia(stringDeConexao);
+        servicos.AdicionarPersistencia(NormalizarConexao(stringDeConexao));
         servicos.AdicionarIntegracoes();
 
         servicos.AddScoped<IRepositorioDeIngestao, RepositorioDeIngestao>();

@@ -1,0 +1,18 @@
+# O que NÃO entra no contexto de build.
+#
+# Não é só economia: `bin/` e `obj/` da máquina local carregam caminhos absolutos e artefatos
+# de outro sistema operacional, e copiá-los para dentro faz a compilação no contêiner
+# reaproveitar lixo do Windows e falhar de formas difíceis de ler.
+
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+**/*.user
+
+# A saída fica fora do repositório nesta máquina (ver Directory.Build.props), mas a regra
+# permanece para quem clonar fora do OneDrive.
+artifacts/
+
+Dockerfile
+.dockerignore

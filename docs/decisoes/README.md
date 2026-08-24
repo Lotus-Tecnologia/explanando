@@ -17,10 +17,11 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0007](ADR-0007-postura-permissiva-do-motor.md) | Motor permissivo: na dúvida, silêncio | 2026-08-19 | Aceita |
 | [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Aceita |
 | [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
-| [0010](ADR-0010-resolucoes-produto-infraestrutura.md) | Resoluções de produto e infraestrutura | 2026-08-20 | Aceita |
+| [0010](ADR-0010-resolucoes-produto-infraestrutura.md) | Resoluções de produto e infraestrutura | 2026-08-20 | Aceita — **§2 e §4 atualizados pela [0014](ADR-0014-lacuna-camada-2-e-base-legal.md)** |
 | [0011](ADR-0011-v1-e-o-plano-inteiro.md) | O V1 é o plano de execução inteiro | 2026-08-20 | Aceita |
 | [0012](ADR-0012-assimetria-camara-senado.md) | A assimetria entre Câmara e Senado é exibida, não escondida | 2026-08-21 | Aceita |
 | [0013](ADR-0013-identidade-visual-e-taxonomia-de-risco.md) | Identidade visual: a taxonomia de risco é o ADR-0004 em pixels | 2026-08-21 | Aceita |
+| [0014](ADR-0014-lacuna-camada-2-e-base-legal.md) | A lacuna como informação, o dossiê como produto, e a base legal corrigida | 2026-08-22 | Aceita |
 
 ## Questões abertas
 

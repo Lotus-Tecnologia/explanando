@@ -41,10 +41,10 @@ export function Comprovante({
   // Câmara não disponibiliza" seria falso, e escrever só "a fonte" no Senado devolve a
   // suspeita de falha para a plataforma — que é exatamente o que o ADR-0012 §1 evita.
   const frase = casa?.includes("Senado")
-    ? "Senado não disponibiliza o comprovante"
+    ? "O Senado não disponibiliza o comprovante"
     : casa?.includes("Câmara")
-      ? "Comprovante não publicado para esta nota"
-      : "A fonte oficial não disponibiliza o comprovante";
+      ? "A Câmara não publicou o comprovante desta nota"
+      : "O governo não disponibilizou este comprovante";
 
   // Tag inativa: sem hover, sem cursor de link, sem prometer clique. Um link que dá 404
   // afirma que o documento sumiu.

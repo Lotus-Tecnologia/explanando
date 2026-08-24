@@ -32,14 +32,23 @@ export function Rodape() {
       </p>
 
       <p className="mt-3">
+        {/*
+          Aponta para a política, não para um `mailto`. O ADR-0010 §2 pedia o canal; a LGPD
+          pede a política publicada, e um `mailto` sozinho não é política.
+        */}
         <Link
-          href={`mailto:${ENCARREGADO.email}`}
+          href="/privacidade"
           className="font-semibold text-titulo underline underline-offset-2"
         >
           Privacidade e Direitos LGPD
         </Link>{" "}
         · Encarregado de Dados: {ENCARREGADO.nome} —{" "}
-        <span className="numeros">{ENCARREGADO.email}</span>
+        <a
+          href={`mailto:${ENCARREGADO.email}`}
+          className="numeros text-titulo underline underline-offset-2"
+        >
+          {ENCARREGADO.email}
+        </a>
       </p>
     </footer>
   );

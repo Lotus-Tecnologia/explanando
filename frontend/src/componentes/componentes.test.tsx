@@ -10,6 +10,8 @@ import { Paginacao } from "./Paginacao";
 import { BarraDeFiltros } from "./BarraDeFiltros";
 import { ListaDeDespesas } from "./ListaDeDespesas";
 import { SerieMensal } from "./SerieMensal";
+import { PoliticaDePrivacidade } from "./PoliticaDePrivacidade";
+import { Rodape } from "./Rodape";
 import type { MesDoParlamentar } from "@/lib/contrato";
 import { lerFiltros } from "@/lib/filtros";
 import type { ItemDoRanking } from "@/lib/contrato";
@@ -189,7 +191,7 @@ describe("Comprovante", () => {
     );
 
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.getByText(/fonte oficial não disponibiliza o comprovante/i)).toBeInTheDocument();
+    expect(screen.getByText(/governo não disponibilizou este comprovante/i)).toBeInTheDocument();
   });
 });
 
@@ -499,13 +501,18 @@ describe("Comprovante — a ausencia atribuida a fonte certa (ADR-0012 §1)", ()
     );
 
     expect(screen.queryByText(/senado/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/não (foi )?publicad/i)).toBeInTheDocument();
+    // "desta nota", e nao "a Camara nao disponibiliza": ela publica 70,5% das notas, entao
+    // generalizar a ausencia para a casa seria falso.
+    expect(screen.getByText(/câmara não publicou o comprovante desta nota/i)).toBeInTheDocument();
   });
 
-  it("sem saber a casa, nao inventa culpado", () => {
+  it("sem saber a casa, a ausencia continua sendo da origem e nao da plataforma", () => {
     render(<Comprovante despesa={despesa({ urlDocumento: null })} />);
 
-    expect(screen.getByText(/fonte oficial|fonte não/i)).toBeInTheDocument();
+    const tag = screen.getByRole("note");
+
+    expect(tag).toHaveTextContent(/governo não disponibilizou/i);
+    expect(tag).toHaveAccessibleName(/ausência é da origem do dado, não da plataforma/i);
   });
 });
 
@@ -623,5 +630,101 @@ describe("SerieMensal", () => {
     const { container } = render(<SerieMensal serie={[]} idDoParlamentar="p1" />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("A opacidade da fonte como ato civico (ADR-0014 §1)", () => {
+  it("na Camara, atribui a ausencia a Camara", () => {
+    // "Comprovante nao publicado" nao diz de quem e' a omissao. A lacuna so' vira informacao
+    // quando tem dono.
+    render(
+      <Comprovante
+        despesa={despesa({ urlDocumento: null, temDocumentoPublicado: false })}
+        casa="Câmara dos Deputados"
+      />,
+    );
+
+    expect(screen.getByText(/câmara não publicou/i)).toBeInTheDocument();
+  });
+
+  it("sem saber a casa, atribui ao poder publico e nao a plataforma", () => {
+    render(<Comprovante despesa={despesa({ urlDocumento: null })} />);
+
+    expect(screen.getByText(/governo não disponibilizou/i)).toBeInTheDocument();
+  });
+
+  it("o bloco de cobertura diz que a lacuna e de dado publico, nao de analise", () => {
+    // Sem essa frase, "3 de 11 regras nao puderam ser aplicadas" e' lido como limitacao
+    // nossa. A limitacao e' da fonte, e dizer isso e' o ato civico.
+    render(
+      <BlocoDeCobertura
+        cobertura={[regra({ silencioEhConclusivo: false, motivoDaAbstencao: "sem teto" })]}
+        regrasSemDado={1}
+      />,
+    );
+
+    expect(screen.getByText(/não publicou/i)).toBeInTheDocument();
+  });
+
+  it("nao inventa ressalva quando nao ha lacuna", () => {
+    render(<BlocoDeCobertura cobertura={[regra()]} regrasSemDado={0} />);
+
+    expect(screen.queryByText(/não publicou/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("PoliticaDePrivacidade", () => {
+  it("nomeia a base legal exata, e nao 'a LAI'", () => {
+    // O ADR-0010 §2 citava o art. 7º, VI — que trata de exercicio de direitos em processo.
+    // A LAI ampara OBTER a informacao publica; ela nao e' base para TRATAR dado pessoal.
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/art\. 7º, IX/i)).toBeInTheDocument();
+    expect(screen.getByText(/leg[ií]timo interesse/i)).toBeInTheDocument();
+  });
+
+  it("declara o prazo de resposta ao titular", () => {
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/15 dias úteis/i)).toBeInTheDocument();
+  });
+
+  it("identifica o encarregado por nome E por canal, que e o que o art. 41 §1 pede", () => {
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/Gustavo Lira Criado/)).toBeInTheDocument();
+    expect(screen.getByText(/privacidade@explanando\.com\.br/)).toBeInTheDocument();
+  });
+
+  it("diz o que NAO e coletado, porque necessidade tambem se prova pelo que falta", () => {
+    // Etapa 01: o CPF do parlamentar, data e municipio de nascimento, redes sociais e a
+    // faixa etaria do socio nao sao ingeridos. LGPD art. 6º, III.
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/não coletamos|não ingerimos|não é coletado/i)).toBeInTheDocument();
+    expect(screen.getByText(/CPF do parlamentar/i)).toBeInTheDocument();
+  });
+
+  it("avisa que o CPF do socio chega mascarado da propria fonte", () => {
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/mascarad/i)).toBeInTheDocument();
+  });
+});
+
+describe("Rodape", () => {
+  it("leva a politica de privacidade, e nao so a um mailto", () => {
+    // O ADR-0010 §2 pede o canal; a LGPD pede a politica publicada. Um mailto sozinho nao e'
+    // politica.
+    render(<Rodape />);
+
+    expect(
+      screen.getByRole("link", { name: "Privacidade e Direitos LGPD" }),
+    ).toHaveAttribute("href", "/privacidade");
+
+    // E o canal continua ali, porque o art. 41 §1 pede identidade E contato.
+    expect(
+      screen.getByRole("link", { name: "privacidade@explanando.com.br" }),
+    ).toHaveAttribute("href", "mailto:privacidade@explanando.com.br");
   });
 });

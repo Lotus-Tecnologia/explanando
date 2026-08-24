@@ -103,7 +103,14 @@ export function BlocoDeCobertura({
             <strong className="numeros">{regrasSemDado}</strong> de{" "}
             <strong className="numeros">{cobertura.length}</strong> regras não puderam ser
             aplicadas integralmente por ausência de dado público.{" "}
-            <strong>A ausência de indicador nelas não significa ausência de achado.</strong>
+            <strong>A ausência de indicador nelas não significa ausência de achado.</strong>{" "}
+            {/*
+              A lacuna com dono. "Não puderam ser aplicadas" sozinho é lido como limitação
+              nossa — e a limitação é da fonte. Dizer de quem ela é transforma a falha de
+              transparência do poder público em informação para quem lê (ADR-0014 §1).
+            */}
+            O que falta aqui não é análise:{" "}
+            <strong>é dado que o poder público não publicou.</strong>
           </>
         )}
       </p>

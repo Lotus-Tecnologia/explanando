@@ -25,6 +25,10 @@ const ROTAS_FIXAS = [
   { caminho: "/", prioridade: 1 },
   { caminho: "/ranking/indice", prioridade: 0.8 },
   { caminho: "/ranking/gravidade", prioridade: 0.8 },
+
+  // A política é página pública e precisa ser encontrável — inclusive por quem quer exercer
+  // um direito e não sabe por onde começar.
+  { caminho: "/privacidade", prioridade: 0.3 },
 ] as const;
 
 export interface RotaDoSitemap {
