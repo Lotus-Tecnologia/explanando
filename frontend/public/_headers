@@ -1,0 +1,16 @@
+# Cabeçalhos dos ativos estáticos servidos pelo Cloudflare Workers.
+#
+# Sem este arquivo, o adaptador entrega `/_next/static/*` com
+# `public, max-age=0, must-revalidate` — medido. E esses arquivos têm o hash do conteúdo no
+# próprio nome: mudou o conteúdo, mudou a URL. Revalidar cada um a cada carregamento é uma ida
+# e volta desperdiçada por chunk, no celular, que é o aparelho da maior parte do tráfego vindo
+# de rede social.
+#
+# `immutable` é seguro justamente por causa do hash: a URL nunca serve outro conteúdo.
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# A fonte é servida do mesmo domínio pelo `next/font`, e também é versionada por hash.
+/_next/static/media/*
+  Cache-Control: public, max-age=31536000, immutable
