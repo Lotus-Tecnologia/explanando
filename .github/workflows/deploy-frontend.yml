@@ -1,0 +1,69 @@
+name: Publicar frontend
+
+# Disparo MANUAL, de propósito.
+#
+# Publicar a cada push na main é conveniente e é uma decisão de política, não um detalhe: o
+# build busca a API pública, e um deploy disparado enquanto ela estiver fora publica um site
+# com 9 páginas e a home dizendo "o ranking não pôde ser carregado" — que é o comportamento
+# correto do código, mas não é o que se quer no ar sem alguém olhando.
+#
+# Para publicar a cada push, acrescente:
+#   push:
+#     branches: [main]
+#     paths: ['frontend/**']
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publicar:
+    name: Build em Linux e deploy no Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # A porta de entrada: publicar algo que nao passa nos testes seria pior que nao
+      # publicar. O job de CI ja faz isso em todo push, mas um disparo manual pode acontecer
+      # de um commit que nunca passou por la.
+      - name: Testes
+        run: npm test
+
+      - name: Publicar
+        run: npm run cf:deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+          # Lidas no BUILD e embutidas nas paginas estaticas.
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_API: ${{ vars.NEXT_PUBLIC_API }}
+
+          # Lida no build, para buscar os 513 perfis sem esbarrar no teto de 120/min da API.
+          # O Worker precisa dela TAMBEM em execucao — isso e' `wrangler secret put`, uma vez,
+          # e nao se configura aqui.
+          EXPLANANDO_CHAVE_INTERNA: ${{ secrets.EXPLANANDO_CHAVE_INTERNA }}
+
+      - name: Conferir o que subiu
+        run: |
+          echo "Confira depois, contra o dominio publicado:"
+          echo "  curl -sI https://explanando.com.br | grep -i cache-control"
+          echo "  curl -s https://explanando.com.br/sitemap.xml | grep -c '<loc>'"
+          echo "Esperado: 517 enderecos quando a API estiver no ar; 4 enquanto nao estiver."
