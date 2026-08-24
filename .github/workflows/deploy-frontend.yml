@@ -56,6 +56,11 @@ jobs:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_API: ${{ vars.NEXT_PUBLIC_API }}
 
+          # Trava de indexacao. Ausente = nao indexa, que e' o padrao seguro. Defina a
+          # variavel de repositorio como `true` so' depois que a API estiver no ar e um deploy
+          # tiver gerado as 513 paginas.
+          NEXT_PUBLIC_INDEXAVEL: ${{ vars.NEXT_PUBLIC_INDEXAVEL }}
+
           # Lida no build, para buscar os 513 perfis sem esbarrar no teto de 120/min da API.
           # O Worker precisa dela TAMBEM em execucao — isso e' `wrangler secret put`, uma vez,
           # e nao se configura aqui.

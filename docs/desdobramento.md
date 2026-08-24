@@ -69,8 +69,9 @@ US$ 20 por assento/mês antes de haver receita.
 | `NEXT_PUBLIC_API` | **sim** | `https://api.explanando.com.br` |
 | `NEXT_PUBLIC_SITE_URL` | **sim** | `https://explanando.com.br` |
 | `EXPLANANDO_CHAVE_INTERNA` | **sim** | **O mesmo valor** de `RateLimit__ChaveInterna` |
+| `NEXT_PUBLIC_INDEXAVEL` | não | **Ausente = não indexa**, que é o padrão seguro. Ligue com a grafia exata `true` só depois que a API estiver no ar e um deploy tiver gerado as 513 páginas |
 
-As duas `NEXT_PUBLIC_` são lidas **no build** e podem ser variáveis simples. A chave interna é
+As demais `NEXT_PUBLIC_` são lidas **no build** e podem ser variáveis simples. A chave interna é
 segredo: `npx wrangler secret put EXPLANANDO_CHAVE_INTERNA`.
 
 O balde do R2 já está declarado em `wrangler.jsonc` como `NEXT_INC_CACHE_R2_BUCKET`; ele só

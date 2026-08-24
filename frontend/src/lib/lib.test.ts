@@ -5,7 +5,7 @@ import {
   ranquearTudo,
 } from "./api";
 import { metadadosDoParlamentar } from "./metadados";
-import { URL_BASE, rotasDoSitemap } from "./site";
+import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { ORDENACOES, ordenacaoPorChave } from "./ordenacoes";
 import { lerFiltros, montarConsulta } from "./filtros";
 import type { ItemDoRanking, Pagina, PerfilDoParlamentar } from "./contrato";
@@ -566,5 +566,41 @@ describe("cabecalho interno", () => {
     const segunda = apiFalsa(10);
     await ranquearTudo("volume");
     expect(cabecalhosDe(segunda.fetchFalso)[0]!["X-Explanando-Interno"]).toBe("segunda");
+  });
+});
+
+// ── A trava de indexacao ─────────────────────────────────────────────────────────────────
+
+describe("ehIndexavel", () => {
+  it("por padrao, NAO indexa", () => {
+    // O padrao seguro e' o inverso do desejado no fim. Um site incompleto indexado gasta a
+    // primeira impressao do buscador — que e' o canal de aquisicao principal do produto — e
+    // desfazer isso e' caro. Esquecer de LIGAR e' visivel; indexar cedo, nao.
+    vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", "");
+
+    expect(ehIndexavel()).toBe(false);
+  });
+
+  it("indexa quando alguem diz explicitamente que pode", () => {
+    vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", "true");
+
+    expect(ehIndexavel()).toBe(true);
+  });
+
+  it("so aceita 'true', e nao qualquer coisa que pareca verdadeira", () => {
+    // "1", "sim", "yes" ligariam a indexacao por acidente de digitacao. Uma unica grafia
+    // aceita torna a intencao inequivoca.
+    for (const valor of ["1", "sim", "yes", "TRUE", "verdadeiro"]) {
+      vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", valor);
+      expect(ehIndexavel()).toBe(false);
+    }
+  });
+
+  it("le a variavel a cada chamada, para o build decidir e nao a importacao", () => {
+    vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", "true");
+    expect(ehIndexavel()).toBe(true);
+
+    vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", "false");
+    expect(ehIndexavel()).toBe(false);
   });
 });

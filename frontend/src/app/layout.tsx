@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Rodape } from "@/componentes/Rodape";
-import { URL_BASE } from "@/lib/site";
+import { URL_BASE, ehIndexavel } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,6 +22,15 @@ export const metadata: Metadata = {
 
   // Base absoluta: sem ela o Next resolve os canônicos contra localhost no build.
   metadataBase: new URL(URL_BASE),
+
+  /*
+    Cinto e suspensório com o robots.txt.
+
+    O `Disallow` impede o rastreamento, mas uma URL bloqueada ainda pode aparecer no índice
+    sem conteúdo se alguém a linkar de fora. O `noindex` fecha esse caso. Os dois saem da
+    mesma trava, então nunca discordam.
+  */
+  robots: ehIndexavel() ? undefined : { index: false, follow: false },
 };
 
 export default function RootLayout({

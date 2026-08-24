@@ -20,6 +20,27 @@ export const ENCARREGADO = {
   email: "privacidade@explanando.com.br",
 } as const;
 
+/**
+ * Se o site pode ser indexado.
+ *
+ * **O padrão é NÃO**, e a inversão é deliberada. A indexação é o canal de aquisição principal
+ * do produto (ADR-0001), e é justamente por isso que ela não pode começar cedo: um site
+ * incompleto — a home dizendo que o ranking não carregou, o sitemap com 4 endereços em vez de
+ * 517 — gasta a primeira impressão do buscador, e desfazer isso custa muito mais do que
+ * esperar.
+ *
+ * Os dois erros possíveis não são simétricos. Esquecer de **ligar** é visível: você abre o
+ * Search Console e não há nada. Indexar cedo é invisível até o estrago estar feito.
+ *
+ * Só a grafia exata `true` liga. "1", "sim", "yes" não ligam — uma única forma aceita torna a
+ * intenção inequívoca, e evita que um valor herdado de outro lugar acione isso por acidente.
+ *
+ * Lida a cada chamada, e não uma vez na importação, para que quem decida seja o build.
+ */
+export function ehIndexavel(): boolean {
+  return process.env.NEXT_PUBLIC_INDEXAVEL === "true";
+}
+
 /** As rotas que existem independentemente de a API responder no build. */
 const ROTAS_FIXAS = [
   { caminho: "/", prioridade: 1 },
