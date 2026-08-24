@@ -141,6 +141,8 @@ despesa não traz local nem hora).
 - **PostgreSQL 17** + EF Core 10 + Npgsql, snake_case
 - **Next.js 16 / React 19 / Tailwind v4** — Tailwind v4 configura por **CSS**, não pelo
   `tailwind.config.js` que o documento de identidade descrevia
+- **Frontend no Cloudflare Workers** via `@opennextjs/cloudflare`, com o ISR em R2
+  ([ADR-0015](docs/decisoes/ADR-0015-frontend-no-cloudflare.md)) — não na Vercel
 - **HybridCache** (memória; ganha Redis via `EXPLANANDO_REDIS`)
 - Repositório **privado** (ADR-0008)
 

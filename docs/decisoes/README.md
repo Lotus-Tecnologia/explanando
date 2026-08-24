@@ -8,7 +8,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 
 | ADR | Decisão | Data | Situação |
 |---|---|---|---|
-| [0001](ADR-0001-frontend-nextjs.md) | Frontend em Next.js, não Blazor | 2026-08-18 | Aceita |
+| [0001](ADR-0001-frontend-nextjs.md) | Frontend em Next.js, não Blazor | 2026-08-18 | Aceita — **host atualizado pela [0015](ADR-0015-frontend-no-cloudflare.md)** |
 | [0002](ADR-0002-escopo-v1-fatia-vertical.md) | V1 é uma fatia vertical só da Câmara | 2026-08-18 | **Substituída pela [0011](ADR-0011-v1-e-o-plano-inteiro.md)** |
 | [0003](ADR-0003-monorepo-com-git.md) | Monorepo, com git desde o commit inicial | 2026-08-18 | Aceita |
 | [0004](ADR-0004-nomenclatura-tecnica.md) | Nomenclatura técnica em todo o produto | 2026-08-18 | Aceita |
@@ -22,6 +22,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0012](ADR-0012-assimetria-camara-senado.md) | A assimetria entre Câmara e Senado é exibida, não escondida | 2026-08-21 | Aceita |
 | [0013](ADR-0013-identidade-visual-e-taxonomia-de-risco.md) | Identidade visual: a taxonomia de risco é o ADR-0004 em pixels | 2026-08-21 | Aceita |
 | [0014](ADR-0014-lacuna-camada-2-e-base-legal.md) | A lacuna como informação, o dossiê como produto, e a base legal corrigida | 2026-08-22 | Aceita |
+| [0015](ADR-0015-frontend-no-cloudflare.md) | O frontend roda no Cloudflare Workers, não na Vercel | 2026-08-22 | Aceita |
 
 ## Questões abertas
 

@@ -4,8 +4,8 @@ Guia operacional do primeiro deploy. Os nomes de variável aqui foram lidos do c
 escritos de memória — errar um faz o serviço subir e não funcionar.
 
 > **Ordem curta:** domínio → Neon → migrations pelo worker → API no Cloud Run → Cloudflare na
-> frente → frontend na Vercel → agendador. O passo das migrations vem antes da API de
-> propósito; ver §5.
+> frente → frontend no Cloudflare Workers → agendador. O passo das migrations vem antes da
+> API de propósito; ver §6.1.
 
 ---
 
@@ -17,11 +17,11 @@ escritos de memória — errar um faz o serviço subir e não funcionar.
 | **Neon** | PostgreSQL | Gratuito (512 MB) | A base ocupa **317 MB** — cabe com 38% de folga. Aperta quando a legislatura 57 fechar, em jan/2027 |
 | **Google Cloud** | Cloud Run (API), Cloud Run Jobs (worker), Artifact Registry (imagens), Cloud Scheduler | Gratuito na faixa de uso | Exige cartão cadastrado mesmo dentro da cota gratuita |
 | **Cloudflare** | DNS, CDN e WAF | Gratuito | É ela que absorve o pico viral (ADR-0001). Sem ela, a premissa de custo não se sustenta |
-| **Vercel** | Frontend Next.js | Hobby (gratuito) | Uso não comercial no plano Hobby; se o produto monetizar, é Pro |
+| **Cloudflare Workers** | Frontend Next.js, via `@opennextjs/cloudflare` | Gratuito | Mesma conta do DNS. Permite uso comercial e não se importa com quem é dono do repositório — ver [ADR-0015](decisoes/ADR-0015-frontend-no-cloudflare.md) |
+| **Cloudflare R2** | O cache incremental do ISR | Gratuito (10 GB) | Balde `explanando-cache-incremental`. **Sem ele o `revalidate` não tem onde guardar a página** |
 
 **Ainda não precisa:** Upstash (o `HybridCache` roda em memória sem ele), coletor de OTel,
-Mercado Pago, Google AI Studio, Resend, R2. Todos entram quando os blocos que dependem deles
-entrarem.
+Mercado Pago, Google AI Studio e Resend. Entram com os blocos que dependem deles.
 
 ---
 
@@ -31,7 +31,7 @@ entrarem.
 |---|---|---|
 | `EXPLANANDO_CONEXAO` | **sim** | A string do Neon, com `Ssl Mode=Require` |
 | `RateLimit__AtrasDeProxy` | **sim**, atrás da Cloudflare | `true` |
-| `RateLimit__ChaveInterna` | **sim** | Segredo compartilhado com a Vercel. Gere com `openssl rand -hex 32` |
+| `RateLimit__ChaveInterna` | **sim** | Segredo compartilhado com o Worker do frontend. Gere com `openssl rand -hex 32` |
 | `RateLimit__Capacidade` | não | Padrão 120 |
 | `RateLimit__PorMinuto` | não | Padrão 120 |
 | `EXPLANANDO_REDIS` | não | Só se quiser cache distribuído; sem ela roda em memória |
@@ -58,13 +58,35 @@ quase tudo é espera pelo limitador da BrasilAPI. O padrão do Cloud Run Jobs é
 ele, a tarefa morre e o checkpoint faz a próxima recomeçar de onde parou, mas o ciclo nunca
 fecha. O teto da plataforma é 24 h.
 
-## 4. Os segredos do frontend — Vercel
+## 4. Os segredos do frontend — Cloudflare Workers
+
+O frontend deixou de ir para a Vercel ([ADR-0015](decisoes/ADR-0015-frontend-no-cloudflare.md)):
+o plano Hobby não deploya repositório de organização **e** proíbe uso comercial, e o Pro custa
+US$ 20 por assento/mês antes de haver receita.
 
 | Variável | Obrigatória | Valor |
 |---|---|---|
 | `NEXT_PUBLIC_API` | **sim** | `https://api.explanando.com.br` |
 | `NEXT_PUBLIC_SITE_URL` | **sim** | `https://explanando.com.br` |
 | `EXPLANANDO_CHAVE_INTERNA` | **sim** | **O mesmo valor** de `RateLimit__ChaveInterna` |
+
+As duas `NEXT_PUBLIC_` são lidas **no build** e podem ser variáveis simples. A chave interna é
+segredo: `npx wrangler secret put EXPLANANDO_CHAVE_INTERNA`.
+
+O balde do R2 já está declarado em `wrangler.jsonc` como `NEXT_INC_CACHE_R2_BUCKET`; ele só
+precisa existir na conta com o nome `explanando-cache-incremental`.
+
+**Os comandos:**
+
+```bash
+npx wrangler login          # a autenticação é sua; nenhuma credencial passa por outro lugar
+npm run cf:build            # monta o Worker
+npm run cf:deploy           # publica
+```
+
+> **Não rode isso no Windows.** O adaptador avisa que *"could encounter unpredictable failures
+> during runtime"*, e foi o que aconteceu na medição: a primeira execução completou, as
+> seguintes penduraram em toda rota. Use WSL, ou deixe o CI publicar.
 
 > **`EXPLANANDO_CHAVE_INTERNA` não leva `NEXT_PUBLIC_`, e isso é o ponto.** O Next embute as
 > que levam o prefixo no pacote que vai para o navegador, e chave embutida em pacote público
@@ -74,8 +96,9 @@ fecha. O teto da plataforma é 24 h.
 > perfis de um endereço só, com onze processos em paralelo, e bate no teto de 120/min. Medido —
 > `ErroDaApi: A API respondeu 429` e `Next.js build worker exited with code: 1`.
 
-Marque as três para **Production, Preview e Development**, senão o preview quebra e o
-diagnóstico aponta para o lugar errado.
+**O cache do build precisa ir para o R2.** As 513 páginas não saem como HTML estático — saem
+como ~1.557 arquivos de cache incremental. Sem populá-los, toda página é *miss* na primeira
+visita: funciona, mas desperdiça a pré-renderização inteira.
 
 ## 5. GitHub Actions
 

@@ -49,6 +49,56 @@ jobs:
           echo "Repositório privado, como esperado."
 
   # ---------------------------------------------------------------------------
+  #  Frontend
+  # ---------------------------------------------------------------------------
+  #  Ate aqui o CI nao tocava no frontend: 106 testes, o lint e o tsc cresceram
+  #  desde a Etapa 06 sem nunca terem rodado fora da maquina de quem escreveu.
+  #
+  #  E o build do Cloudflare precisa rodar AQUI por um motivo especifico: o
+  #  @opennextjs/cloudflare avisa que nao e' compativel com Windows e trava de
+  #  forma imprevisivel em execucao. Este job e' o unico lugar onde ele e'
+  #  exercitado em Linux, que e' onde ele vai rodar de verdade.
+  frontend:
+    name: Frontend — testes e bundle do Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes
+        run: npm test
+
+      # Sem API alcancavel aqui, e isso e' esperado: o build degrada para as
+      # rotas que nao dependem dela e continua provando o que este passo existe
+      # para provar — que o adaptador monta o Worker sem quebrar.
+      - name: Bundle do Cloudflare
+        run: npm run cf:build
+
+      - name: Conferir que o Worker foi gerado
+        run: test -f .open-next/worker.js
+
+  # ---------------------------------------------------------------------------
   #  Empacotamento
   # ---------------------------------------------------------------------------
   #  Constroi as duas imagens sem publicar. Publicar exige credencial de registro,
