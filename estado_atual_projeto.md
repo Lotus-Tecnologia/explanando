@@ -277,6 +277,11 @@ Cinco combinados que valem manter:
    histórica: por que a glosa é nula, por que o vermelho é só dos 3,3%, por que o `last`
    ausente é suspeito. Isso é intencional e deve continuar.
 
+### Para desdobrar
+
+O guia operacional — contas, nomes exatos de variável, onde cada segredo vai e a ordem que
+importa — está em [docs/desdobramento.md](docs/desdobramento.md).
+
 ### Documentos de referência
 
 - **13 ADRs** em `docs/decisoes/` — quando um ADR contradiz `docs/especificacao/`, **o ADR
