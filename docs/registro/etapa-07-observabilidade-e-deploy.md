@@ -335,7 +335,62 @@ de Kerberos declara e a escolha é respeitada.
 
 ---
 
-## 7. O que falta nesta etapa
+## 7. O desdobramento — parcial
+
+### 7.1 Neon, e a base de produção completa
+
+Migrations aplicadas pelo worker (a API não mexe em esquema, por decisão da Etapa 05). Depois,
+coleta, varredura e consolidação **contra a Neon**:
+
+| | |
+|---|---|
+| Parlamentares | **513 / 513** |
+| Despesas | **713.383** |
+| Fornecedores | **40.860** |
+| Flags | **21.078** |
+| Consolidados | **20.115** |
+| Checkpoints | **513, zero com alerta** |
+| Volume | **R$ 803.468.145,38** |
+| Banco | **300 MB** de 512 |
+
+**A taxa de sinalização deu 2,955%, contra 2,96% da base anterior.** Os limiares foram
+calibrados contra 28.540 despesas na Etapa 04b e reproduziram o resultado sobre 713 mil,
+coletadas três dias depois, em outro banco. Cada regra caiu na mesma faixa — `REG_KYB_001` em
+0,917% contra 0,918%.
+
+E os **15 fora do ranking de risco** são os mesmos que o ADR-0009 previu.
+
+### 7.2 A fonte da Câmara degradou de novo, e o freio funcionou
+
+A primeira coleta parou em **1m46s**: 61 requisições, **todas `200`, todas vazias**, seis
+reconsultas por deputado, dez deputados seguidos. É a assinatura do
+[incidente de 2026-08-21](incidente-2026-08-21-despesas-vazia.md), e o limite de dez alertas
+seguidos — criado por causa dele — evitou marchar por 513 gravando gasto zero.
+
+**Investigar antes de reexecutar valeu a pena:** a URL que o cliente monta estava certa, e
+bater 12 vezes nela minutos depois deu 12 respostas com 100 itens. Foi janela, não defeito.
+
+### 7.3 Queda de energia em 291/513, e o checkpoint provou o desenho
+
+A retomada **pulou os 290 já feitos** e continuou. Nada refeito, nada perdido — e o
+`0 com alerta` foi o que garantiu que o parcial era confiável.
+
+Uma medição que corrige intuição: a coleta **quente** roda a **0,89 min/deputado** contra
+**1,58** da fria, porque CNPJ já conhecido não é reconsultado. Extrapolar tempo de coleta fria
+para uma retomada superestima em ~2×.
+
+### 7.4 O frontend está no ar, e degradado de propósito
+
+`https://explanando.gustavo-criado.workers.dev` — publicado pelo workflow manual, em Linux.
+
+Como `api.explanando.com.br` ainda não existe, o build caiu no caminho medido: **9 páginas em
+vez de 522, sitemap com 4 endereços**. O código preferiu degradar a quebrar, e a trava de
+indexação impede que o buscador conheça o site assim.
+
+Isso confirmou no ar o `_headers` que não deu para medir no Windows: os ativos estáticos saem
+com **`public, max-age=31536000, immutable`**, e a home com `x-nextjs-cache: HIT`.
+
+## 8. O que falta nesta etapa
 
 | Item | Situação |
 |---|---|
