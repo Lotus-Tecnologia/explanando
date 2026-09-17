@@ -38,6 +38,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 05 | API pública | ✅ Concluída | [etapa-05-api-publica.md](etapa-05-api-publica.md) |
 | 06 | Frontend Next.js | ✅ Concluída | [etapa-06-frontend.md](etapa-06-frontend.md) |
 | 07 | Observabilidade e deploy | 🚧 Em andamento | [etapa-07-observabilidade-e-deploy.md](etapa-07-observabilidade-e-deploy.md) |
+| 08 | A linguagem da interface | ✅ Concluída | [etapa-08-linguagem-da-interface.md](etapa-08-linguagem-da-interface.md) |
 
 ## Incidentes
 
