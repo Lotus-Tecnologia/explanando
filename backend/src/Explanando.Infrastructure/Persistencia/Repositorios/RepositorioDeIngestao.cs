@@ -14,11 +14,11 @@ public sealed class RepositorioDeIngestao(ExplanandoDbContext contexto) : IRepos
 {
     public Task<Parlamentar?> ObterParlamentarAsync(
         int idExterno,
+        TipoParlamentar tipo,
         CancellationToken cancelamento = default) =>
         contexto.Parlamentares
             .FirstOrDefaultAsync(
-                parlamentar => parlamentar.IdExterno == idExterno
-                    && parlamentar.Tipo == TipoParlamentar.DeputadoFederal,
+                parlamentar => parlamentar.IdExterno == idExterno && parlamentar.Tipo == tipo,
                 cancelamento);
 
     /// <summary>

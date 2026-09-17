@@ -434,7 +434,7 @@ public sealed class ServicoDeColetaTests
         private readonly List<Parlamentar> _parlamentares = [];
         private readonly List<Despesa> _despesas = [];
 
-        public Task<Parlamentar?> ObterParlamentarAsync(int idExterno, CancellationToken c = default) =>
+        public Task<Parlamentar?> ObterParlamentarAsync(int idExterno, TipoParlamentar tipo, CancellationToken c = default) =>
             Task.FromResult(_parlamentares.Find(p => p.IdExterno == idExterno));
 
         public Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken c = default) =>

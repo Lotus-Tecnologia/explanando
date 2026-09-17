@@ -41,6 +41,46 @@ public static class ConversorDoSenado
     }
 
     /// <summary>
+    /// O mesmo lote, mas <b>agrupado por senador</b> e com o nome que a origem deu.
+    ///
+    /// <para>Existe porque as duas casas entregam a despesa de formas opostas. A Câmara serve
+    /// por deputado — a identidade está na chamada. A CEAPS serve <b>o ano inteiro de todos os
+    /// senadores num array só</b>, e a identidade está dentro de cada registro, em
+    /// <c>codSenador</c>. <see cref="ConverterLote"/> a descarta, porque o
+    /// <see cref="DespesaDaFonte"/> não tem onde guardá-la.</para>
+    ///
+    /// <para>O nome vem junto porque é o que salva quem não está mais no cadastro: 2025 teve
+    /// <b>82 senadores para 81 cadeiras</b>, e suplente que assumiu e saiu some das listas de
+    /// exercício. Ver <c>docs/contratos/senado.md</c> §4.</para>
+    ///
+    /// <para>Registro sem <c>codSenador</c> é descartado — sem ele a despesa não tem a quem
+    /// pertencer, e atribuí-la a alguém seria inventar.</para>
+    /// </summary>
+    public static IReadOnlyList<DespesasDeUmSenador> ConverterLotePorSenador(string json)
+    {
+        var registros = JsonSerializer.Deserialize<DespesaCeapsJson[]>(json, Opcoes) ?? [];
+
+        return
+        [
+            .. registros
+                .Where(registro => registro.CodSenador > 0)
+                .GroupBy(registro => registro.CodSenador)
+                .Select(grupo => new DespesasDeUmSenador
+                {
+                    CodSenador = grupo.Key,
+
+                    // A origem varia a grafia do mesmo senador entre anos; a primeira serve
+                    // de rotulo e o cadastro tem a palavra final quando conhece o codigo.
+                    NomeNaOrigem = grupo
+                        .Select(registro => registro.NomeSenador)
+                        .FirstOrDefault(nome => !string.IsNullOrWhiteSpace(nome)),
+
+                    Despesas = [.. grupo.Select(Converter)],
+                }),
+        ];
+    }
+
+    /// <summary>
     /// Marcador para tipo de despesa que a origem não informou (76 de 23.615 em 2025).
     ///
     /// Deixar vazio faria o catálogo guardar string em branco e a tela exibir um rótulo
@@ -151,7 +191,20 @@ public static class ConversorDoSenado
     {
         if (registro.Data is { } data && data >= PisoDePlausibilidade)
         {
-            return data;
+            // O relogio de parede, declarado UTC — e nao `ToUniversalTime()`.
+            //
+            // A CEAPS entrega a data com o offset de Brasilia, e o Npgsql recusa gravar
+            // qualquer offset diferente de zero em `timestamp with time zone`. Converter pelo
+            // instante resolveria o erro e estragaria o dado: 2025-03-10T00:00-03:00 viraria
+            // 2025-03-10T03:00Z, e uma nota emitida a' meia-noite andaria um dia toda vez que
+            // a hora fosse depois das 21h. Data de documento e' data de CALENDARIO, nao
+            // instante — e' a mesma leitura que o cliente da Camara faz com
+            // `DateTime.SpecifyKind(..., DateTimeKind.Utc)`.
+            //
+            // Custou uma coleta: as tres primeiras falharam em `SaveChangesAsync` com
+            // "only offset 0 (UTC) is supported", e nenhum teste de conversao pegaria, porque
+            // o defeito so' existe na fronteira com o banco.
+            return new DateTimeOffset(data.DateTime, TimeSpan.Zero);
         }
 
         return new DateTimeOffset(competencia.Ano, competencia.Mes, 1, 0, 0, 0, TimeSpan.Zero);

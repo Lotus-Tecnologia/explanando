@@ -6,7 +6,9 @@ using Explanando.Application.Ingestao;
 using Explanando.Domain.Regras;
 using Explanando.Domain.Retencao;
 using Explanando.Infrastructure;
+using Explanando.Infrastructure.Integracoes.Senado;
 using Explanando.Infrastructure.Persistencia;
+using Explanando.Domain.Parlamentares;
 using Explanando.Worker;
 using Microsoft.EntityFrameworkCore;
 
@@ -120,6 +122,119 @@ switch (comando)
             }
 
             return resultado.Falhas.Count > 0 ? 1 : 0;
+        }
+
+    case "coletar-senado":
+        {
+            var limite = LerInteiro("--limite");
+            var fonte = servicos.GetRequiredService<ClienteDoSenado>();
+            var anos = ClienteDoSenado.AnosDaLegislatura(legislatura, DateTimeOffset.UtcNow.Year);
+
+            Console.WriteLine(
+                $"Coletando a CEAPS da legislatura {legislatura} "
+                + $"({string.Join(", ", anos)})...");
+
+            // A CEAPS entrega o ano inteiro num payload so'; isto ja baixa tudo e agrupa.
+            var senadores = new List<int>();
+
+            await foreach (var senador in fonte.ListarDeputadosAsync().ConfigureAwait(false))
+            {
+                senadores.Add(senador.IdExterno);
+            }
+
+            Console.WriteLine($"{senadores.Count} senadores com despesa na janela.");
+
+            // ---------------------------------------------------------------
+            //  Guarda de colisao de checkpoint
+            //
+            //  `parlamentares` e' unico por (IdExterno, Tipo) e esta correto. Mas
+            //  `checkpoints_ingestao` e' unico por (IdExternoParlamentar, Legislatura), SEM a
+            //  casa — ele foi desenhado quando so' havia deputados. Um codSenador igual ao
+            //  IdExterno de um deputado faria os dois compartilharem checkpoint, e a coleta
+            //  de um pularia a do outro em silencio.
+            //
+            //  Hoje as faixas nem se tocam — senadores vao a 6.381, deputados comecam em
+            //  62.881 —, entao a colisao e' impossivel na pratica e nao vale uma migration em
+            //  producao. Mas "impossivel na pratica" envelhece sem avisar: esta consulta
+            //  custa milissegundos e transforma o dia em que envelhecer num erro claro, em
+            //  vez de dado trocado.
+            // ---------------------------------------------------------------
+            var colisoes = await contexto.Parlamentares
+                .AsNoTracking()
+                .Where(parlamentar => parlamentar.Tipo == TipoParlamentar.DeputadoFederal
+                    && senadores.Contains(parlamentar.IdExterno))
+                .Select(parlamentar => parlamentar.IdExterno)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            if (colisoes.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "*** COLETA ABORTADA: codigo de senador colide com id de deputado. ***");
+                Console.WriteLine($"    Codigos: {string.Join(", ", colisoes.Take(20))}");
+                Console.WriteLine(
+                    "    A chave de checkpoints_ingestao nao tem a casa. Antes de coletar, "
+                    + "acrescente o tipo a essa chave.");
+                return 4;
+            }
+
+            var ingestaoDoSenado = new ServicoDeIngestao(
+                fonte,
+                servicos.GetRequiredService<IFonteDeCadastroEmpresarial>(),
+                servicos.GetRequiredService<IRepositorioDeIngestao>());
+
+            var coletaDoSenado = new ServicoDeColeta(
+                fonte,
+                ingestaoDoSenado,
+                servicos.GetRequiredService<IRepositorioDeCheckpoints>(),
+                servicos.GetRequiredService<IRelogio>());
+
+            var cronometro = System.Diagnostics.Stopwatch.StartNew();
+
+            var saida = await coletaDoSenado
+                .ColetarTudoAsync(legislatura, limite)
+                .ConfigureAwait(false);
+
+            cronometro.Stop();
+
+            Console.WriteLine($"""
+
+                === COLETA DO SENADO ===
+                Senadores visitados : {saida.DeputadosVisitados}
+                Senadores pulados   : {saida.DeputadosPulados}
+                Despesas novas      : {saida.DespesasNovas}
+                Despesas rejeitadas : {saida.DespesasRejeitadas}
+                CNPJ sem consulta   : {saida.FornecedoresNaoEnriquecidos}
+                Alertas de sanidade : {saida.Alertas.Count}
+                Falhas              : {saida.Falhas.Count}
+                Tempo               : {cronometro.Elapsed:hh\:mm\:ss}
+                """);
+
+            foreach (var (motivo, ocorrencias) in saida.MotivosDeRejeicao)
+            {
+                Console.WriteLine($"  {ocorrencias,6}  {motivo}");
+            }
+
+            foreach (var alerta in saida.Alertas.Take(10))
+            {
+                Console.WriteLine($"  [ALERTA] {alerta}");
+            }
+
+            foreach (var falha in saida.Falhas.Take(10))
+            {
+                Console.WriteLine($"  [FALHA]  {falha}");
+            }
+
+            if (saida.InterrompidaPorFonteSuspeita)
+            {
+                Console.WriteLine();
+                Console.WriteLine("*** COLETA INTERROMPIDA: a origem ficou suspeita. ***");
+                Console.WriteLine("    Nada se perdeu; os checkpoints com alerta serao retentados.");
+                return 2;
+            }
+
+            return saida.Falhas.Count > 0 ? 1 : 0;
         }
 
     case "varrer":

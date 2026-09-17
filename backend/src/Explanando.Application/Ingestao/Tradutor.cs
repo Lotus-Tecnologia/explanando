@@ -33,7 +33,7 @@ public static class Tradutor
             NomeParlamentar = deputado.NomeParlamentar,
             SiglaPartido = deputado.SiglaPartido,
             Uf = deputado.Uf,
-            Tipo = TipoParlamentar.DeputadoFederal,
+            Tipo = deputado.Tipo,
             FotoUrl = deputado.FotoUrl,
         };
     }

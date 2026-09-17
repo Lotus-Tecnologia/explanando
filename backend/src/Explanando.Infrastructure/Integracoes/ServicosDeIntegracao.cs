@@ -1,6 +1,7 @@
 using Explanando.Application.Ingestao;
 using Explanando.Infrastructure.Integracoes.BrasilApi;
 using Explanando.Infrastructure.Integracoes.Camara;
+using Explanando.Infrastructure.Integracoes.Senado;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Explanando.Infrastructure.Integracoes;
@@ -62,6 +63,49 @@ public static class ServicosDeIntegracao
                 opcoes.CircuitBreaker.FailureRatio = 0.5;
                 opcoes.CircuitBreaker.MinimumThroughput = 10;
                 opcoes.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+                opcoes.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+            });
+
+        // Registrado pelo TIPO CONCRETO, e nao pela porta.
+        //
+        // `AddHttpClient<IFonteDeParlamentares, T>` liga a porta a um tipo so', e o ultimo
+        // registro venceria — o Senado silenciosamente sequestraria a coleta da Camara. Quem
+        // monta a cadeia do Senado e' o comando `coletar-senado`, explicitamente.
+        servicos
+            .AddHttpClient<ClienteDoSenado>(http =>
+            {
+                // Sem BaseAddress: sao dois servicos em hosts diferentes — o administrativo
+                // publica a CEAPS, o legislativo publica o cadastro. Ver senado.md §1.
+                //
+                // O timeout e' maior que o da Camara porque a resposta e' maior: um ano
+                // inteiro num payload so', 10 MB em 2025. Medido em 0,7 s, mas o custo de
+                // errar para menos aqui e' a coleta morrer no meio do download.
+                http.Timeout = TimeSpan.FromSeconds(120);
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            })
+            .AddStandardResilienceHandler(opcoes =>
+            {
+                // Sao poucas requisicoes — quatro anos mais dois cadastros —, entao insistir
+                // vale mais aqui do que na Camara: cada falha custa um ano inteiro de dado.
+                opcoes.Retry.MaxRetryAttempts = 4;
+                opcoes.Retry.Delay = TimeSpan.FromSeconds(3);
+                opcoes.Retry.UseJitter = true;
+
+                // 45s por tentativa: o maior payload medido sao 10 MB em 0,7 s, entao isto e'
+                // sessenta vezes a folga. Nao adianta ser mais generoso — a janela de
+                // amostragem do disjuntor precisa ser o DOBRO deste valor, e o proprio
+                // framework recusa a configuracao na subida se nao for. Descoberto assim: com
+                // 90s aqui e 120s abaixo, os 42 testes de ponta a ponta falharam em bloco com
+                // OptionsValidationException, porque a API valida isso ao iniciar.
+                opcoes.AttemptTimeout.Timeout = TimeSpan.FromSeconds(45);
+                opcoes.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(6);
+
+                // Limiar alto de propósito: com meia duzia de requisicoes na passada inteira,
+                // o padrao de 10 nunca fecharia o circuito e duas falhas o abririam.
+                opcoes.CircuitBreaker.FailureRatio = 0.9;
+                opcoes.CircuitBreaker.MinimumThroughput = 5;
+                opcoes.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
                 opcoes.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
             });
 

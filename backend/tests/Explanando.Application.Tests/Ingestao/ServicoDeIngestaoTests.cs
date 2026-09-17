@@ -416,7 +416,7 @@ public sealed class ServicoDeIngestaoTests
         public List<Sociedade> Sociedades { get; } = [];
         public List<Despesa> Despesas { get; } = [];
 
-        public Task<Parlamentar?> ObterParlamentarAsync(int idExterno, CancellationToken c = default) =>
+        public Task<Parlamentar?> ObterParlamentarAsync(int idExterno, TipoParlamentar tipo, CancellationToken c = default) =>
             Task.FromResult(Parlamentares.Find(p => p.IdExterno == idExterno));
 
         public Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken c = default) =>

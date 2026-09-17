@@ -1,3 +1,5 @@
+using Explanando.Domain.Parlamentares;
+
 namespace Explanando.Application.Ingestao;
 
 /// <summary>
@@ -17,6 +19,20 @@ public sealed record DeputadoDaFonte
 
     /// <summary>`ultimoStatus.situacao` == "Exercício" no contrato da Camara.</summary>
     public bool EmExercicio { get; init; } = true;
+
+    /// <summary>
+    /// De que casa vem esta pessoa.
+    ///
+    /// <para>O padrao e' deputado para que o caminho da Camara — que nao conhece este campo —
+    /// continue igual. O Senado preenche explicitamente.</para>
+    ///
+    /// <para><b>Nao e' decoracao.</b> A unicidade de parlamentar e' do par
+    /// <c>(IdExterno, Tipo)</c>, e nao do numero: o comentario em
+    /// <c>ParlamentarConfiguracao</c> ja dizia que "o id 204379 da Camara e o id 204379 do
+    /// Senado seriam pessoas diferentes". Sem carregar o tipo ate aqui, a ingestao gravaria
+    /// senador como deputado e a busca por id sozinho poderia devolver a pessoa errada.</para>
+    /// </summary>
+    public TipoParlamentar Tipo { get; init; } = TipoParlamentar.DeputadoFederal;
 }
 
 /// <summary>

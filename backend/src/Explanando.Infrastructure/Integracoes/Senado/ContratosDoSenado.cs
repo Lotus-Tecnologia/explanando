@@ -1,6 +1,27 @@
 using System.Text.Json.Serialization;
+using Explanando.Application.Ingestao;
 
 namespace Explanando.Infrastructure.Integracoes.Senado;
+
+/// <summary>
+/// As despesas de um senador dentro de um lote anual da CEAPS.
+///
+/// <para>A CEAPS entrega o ano inteiro de todos os senadores num array só, com
+/// <c>codSenador</c> em cada registro. Este tipo é o que devolve a identidade que
+/// <see cref="DespesaDaFonte"/> não carrega.</para>
+/// </summary>
+public sealed record DespesasDeUmSenador
+{
+    public required int CodSenador { get; init; }
+
+    /// <summary>
+    /// O nome como a CEAPS o grafou. É a rede de segurança para quem não está mais nas
+    /// listas de exercício — suplente que assumiu e saiu.
+    /// </summary>
+    public string? NomeNaOrigem { get; init; }
+
+    public required IReadOnlyList<DespesaDaFonte> Despesas { get; init; }
+}
 
 /// <summary>
 /// Um lançamento da CEAPS, como a API administrativa do Senado entrega.

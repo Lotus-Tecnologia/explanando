@@ -8,7 +8,18 @@ namespace Explanando.Application.Ingestao;
 /// <summary>Porta de persistencia da ingestao. Implementada na infraestrutura.</summary>
 public interface IRepositorioDeIngestao
 {
-    Task<Parlamentar?> ObterParlamentarAsync(int idExterno, CancellationToken cancelamento = default);
+    /// <summary>
+    /// O parlamentar pelo par <b>(id externo, casa)</b>.
+    ///
+    /// <para>O tipo e' parametro, e nao constante, porque a unicidade e' do par: o id 204379
+    /// da Camara e o id 204379 do Senado seriam pessoas diferentes. Antes de o Senado entrar,
+    /// a implementacao cravava <c>DeputadoFederal</c> aqui — o que faria um senador nunca ser
+    /// encontrado, e a segunda passada bater na chave unica em vez de atualizar.</para>
+    /// </summary>
+    Task<Parlamentar?> ObterParlamentarAsync(
+        int idExterno,
+        TipoParlamentar tipo,
+        CancellationToken cancelamento = default);
 
     Task<Fornecedor?> ObterFornecedorAsync(CpfCnpj documento, CancellationToken cancelamento = default);
 
@@ -182,7 +193,8 @@ public sealed class ServicoDeIngestao(
         DeputadoDaFonte deputado,
         CancellationToken cancelamento)
     {
-        var existente = await repositorio.ObterParlamentarAsync(deputado.IdExterno, cancelamento)
+        var existente = await repositorio
+            .ObterParlamentarAsync(deputado.IdExterno, deputado.Tipo, cancelamento)
             .ConfigureAwait(false);
 
         if (existente is not null)
