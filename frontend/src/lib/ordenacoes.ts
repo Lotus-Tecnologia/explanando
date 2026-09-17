@@ -1,4 +1,5 @@
 import type { OrdenacaoDoRanking } from "./contrato";
+import type { Casa } from "./casas";
 
 /**
  * As três ordenações, cada uma com rota própria.
@@ -14,7 +15,13 @@ import type { OrdenacaoDoRanking } from "./contrato";
  */
 export interface Ordenacao {
   chave: OrdenacaoDoRanking;
-  caminho: string;
+
+  /**
+   * O trecho que segue a casa na rota. Vazio para `volume`, que mora na raiz da casa —
+   * o endereço mais compartilhável de cada ranking é o mais curto.
+   */
+  sufixo: string;
+
   rotulo: string;
   titulo: string;
   descricao: string;
@@ -24,7 +31,7 @@ export interface Ordenacao {
 export const ORDENACOES: readonly Ordenacao[] = [
   {
     chave: "volume",
-    caminho: "/",
+    sufixo: "",
     rotulo: "Volume gasto",
     titulo: "Gastos da cota parlamentar — ranking por volume",
     descricao:
@@ -34,7 +41,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
   },
   {
     chave: "indice",
-    caminho: "/ranking/indice",
+    sufixo: "/indice",
     rotulo: "Densidade de indicadores",
     titulo: "Densidade de indicadores por 100 despesas — ranking",
     descricao:
@@ -44,7 +51,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
   },
   {
     chave: "gravidade",
-    caminho: "/ranking/gravidade",
+    sufixo: "/gravidade",
     rotulo: "Indicadores de alta relevância",
     titulo: "Indicadores de alta relevância — ranking",
     descricao:
@@ -63,4 +70,15 @@ export const ORDENACOES: readonly Ordenacao[] = [
  */
 export function ordenacaoPorChave(chave: string | undefined): Ordenacao | null {
   return ORDENACOES.find((ordenacao) => ordenacao.chave === chave) ?? null;
+}
+
+/**
+ * A rota de um ranking: a casa manda, a ordenação sufixa.
+ *
+ * Existe para que nenhuma tela monte esse endereço à mão. Caminho escrito literalmente em
+ * seis lugares é onde `/senado/indice` vira `/senado/índice` num deles, e o link quebra só
+ * numa aba.
+ */
+export function caminhoDoRanking(casa: Casa, ordenacao: Ordenacao): string {
+  return `${casa.caminho}${ordenacao.sufixo}`;
 }

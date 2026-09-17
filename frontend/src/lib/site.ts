@@ -44,8 +44,16 @@ export function ehIndexavel(): boolean {
 /** As rotas que existem independentemente de a API responder no build. */
 const ROTAS_FIXAS = [
   { caminho: "/", prioridade: 1 },
-  { caminho: "/ranking/indice", prioridade: 0.8 },
-  { caminho: "/ranking/gravidade", prioridade: 0.8 },
+
+  // Seis rotas de ranking: tres ordenacoes VEZES duas casas. A raiz de cada casa e' o
+  // ranking por volume dela, e as duas tem a mesma prioridade — o tamanho desigual das
+  // casas nao vira hierarquia no sitemap.
+  { caminho: "/camara", prioridade: 0.9 },
+  { caminho: "/camara/indice", prioridade: 0.8 },
+  { caminho: "/camara/gravidade", prioridade: 0.8 },
+  { caminho: "/senado", prioridade: 0.9 },
+  { caminho: "/senado/indice", prioridade: 0.8 },
+  { caminho: "/senado/gravidade", prioridade: 0.8 },
 
   // A política é página pública e precisa ser encontrável — inclusive por quem quer exercer
   // um direito e não sabe por onde começar.

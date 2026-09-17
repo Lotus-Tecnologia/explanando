@@ -6,7 +6,8 @@ import {
 } from "./api";
 import { metadadosDoParlamentar } from "./metadados";
 import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
-import { ORDENACOES, ordenacaoPorChave } from "./ordenacoes";
+import { CASAS } from "./casas";
+import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "./ordenacoes";
 import { lerFiltros, montarConsulta } from "./filtros";
 import type { ItemDoRanking, Pagina, PerfilDoParlamentar } from "./contrato";
 
@@ -24,11 +25,13 @@ import type { ItemDoRanking, Pagina, PerfilDoParlamentar } from "./contrato";
 
 // ── Coleta de ids para a pré-renderização ────────────────────────────────────────────────
 
-function itemDoRanking(indice: number): ItemDoRanking {
+function itemDoRanking(indice: number, prefixo = "parlamentar"): ItemDoRanking {
   return {
-    id: `parlamentar-${indice}`,
+    id: `${prefixo}-${indice}`,
     idExterno: 100000 + indice,
-    nomeParlamentar: `PARLAMENTAR ${indice}`,
+    nomeParlamentar: `${prefixo.toUpperCase()} ${indice}`,
+    casa:
+      prefixo === "senador" ? "Senado Federal" : "Câmara dos Deputados",
     siglaPartido: "XX",
     uf: "SP",
     fotoUrl: null,
@@ -43,12 +46,17 @@ function itemDoRanking(indice: number): ItemDoRanking {
   };
 }
 
-function paginaDoRanking(numero: number, tamanho: number, total: number): Pagina<ItemDoRanking> {
+function paginaDoRanking(
+  numero: number,
+  tamanho: number,
+  total: number,
+  prefixo = "parlamentar",
+): Pagina<ItemDoRanking> {
   const inicio = (numero - 1) * tamanho;
   const quantidade = Math.max(0, Math.min(tamanho, total - inicio));
 
   return {
-    itens: Array.from({ length: quantidade }, (_, i) => itemDoRanking(inicio + i)),
+    itens: Array.from({ length: quantidade }, (_, i) => itemDoRanking(inicio + i, prefixo)),
     total,
     numeroDaPagina: numero,
     itensPorPagina: tamanho,
@@ -66,7 +74,7 @@ function respostaOk(corpo: unknown) {
  * atendesse ao pedido literal deixaria passar exatamente o bug que estes testes existem para
  * impedir — o build ficaria verde com 313 parlamentares fora da CDN.
  */
-function apiFalsa(total: number) {
+function apiFalsa(deputados: number, senadores = 0) {
   const chamadas: string[] = [];
 
   const fetchFalso = vi.fn(async (url: string | URL) => {
@@ -77,7 +85,12 @@ function apiFalsa(total: number) {
     const tamanho = Math.min(Math.max(pedido, 1), 200);
     const numero = Math.max(1, Number(endereco.searchParams.get("pagina") ?? 1));
 
-    return respostaOk(paginaDoRanking(numero, tamanho, total));
+    // A casa muda o resultado, como na API de verdade. Uma falsa que ignorasse o parâmetro
+    // devolveria as mesmas pessoas para as duas casas — e um filtro quebrado passaria.
+    const senado = endereco.searchParams.get("casa") === "senadores";
+    const total = senado ? senadores : deputados;
+
+    return respostaOk(paginaDoRanking(numero, tamanho, total, senado ? "senador" : "parlamentar"));
   });
 
   vi.stubGlobal("fetch", fetchFalso);
@@ -99,6 +112,19 @@ describe("coletarIdsParaPreRender", () => {
     expect(new Set(ids).size).toBe(513);
   });
 
+  it("junta AS DUAS CASAS, porque as duas precisam de pagina", async () => {
+    // O ranking é separado porque comparar cotas distintas seria errado. A pré-renderização
+    // não compara nada: buscar uma casa só deixaria a outra inteira fora do sitemap e das
+    // páginas estáticas, e o build passaria verde relatando sucesso.
+    apiFalsa(513, 118);
+
+    const ids = await coletarIdsParaPreRender();
+
+    expect(ids).toHaveLength(631);
+    expect(new Set(ids).size).toBe(631);
+    expect(ids.some((id) => id.startsWith("senador-"))).toBe(true);
+  });
+
   it("nunca pede mais itens do que o servidor entrega, para nao truncar em silencio", async () => {
     const { chamadas } = apiFalsa(513);
 
@@ -109,7 +135,8 @@ describe("coletarIdsParaPreRender", () => {
       expect(pedido).toBeLessThanOrEqual(MAXIMO_DE_ITENS_POR_PAGINA);
     }
 
-    expect(chamadas).toHaveLength(3);
+    // Três páginas para os 513 deputados, mais uma para o Senado vazio nesta montagem.
+    expect(chamadas).toHaveLength(4);
   });
 
   it("devolve lista vazia quando a API esta fora, para o build nao quebrar em CI", async () => {
@@ -156,8 +183,9 @@ describe("coletarIdsParaPreRender", () => {
 
     const ids = await coletarIdsParaPreRender();
 
-    expect(ids).toEqual(["parlamentar-0"]);
-    expect(chamadas).toHaveLength(2);
+    // Uma por casa: cada uma para na primeira página vazia, em vez de confiar no total.
+    expect(ids).toEqual(["parlamentar-0", "parlamentar-0"]);
+    expect(chamadas).toHaveLength(4);
   });
 });
 
@@ -165,7 +193,7 @@ describe("ranquearTudo", () => {
   it("traz os 513 de uma vez, para a tabela nao esconder 463 atras de paginacao", async () => {
     apiFalsa(513);
 
-    const itens = await ranquearTudo("volume");
+    const itens = await ranquearTudo(CASAS[0], "volume");
 
     expect(itens).toHaveLength(513);
   });
@@ -176,7 +204,7 @@ describe("ranquearTudo", () => {
     // sincronia sem ninguem perceber.
     apiFalsa(513);
 
-    const itens = await ranquearTudo("volume");
+    const itens = await ranquearTudo(CASAS[0], "volume");
 
     expect(itens!.slice(0, 3).map((i) => i.id)).toEqual([
       "parlamentar-0",
@@ -188,7 +216,7 @@ describe("ranquearTudo", () => {
   it("pede ao servidor a ordenacao que recebeu", async () => {
     const { chamadas } = apiFalsa(300);
 
-    await ranquearTudo("gravidade");
+    await ranquearTudo(CASAS[0], "gravidade");
 
     expect(chamadas.every((c) => c.includes("ordenar=gravidade"))).toBe(true);
   });
@@ -201,7 +229,7 @@ describe("ranquearTudo", () => {
       }),
     );
 
-    await expect(ranquearTudo("volume")).resolves.toBeNull();
+    await expect(ranquearTudo(CASAS[0], "volume")).resolves.toBeNull();
   });
 });
 
@@ -324,13 +352,28 @@ describe("metadadosDoParlamentar", () => {
 describe("rotasDoSitemap", () => {
   const agora = new Date("2026-08-21T00:00:00Z");
 
-  it("lista a home e as tres ordenacoes, que sao paginas distintas e indexaveis", () => {
+  it("lista a home e os SEIS rankings — tres ordenacoes vezes duas casas", () => {
     const rotas = rotasDoSitemap([], agora);
     const enderecos = rotas.map((r) => r.url);
 
     expect(enderecos).toContain(`${URL_BASE}/`);
-    expect(enderecos).toContain(`${URL_BASE}/ranking/indice`);
-    expect(enderecos).toContain(`${URL_BASE}/ranking/gravidade`);
+
+    for (const casa of CASAS) {
+      for (const ordenacao of ORDENACOES) {
+        expect(enderecos).toContain(`${URL_BASE}${caminhoDoRanking(casa, ordenacao)}`);
+      }
+    }
+  });
+
+  it("nao privilegia uma casa sobre a outra", () => {
+    // O tamanho desigual — 513 deputados contra 118 senadores — e' real e nao vira
+    // hierarquia: as raizes das duas casas tem a mesma prioridade no sitemap.
+    const rotas = rotasDoSitemap([], agora);
+    const prioridades = CASAS.map(
+      (casa) => rotas.find((r) => r.url === `${URL_BASE}${casa.caminho}`)!.priority,
+    );
+
+    expect(new Set(prioridades).size).toBe(1);
   });
 
   it("inclui um perfil por parlamentar", () => {
@@ -381,11 +424,22 @@ describe("ORDENACOES", () => {
     expect(ORDENACOES.map((o) => o.chave)).toEqual(["volume", "indice", "gravidade"]);
   });
 
-  it("tem uma rota propria por ordenacao, para as tres serem indexaveis", () => {
-    const caminhos = ORDENACOES.map((o) => o.caminho);
+  it("tem uma rota propria por ordenacao DENTRO de cada casa", () => {
+    for (const casa of CASAS) {
+      const caminhos = ORDENACOES.map((o) => caminhoDoRanking(casa, o));
 
-    expect(new Set(caminhos).size).toBe(3);
-    expect(caminhos).toContain("/");
+      expect(new Set(caminhos).size).toBe(3);
+      expect(caminhos).toContain(casa.caminho);
+    }
+  });
+
+  it("nenhuma rota de ranking colide entre as casas", () => {
+    // O que impede `/senado/indice` de cair no ranking da Camara por descuido de sufixo.
+    const todas = CASAS.flatMap((casa) =>
+      ORDENACOES.map((ordenacao) => caminhoDoRanking(casa, ordenacao)),
+    );
+
+    expect(new Set(todas).size).toBe(todas.length);
   });
 
   it("aparece inteira no sitemap — a rota que nao esta la nao existe para o buscador", () => {
@@ -393,8 +447,10 @@ describe("ORDENACOES", () => {
     // sem anuncia-la deixaria uma pagina publica fora do indice, em silencio.
     const enderecos = rotasDoSitemap([], new Date()).map((r) => r.url);
 
-    for (const ordenacao of ORDENACOES) {
-      expect(enderecos).toContain(`${URL_BASE}${ordenacao.caminho}`);
+    for (const casa of CASAS) {
+      for (const ordenacao of ORDENACOES) {
+        expect(enderecos).toContain(`${URL_BASE}${caminhoDoRanking(casa, ordenacao)}`);
+      }
     }
   });
 
@@ -529,7 +585,7 @@ describe("cabecalho interno", () => {
     vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "");
     const { fetchFalso } = apiFalsa(10);
 
-    await ranquearTudo("volume");
+    await ranquearTudo(CASAS[0], "volume");
 
     for (const cabecalhos of cabecalhosDe(fetchFalso)) {
       expect(cabecalhos["X-Explanando-Interno"]).toBeUndefined();
@@ -542,7 +598,7 @@ describe("cabecalho interno", () => {
     vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "segredo");
     const { fetchFalso } = apiFalsa(513);
 
-    await ranquearTudo("volume");
+    await ranquearTudo(CASAS[0], "volume");
 
     const cabecalhos = cabecalhosDe(fetchFalso);
     expect(cabecalhos).toHaveLength(3);
@@ -558,13 +614,13 @@ describe("cabecalho interno", () => {
     // deixaria de ser segredo.
     vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "primeira");
     const primeira = apiFalsa(10);
-    await ranquearTudo("volume");
+    await ranquearTudo(CASAS[0], "volume");
     expect(cabecalhosDe(primeira.fetchFalso)[0]!["X-Explanando-Interno"]).toBe("primeira");
 
     vi.unstubAllGlobals();
     vi.stubEnv("EXPLANANDO_CHAVE_INTERNA", "segunda");
     const segunda = apiFalsa(10);
-    await ranquearTudo("volume");
+    await ranquearTudo(CASAS[0], "volume");
     expect(cabecalhosDe(segunda.fetchFalso)[0]!["X-Explanando-Interno"]).toBe("segunda");
   });
 });

@@ -28,6 +28,15 @@ export interface Pagina<T> {
 }
 
 export interface ItemDoRanking {
+  /**
+   * A casa por extenso — "Câmara dos Deputados" ou "Senado Federal".
+   *
+   * Redundante com a rota que pediu o ranking, e é assim de propósito: uma linha que circule
+   * fora do contexto, num card compartilhado ou numa exportação, precisa dizer sozinha de
+   * que casa ela fala. As cotas são distintas e os números não se comparam entre casas.
+   */
+  casa: string;
+
   id: string;
   idExterno: number;
   nomeParlamentar: string;

@@ -1,3 +1,4 @@
+import { CASAS, type Casa } from "./casas";
 import type {
   DespesaDetalhada,
   ItemDeDespesa,
@@ -71,13 +72,22 @@ async function buscar<T>(caminho: string): Promise<T | null> {
   return (await resposta.json()) as T;
 }
 
+/**
+ * Uma página do ranking de **uma** casa.
+ *
+ * `casa` não tem padrão, aqui nem na API — omitir lá devolve 400. São cotas distintas, com
+ * regras e valores próprios por UF, e um padrão silencioso faria quem esquecesse o parâmetro
+ * receber uma casa só achando que recebeu as duas.
+ */
 export async function ranquear(
+  casa: Casa,
   ordenacao: OrdenacaoDoRanking = "volume",
   pagina = 1,
   itens = 50,
 ): Promise<Pagina<ItemDoRanking>> {
   const resultado = await buscar<Pagina<ItemDoRanking>>(
-    `/api/v1/parlamentares?ordenar=${ordenacao}&pagina=${pagina}&itens=${itens}`,
+    `/api/v1/parlamentares?casa=${casa.parametro}&ordenar=${ordenacao}` +
+      `&pagina=${pagina}&itens=${itens}`,
   );
 
   // O ranking nunca é 404: ou responde, ou é falha de verdade.
@@ -109,6 +119,7 @@ export const MAXIMO_DE_ITENS_POR_PAGINA = 200;
  * melhor que não existir página nenhuma.
  */
 export async function ranquearTudo(
+  casa: Casa,
   ordenacao: OrdenacaoDoRanking,
 ): Promise<ItemDoRanking[] | null> {
   try {
@@ -117,7 +128,7 @@ export async function ranquearTudo(
     let totalDePaginas = 1;
 
     do {
-      const pagina = await ranquear(ordenacao, numero, MAXIMO_DE_ITENS_POR_PAGINA);
+      const pagina = await ranquear(casa, ordenacao, numero, MAXIMO_DE_ITENS_POR_PAGINA);
 
       if (pagina.itens.length === 0) {
         break;
@@ -131,7 +142,7 @@ export async function ranquearTudo(
     return itens;
   } catch (erro) {
     console.warn(
-      `[explanando] Ranking '${ordenacao}' indisponível: ` +
+      `[explanando] Ranking '${ordenacao}' de ${casa.rotulo} indisponível: ` +
         `${erro instanceof Error ? erro.message : erro}`,
     );
 
@@ -151,11 +162,15 @@ export async function ranquearTudo(
  * `dynamicParams` segue no padrão. Pré-renderizar é otimização, não muro.
  */
 export async function coletarIdsParaPreRender(): Promise<string[]> {
-  // 'volume' de propósito: é a única ordenação que inclui os 513. As outras duas excluem
-  // quem está abaixo do piso amostral, e esses 15 também precisam de página.
-  const itens = await ranquearTudo("volume");
+  // 'volume' de propósito: é a única ordenação que inclui todo mundo. As outras duas excluem
+  // quem está abaixo do piso amostral, e essas pessoas também precisam de página.
+  //
+  // AS DUAS CASAS, somadas. O ranking é separado porque comparar as cotas seria errado; a
+  // pré-renderização não compara nada — ela só precisa da lista completa de quem tem perfil.
+  // Buscar uma casa só deixaria a outra inteira fora do sitemap e das páginas estáticas.
+  const porCasa = await Promise.all(CASAS.map((casa) => ranquearTudo(casa, "volume")));
 
-  if (itens === null) {
+  if (porCasa.every((itens) => itens === null)) {
     console.warn(
       "[explanando] Sem ranking para a pré-renderização: os perfis ficam dinâmicos neste build.",
     );
@@ -163,7 +178,7 @@ export async function coletarIdsParaPreRender(): Promise<string[]> {
     return [];
   }
 
-  return itens.map((item) => item.id);
+  return porCasa.flatMap((itens) => itens ?? []).map((item) => item.id);
 }
 
 export function obterPerfil(id: string): Promise<PerfilDoParlamentar | null> {

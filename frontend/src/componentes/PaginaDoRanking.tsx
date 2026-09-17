@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ranquearTudo } from "@/lib/api";
 import { formatarNumero } from "@/lib/formato";
-import { ORDENACOES, type Ordenacao } from "@/lib/ordenacoes";
+import { ORDENACOES, caminhoDoRanking, type Ordenacao } from "@/lib/ordenacoes";
+import { CASAS, type Casa } from "@/lib/casas";
 import { TabelaDoRanking } from "./TabelaDoRanking";
 
 /**
@@ -12,20 +13,58 @@ import { TabelaDoRanking } from "./TabelaDoRanking";
  * de cada ordenação apareça sempre ao lado da tabela — sem ela, "densidade" que exclui 15
  * pessoas é lido como "essas 15 não têm indicador".
  */
-export async function PaginaDoRanking({ ordenacao }: { ordenacao: Ordenacao }) {
-  const itens = await ranquearTudo(ordenacao.chave);
+export async function PaginaDoRanking({
+  casa,
+  ordenacao,
+}: {
+  casa: Casa;
+  ordenacao: Ordenacao;
+}) {
+  const itens = await ranquearTudo(casa, ordenacao.chave);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-titulo">Gastos da cota parlamentar</h1>
+      <h1 className="text-2xl font-bold text-titulo">
+        Gastos da cota parlamentar — {casa.nomeOficial}
+      </h1>
 
       <p className="mt-2 max-w-3xl text-sm">
-        Dados públicos da Câmara dos Deputados. Os indicadores vêm de um motor de regras
-        determinístico e{" "}
-        <strong>descrevem inconsistências, não imputam conduta.</strong> Cada achado é
-        identificado pelo código da regra que o produziu, com o documento oficial ao alcance
-        do clique quando a fonte o publica.
+        Dados públicos {casa.chave === "camara" ? "da" : "do"} {casa.nomeOficial}, cota{" "}
+        {casa.cota}. Os indicadores vêm de um motor de regras determinístico e{" "}
+        <strong>descrevem inconsistências, não imputam conduta.</strong> Cada achado traz o
+        que a regra procurou, com o documento oficial ao alcance do clique quando a fonte o
+        publica.
       </p>
+
+      {/*
+        As duas casas ficam sempre visíveis, uma ao lado da outra, e nunca no mesmo ranking:
+        a CEAP e a CEAPS têm regras e valores próprios por UF, e os números não se comparam
+        entre elas. Poder trocar de casa sem voltar à home é conveniência; misturá-las seria
+        erro.
+      */}
+      <nav aria-label="Casa legislativa" className="mt-5">
+        <ul className="flex flex-wrap gap-2">
+          {CASAS.map((opcao) => {
+            const atual = opcao.chave === casa.chave;
+
+            return (
+              <li key={opcao.chave}>
+                <Link
+                  href={caminhoDoRanking(opcao, ordenacao)}
+                  aria-current={atual ? "page" : undefined}
+                  className={
+                    atual
+                      ? "inline-block border-b-2 border-titulo px-1 pb-1 text-sm font-bold text-titulo"
+                      : "inline-block border-b-2 border-transparent px-1 pb-1 text-sm font-semibold text-texto-suave hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+                  }
+                >
+                  {opcao.nomeOficial}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
       <nav aria-label="Ordenação do ranking" className="mt-6">
         <ul className="flex flex-wrap gap-2">
@@ -35,7 +74,7 @@ export async function PaginaDoRanking({ ordenacao }: { ordenacao: Ordenacao }) {
             return (
               <li key={opcao.chave}>
                 <Link
-                  href={opcao.caminho}
+                  href={caminhoDoRanking(casa, opcao)}
                   aria-current={ativa ? "page" : undefined}
                   className={
                     ativa
@@ -71,13 +110,14 @@ export async function PaginaDoRanking({ ordenacao }: { ordenacao: Ordenacao }) {
           <p className="mt-3 text-xs text-texto-suave">
             {ordenacao.chave === "volume" ? (
               <>
-                Os <strong className="numeros">{formatarNumero(itens.length)}</strong>{" "}
-                parlamentares da base aparecem aqui.
+                {"Os "}
+                <strong className="numeros">{formatarNumero(itens.length)}</strong>{" "}
+                {casa.integrantes} da base aparecem aqui.
               </>
             ) : (
               <>
                 <strong className="numeros">{formatarNumero(itens.length)}</strong>{" "}
-                parlamentares aparecem nesta ordenação. Quem tem menos de 100 despesas
+                {casa.integrantes} aparecem nesta ordenação. Quem tem menos de 100 despesas
                 analisadas fica de fora — a densidade seria ruído, não sinal —{" "}
                 <strong>e ficar de fora não significa ausência de achado.</strong>
               </>

@@ -1,22 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PaginaDoRanking } from "@/componentes/PaginaDoRanking";
-import { ORDENACOES, ordenacaoPorChave } from "@/lib/ordenacoes";
+import { casaPorChave } from "@/lib/casas";
+import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "@/lib/ordenacoes";
 
-/*
-  Literal, e não a constante importada de `lib/api`: o Next lê este export **estaticamente**,
-  antes de executar qualquer coisa, e uma referência que ele não consegue resolver derruba o
-  build inteiro com "Invalid segment configuration export". O valor é o mesmo
-  `SEGUNDOS_DE_REVALIDACAO` — cinco minutos, a janela do cache do ranking na API.
-*/
+/* Ver a nota em ../page.tsx: precisa ser literal. */
 export const revalidate = 300;
 
-/**
- * Só as ordenações que não são a home — o volume vive em `/`, para o endereço mais
- * compartilhável do site ser o mais curto.
- */
+const CASA = casaPorChave("senado")!;
+
+/** Só as ordenações que não são a raiz — o volume mora em `/senado`. */
 export function generateStaticParams() {
-  return ORDENACOES.filter((ordenacao) => ordenacao.caminho !== "/").map((ordenacao) => ({
+  return ORDENACOES.filter((ordenacao) => ordenacao.sufixo !== "").map((ordenacao) => ({
     ordenacao: ordenacao.chave,
   }));
 }
@@ -38,17 +33,17 @@ export async function generateMetadata({
   const ordenacao = ordenacaoPorChave(chave);
 
   if (!ordenacao) {
-    return { title: "Ordenação desconhecida" };
+    return {};
   }
 
   return {
-    title: ordenacao.titulo,
-    description: ordenacao.descricao,
-    alternates: { canonical: ordenacao.caminho },
+    title: `${ordenacao.titulo} — ${CASA.nomeOficial}`,
+    description: `${ordenacao.descricao} Cota ${CASA.cota}.`,
+    alternates: { canonical: caminhoDoRanking(CASA, ordenacao) },
   };
 }
 
-export default async function Ranking({
+export default async function Pagina({
   params,
 }: {
   params: Promise<{ ordenacao: string }>;
@@ -56,9 +51,9 @@ export default async function Ranking({
   const { ordenacao: chave } = await params;
   const ordenacao = ordenacaoPorChave(chave);
 
-  if (!ordenacao) {
+  if (!ordenacao || ordenacao.sufixo === "") {
     notFound();
   }
 
-  return <PaginaDoRanking ordenacao={ordenacao} />;
+  return <PaginaDoRanking casa={CASA} ordenacao={ordenacao} />;
 }

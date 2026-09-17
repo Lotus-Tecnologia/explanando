@@ -314,6 +314,7 @@ function doRanking(ajustes: Partial<ItemDoRanking> = {}): ItemDoRanking {
     id: "p1",
     idExterno: 1,
     nomeParlamentar: "MARIA DA SILVA",
+    casa: "Câmara dos Deputados",
     siglaPartido: "PT",
     uf: "SP",
     fotoUrl: null,
