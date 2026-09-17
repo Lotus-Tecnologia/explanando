@@ -413,6 +413,12 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         new()
         {
             Codigo = cobertura.CodigoRegra,
+
+            // A redacao de leitor vem do dominio, e nao da persistencia, porque melhorar o
+            // texto da tela nao pode exigir reprocessar 513 parlamentares. O que o banco
+            // guarda e' o codigo; o que a pagina mostra e' resolvido na leitura.
+            Descricao = CatalogoDeRegras.DescricaoDe(cobertura.CodigoRegra),
+
             Situacao = cobertura.Situacao,
             DespesasComDado = cobertura.DespesasComDado,
             DespesasSemDado = cobertura.DespesasSemDado,

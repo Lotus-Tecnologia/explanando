@@ -117,6 +117,24 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task Cobertura_diz_o_que_a_regra_procura_e_nao_so_o_codigo()
+    {
+        // O código é identificador estável de metodologia para quem integra a API — e ruído
+        // para o cidadão que abriu a página do próprio deputado. O contrato carrega os dois
+        // justamente para que a página possa escolher, em vez de imprimir `REG_TX_002`.
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
+
+        foreach (var regra in perfil.Cobertura)
+        {
+            regra.Descricao.ShouldNotBeNullOrWhiteSpace(
+                $"{regra.Codigo} chegou à borda sem redação de leitor");
+
+            regra.Descricao.ShouldNotContain("REG_");
+        }
+    }
+
+    [Fact]
     public async Task Regra_que_se_absteve_diz_por_que_em_portugues()
     {
         // O ADR-0013 §2 proíbe a interface de renderizar regra abstida como aprovada — e

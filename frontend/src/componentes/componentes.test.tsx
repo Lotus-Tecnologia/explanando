@@ -49,6 +49,9 @@ function despesa(ajustes: Partial<ItemDeDespesa> = {}): ItemDeDespesa {
 function regra(ajustes: Partial<CoberturaDeRegra> = {}): CoberturaDeRegra {
   return {
     codigo: "REG_KYB_001",
+    descricao:
+      "A atividade registrada da empresa não corresponde ao tipo do gasto — como uma " +
+      "empresa de informática emitindo nota de combustível.",
     situacao: "SemAchados",
     despesasComDado: 100,
     despesasSemDado: 0,
@@ -72,13 +75,24 @@ describe("TagDeGravidade", () => {
     );
   });
 
-  it("inclui o código da regra no nome acessível", () => {
-    // Ícone sem rótulo não existe para leitor de tela — e é quem mais depende da forma.
-    render(<TagDeGravidade gravidade="Alta" codigoRegra="REG_KYB_002" />);
+  it("nao lê o código da regra para o leitor de tela", () => {
+    // Antes, o nome acessível era "indicador de alta relevância, regra REG_KYB_002". Quem
+    // usa leitor de tela ouvia a sigla soletrada a cada achado da lista — e a sigla não
+    // significa nada para quem abriu a página do próprio deputado. A frase que explica o
+    // achado já vem logo em seguida, no parágrafo ao lado.
+    render(<TagDeGravidade gravidade="Alta" />);
 
     expect(screen.getByRole("status")).toHaveAccessibleName(
-      expect.stringContaining("REG_KYB_002") as unknown as string,
+      expect.not.stringContaining("REG_") as unknown as string,
     );
+  });
+
+  it("nao imprime o código da regra na tela", () => {
+    // O código continua no JSON da API, onde é identificador estável de metodologia para
+    // quem integra. Na página, é ruído.
+    const { container } = render(<TagDeGravidade gravidade="Alta" />);
+
+    expect(container.textContent).not.toContain("REG_");
   });
 
   it("nao usa caixa alta", () => {
@@ -132,9 +146,15 @@ describe("BlocoDeCobertura", () => {
       <BlocoDeCobertura
         regrasSemDado={1}
         cobertura={[
-          regra({ codigo: "REG_TX_001", situacao: "SemAchados", silencioEhConclusivo: true }),
+          regra({
+            codigo: "REG_TX_001",
+            descricao: "Várias notas do mesmo fornecedor no mesmo mês, em vez de uma só.",
+            situacao: "SemAchados",
+            silencioEhConclusivo: true,
+          }),
           regra({
             codigo: "REG_TX_002",
+            descricao: "O gasto do mês ficou perto do limite mensal da cota do estado.",
             situacao: "SemDado",
             silencioEhConclusivo: false,
             despesasComDado: 0,
@@ -145,8 +165,8 @@ describe("BlocoDeCobertura", () => {
       />,
     );
 
-    const limpa = screen.getByText("REG_TX_001").closest("li")!;
-    const abstida = screen.getByText("REG_TX_002").closest("li")!;
+    const limpa = screen.getByText(/mesmo fornecedor no mesmo mês/i).closest("li")!;
+    const abstida = screen.getByText(/limite mensal da cota do estado/i).closest("li")!;
 
     expect(within(limpa).getByText("Sem indicadores")).toBeInTheDocument();
     expect(within(limpa).queryByText("Não avaliado")).not.toBeInTheDocument();
@@ -170,6 +190,33 @@ describe("BlocoDeCobertura", () => {
       screen.queryByText(/não significa ausência de achado/i),
     ).not.toBeInTheDocument();
     expect(screen.getByText(/puderam ser aplicadas a todas/i)).toBeInTheDocument();
+  });
+
+  it("diz o que a regra procura, em vez do código dela", () => {
+    // Era o defeito mais visível da página: onze `REG_*` como rótulo de linha, num bloco
+    // cujo título é "O que foi analisado". O leitor via a pergunta e recebia a sigla.
+    render(<BlocoDeCobertura regrasSemDado={0} cobertura={[regra()]} />);
+
+    expect(
+      screen.getByText(/empresa de informática emitindo nota de combustível/i),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByText("REG_KYB_001")).not.toBeInTheDocument();
+  });
+
+  it("sem redação, cai para o código em vez de sumir com a regra", () => {
+    // O catálogo do domínio tem teste de deriva, então isto não deve acontecer. Se
+    // acontecer, omitir a linha seria pior: o bloco existe para ser COMPLETO, e uma regra
+    // ausente da lista é lida como regra que ninguém considerou.
+    render(
+      <BlocoDeCobertura
+        regrasSemDado={0}
+        cobertura={[regra({ codigo: "REG_XX_999", descricao: null })]}
+      />,
+    );
+
+    expect(screen.getByText("REG_XX_999")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 });
 
@@ -548,7 +595,12 @@ describe("ListaDeDespesas", () => {
       />,
     );
 
-    expect(screen.getByLabelText(/alta relevância, regra REG_KYB_003/i)).toBeInTheDocument();
+    // A tag carrega o nível; a frase ao lado carrega o achado, com o dado concreto. Juntas
+    // dizem tudo o que a sigla dizia, e dizem para quem não conhece a sigla.
+    expect(screen.getByLabelText(/alta relevância/i)).toBeInTheDocument();
+    expect(screen.getByText("Empresa com 43 dias de atividade.")).toBeInTheDocument();
+
+    expect(document.body.textContent).not.toContain("REG_");
   });
 
   it("diz que a lista esta vazia sem afirmar que nao houve gasto", () => {

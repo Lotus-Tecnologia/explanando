@@ -39,32 +39,50 @@ function LinhaDeRegra({ regra }: { regra: CoberturaDeRegra }) {
   const avaliouTudo = regra.silencioEhConclusivo && regra.despesasSemDado === 0;
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-borda-suave py-2 last:border-b-0">
-      <span className="numeros w-32 shrink-0 text-sm font-semibold text-titulo">
-        {regra.codigo}
-      </span>
+    <li className="border-b border-borda-suave py-2.5 last:border-b-0">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+        {/*
+          A frase é o rótulo da linha, e o código não aparece. O bloco se chama "O que foi
+          analisado": responder isso com `REG_TX_002` é mostrar a pergunta e devolver a
+          sigla. O código continua no JSON, para quem integra a API citar a metodologia.
 
-      {regra.silencioEhConclusivo ? (
-        <span className="text-sm">
-          {regra.flagsEmitidas > 0 ? (
-            <>
-              <strong className="numeros text-titulo">{regra.flagsEmitidas}</strong>{" "}
-              {regra.flagsEmitidas === 1 ? "indicador" : "indicadores"}
-            </>
+          O fallback existe e é o código, não o vazio. O catálogo tem teste de deriva, então
+          não deve acontecer — mas omitir a linha seria pior que uma sigla feia: este bloco
+          existe para ser completo, e regra ausente da lista é lida como regra que ninguém
+          considerou.
+        */}
+        <p
+          className={
+            regra.descricao
+              ? "flex-1 text-sm text-titulo"
+              : "numeros flex-1 text-sm font-semibold text-titulo"
+          }
+        >
+          {regra.descricao ?? regra.codigo}
+        </p>
+
+        <div className="shrink-0">
+          {regra.silencioEhConclusivo ? (
+            <span className="text-sm">
+              {regra.flagsEmitidas > 0 ? (
+                <>
+                  <strong className="numeros text-titulo">{regra.flagsEmitidas}</strong>{" "}
+                  {regra.flagsEmitidas === 1 ? "indicador" : "indicadores"}
+                </>
+              ) : (
+                <span className="text-texto-suave">Sem indicadores</span>
+              )}
+            </span>
           ) : (
-            <span className="text-texto-suave">Sem indicadores</span>
+            <TagDeAbstencao motivo={regra.motivoDaAbstencao} />
           )}
-        </span>
-      ) : (
-        <TagDeAbstencao motivo={regra.motivoDaAbstencao} />
-      )}
+        </div>
+      </div>
 
       {/* O motivo aparece mesmo quando a regra emitiu: ela pode ter avaliado só parte das
           despesas, e o leitor precisa saber sobre quantas o resultado vale. */}
       {!avaliouTudo && regra.motivoDaAbstencao ? (
-        <span className="w-full text-xs text-texto-suave sm:w-auto sm:flex-1">
-          {regra.motivoDaAbstencao}
-        </span>
+        <p className="mt-1 text-xs text-texto-suave">{regra.motivoDaAbstencao}</p>
       ) : null}
     </li>
   );

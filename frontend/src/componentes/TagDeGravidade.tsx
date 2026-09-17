@@ -46,26 +46,25 @@ const FORMA: Record<Gravidade, string> = {
   Alta: "[clip-path:polygon(30%_0%,70%_0%,100%_30%,100%_70%,70%_100%,30%_100%,0%_70%,0%_30%)]",
 };
 
-export function TagDeGravidade({
-  gravidade,
-  codigoRegra,
-}: {
-  gravidade: Gravidade;
-  codigoRegra?: string;
-}) {
+/**
+ * A tag carrega o **peso**, não a identidade da regra.
+ *
+ * O código saiu daqui — do texto e do nome acessível. Ele dizia "indicador de alta
+ * relevância, regra REG_KYB_002", e quem usa leitor de tela ouvia a sigla soletrada a cada
+ * achado da lista. A frase que explica o achado vem logo ao lado, vinda da API, com o valor
+ * e o fornecedor reais; é ela que informa. O código continua no JSON, onde é identificador
+ * estável de metodologia para quem integra.
+ */
+export function TagDeGravidade({ gravidade }: { gravidade: Gravidade }) {
   const { classe, icone, rotulo, descricao } = APARENCIA[gravidade];
-
-  // Nome acessível explícito: ícone sem rótulo não existe para leitor de tela, e o leitor
-  // de tela é justamente quem mais depende da forma.
-  const nomeAcessivel = codigoRegra
-    ? `${descricao}, regra ${codigoRegra}`
-    : descricao;
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 border px-2 py-1 text-xs font-semibold ${classe}`}
       role="status"
-      aria-label={nomeAcessivel}
+      // Nome acessível explícito: ícone sem rótulo não existe para leitor de tela, e o
+      // leitor de tela é justamente quem mais depende da forma.
+      aria-label={descricao}
     >
       <span
         aria-hidden="true"
@@ -76,9 +75,6 @@ export function TagDeGravidade({
       {/* Sem uppercase: caixa alta em texto curto é lida como ênfase, e ênfase sobre um
           achado descritivo é imputação pela tipografia. */}
       <span>{rotulo}</span>
-      {codigoRegra ? (
-        <span className="numeros font-normal opacity-75">{codigoRegra}</span>
-      ) : null}
     </span>
   );
 }

@@ -53,7 +53,27 @@ export interface ItemDoRanking {
 }
 
 export interface CoberturaDeRegra {
+  /**
+   * Identificador estável da metodologia — `REG_TX_002`.
+   *
+   * **Não é para a tela.** Serve a quem integra a API: o banco em due diligence e a redação
+   * investigativa citam a regra por ele. Quem desenha usa {@link descricao}.
+   */
   codigo: string;
+
+  /**
+   * O que a regra procura, em português de leitor.
+   *
+   * Vem do catálogo no domínio, e não de uma tabela aqui, porque cópia na borda envelhece
+   * em silêncio — e porque cada consumidor da API acabaria redigindo a sua, que é como
+   * "nada irregular encontrado" apareceria em algum lugar.
+   *
+   * Nulo só se o código não estiver no catálogo, o que um teste de deriva impede. Quando
+   * for nulo, a linha cai para o código: o bloco de cobertura existe para ser completo, e
+   * regra ausente da lista é lida como regra que ninguém considerou.
+   */
+  descricao: string | null;
+
   situacao: SituacaoDaRegra;
   despesasComDado: number;
   despesasSemDado: number;

@@ -106,6 +106,21 @@ public sealed record MesDoParlamentar
 public sealed record CoberturaDeRegra
 {
     public required string Codigo { get; init; }
+
+    /// <summary>
+    /// O que a regra procura, na redação de leitor do <see cref="CatalogoDeRegras"/>.
+    ///
+    /// <para>Vem daqui, e não de uma tabela no frontend, pelo mesmo motivo que
+    /// <see cref="MotivoDaAbstencao"/>: cópia na borda envelhece em silêncio, e cada
+    /// consumidor acabaria redigindo a sua. <see cref="Codigo"/> continua no contrato — é
+    /// identificador estável de metodologia para quem integra —, mas a página exibe esta
+    /// frase.</para>
+    ///
+    /// <para>Nulo apenas se o código não estiver no catálogo, o que um teste de deriva
+    /// impede. A borda trata o nulo não desenhando a linha.</para>
+    /// </summary>
+    public string? Descricao { get; init; }
+
     public required SituacaoDaRegra Situacao { get; init; }
     public int DespesasComDado { get; init; }
     public int DespesasSemDado { get; init; }

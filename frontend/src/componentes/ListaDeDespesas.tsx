@@ -34,7 +34,7 @@ function LinhaDaDespesa({ despesa, casa }: { despesa: ItemDeDespesa; casa?: stri
         <ul className="mt-3 space-y-2">
           {despesa.flags.map((flag) => (
             <li key={flag.codigoRegra} className="flex flex-wrap items-start gap-2">
-              <TagDeGravidade gravidade={flag.gravidade} codigoRegra={flag.codigoRegra} />
+              <TagDeGravidade gravidade={flag.gravidade} />
               <p className="flex-1 text-xs text-texto">{flag.descricao}</p>
             </li>
           ))}

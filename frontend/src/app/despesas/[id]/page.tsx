@@ -134,7 +134,7 @@ export default async function Despesa({ params }: Parametros) {
             {despesa.flags.map((flag) => (
               <li key={flag.codigoRegra}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <TagDeGravidade gravidade={flag.gravidade} codigoRegra={flag.codigoRegra} />
+                  <TagDeGravidade gravidade={flag.gravidade} />
                   {/* O grau de confiança viaja com o achado porque nem todo indicador é um
                       fato: REG_NET_004 cruza pessoas e sai com 0,7, não com 1,0. */}
                   <span className="numeros text-xs text-texto-suave">
