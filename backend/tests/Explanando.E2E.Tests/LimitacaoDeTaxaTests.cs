@@ -39,7 +39,7 @@ public sealed class ApiComTetoBaixo(string conexao, bool atrasDeProxy = false)
 [Collection(ColecaoDaApi.Nome)]
 public sealed class LimitacaoDeTaxaTests(ApiDeTestes api)
 {
-    private const string Leitura = "/api/v1/parlamentares?itens=1";
+    private const string Leitura = "/api/v1/parlamentares?casa=deputados&itens=1";
 
     private static async Task<HttpResponseMessage> BaterAsync(
         HttpClient cliente,

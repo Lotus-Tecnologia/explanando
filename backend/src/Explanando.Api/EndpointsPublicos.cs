@@ -1,4 +1,5 @@
 using Explanando.Application.Consultas;
+using Explanando.Domain.Parlamentares;
 
 namespace Explanando.Api;
 
@@ -22,9 +23,13 @@ public static class EndpointsPublicos
 
         grupo.MapGet("/parlamentares", RanquearAsync)
             .WithName("Ranquear")
-            .WithSummary("Ranking de parlamentares.")
+            .WithSummary("Ranking de parlamentares de UMA casa.")
             .WithDescription(
-                "Três ordenações, porque são perguntas diferentes: 'volume' é quanto se "
+                "`casa` é obrigatório — 'deputados' ou 'senadores'. Os dois rankings são "
+                + "separados porque as cotas são: a CEAP e a CEAPS têm regras e valores "
+                + "próprios por UF, e o mesmo eixo poria lado a lado números que não medem "
+                + "a mesma coisa. Não há ranking padrão, e omitir a casa é 400. "
+                + "Três ordenações, porque são perguntas diferentes: 'volume' é quanto se "
                 + "gastou, 'indice' é a densidade de indicadores por 100 despesas, e "
                 + "'gravidade' ordena só pelos achados de gravidade alta — a fila de "
                 + "triagem. As duas últimas excluem quem está abaixo do piso amostral; "
@@ -51,11 +56,28 @@ public static class EndpointsPublicos
 
     private static async Task<IResult> RanquearAsync(
         IConsultasPublicas consultas,
+        string? casa,
         string? ordenar,
         int? pagina,
         int? itens,
         CancellationToken cancelamento)
     {
+        // `casa` NAO tem padrao, de proposito. Um padrao silencioso — qualquer um dos dois —
+        // faria quem esquecesse o parametro receber uma casa so' achando que recebeu as
+        // duas, ou as duas misturadas achando que recebeu uma. E' a mesma classe de erro do
+        // idLegislatura da Camara, que responde 200 com lista vazia: o pedido incompleto
+        // precisa falhar alto, nao devolver algo plausivel.
+        if (!TentarLerCasa(casa, out var tipo))
+        {
+            return Results.Problem(
+                title: "Casa não informada ou desconhecida",
+                detail: $"Informe 'casa=deputados' ou 'casa=senadores'. Recebido: '{casa}'. "
+                    + "Os rankings são separados porque as cotas são distintas: a CEAP e a "
+                    + "CEAPS têm regras e valores próprios, e compará-las no mesmo eixo põe "
+                    + "lado a lado números que não medem a mesma coisa.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
         if (!TentarLerOrdenacao(ordenar, out var ordenacao))
         {
             return Results.Problem(
@@ -66,10 +88,32 @@ public static class EndpointsPublicos
         }
 
         var resultado = await consultas
-            .RanquearAsync(ordenacao, pagina ?? 1, itens ?? 50, cancelamento)
+            .RanquearAsync(ordenacao, tipo, pagina ?? 1, itens ?? 50, cancelamento)
             .ConfigureAwait(false);
 
         return Results.Ok(resultado);
+    }
+
+    /// <summary>
+    /// Lê a casa do pedido. Diferente de <see cref="TentarLerOrdenacao"/>, <b>vazio é
+    /// inválido</b>: não há ranking padrão.
+    /// </summary>
+    private static bool TentarLerCasa(string? bruto, out TipoParlamentar casa)
+    {
+        casa = TipoParlamentar.DeputadoFederal;
+
+        return bruto?.Trim().ToLowerInvariant() switch
+        {
+            "deputados" or "deputado" or "camara" or "câmara" => true,
+            "senadores" or "senador" or "senado" => Marcar(TipoParlamentar.Senador, out casa),
+            _ => false,
+        };
+
+        static bool Marcar(TipoParlamentar valor, out TipoParlamentar destino)
+        {
+            destino = valor;
+            return true;
+        }
     }
 
     private static async Task<IResult> ObterPerfilAsync(

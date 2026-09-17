@@ -46,7 +46,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     {
         // Gasto não depende de amostra: um deputado com 3 despesas gastou o que gastou.
         var pagina = await LerAsync<Pagina<ItemDoRanking>>(
-            await Cliente.GetAsync("/api/v1/parlamentares?ordenar=volume"));
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&ordenar=volume"));
 
         pagina.Itens.Select(i => i.Id).ShouldContain(api.ParlamentarSemAmostra);
         pagina.Total.ShouldBe(2);
@@ -60,7 +60,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
         // Abaixo do piso do ADR-0009 a densidade é ruído. Publicá-la com nome e foto seria
         // ranquear alguém por prova fina.
         var pagina = await LerAsync<Pagina<ItemDoRanking>>(
-            await Cliente.GetAsync($"/api/v1/parlamentares?ordenar={ordenacao}"));
+            await Cliente.GetAsync($"/api/v1/parlamentares?casa=deputados&ordenar={ordenacao}"));
 
         pagina.Itens.Select(i => i.Id).ShouldNotContain(api.ParlamentarSemAmostra);
         pagina.Itens.ShouldAllBe(i => i.AmostraSuficiente);
@@ -71,7 +71,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     {
         // Zero diria que a densidade foi medida e deu nada. A interface precisa distinguir.
         var pagina = await LerAsync<Pagina<ItemDoRanking>>(
-            await Cliente.GetAsync("/api/v1/parlamentares?ordenar=volume"));
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&ordenar=volume"));
 
         var semAmostra = pagina.Itens.Single(i => i.Id == api.ParlamentarSemAmostra);
 
@@ -86,7 +86,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     {
         // Aceitar em silêncio devolveria o ranking por volume, e o consumidor acharia que
         // estava ordenando por risco.
-        var resposta = await Cliente.GetAsync("/api/v1/parlamentares?ordenar=inventada");
+        var resposta = await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&ordenar=inventada");
 
         resposta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         (await resposta.Content.ReadAsStringAsync()).ShouldContain("gravidade");
@@ -97,9 +97,81 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     {
         // A paginação é a superfície mais fácil de abusar numa API pública sem autenticação.
         var pagina = await LerAsync<Pagina<ItemDoRanking>>(
-            await Cliente.GetAsync("/api/v1/parlamentares?itens=100000"));
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&itens=100000"));
 
         pagina.ItensPorPagina.ShouldBeLessThanOrEqualTo(200);
+    }
+
+    // ------------------------------------------------------------------
+    //  Duas casas, dois rankings
+    //
+    //  Deputado e senador disputam cotas distintas — a CEAP e a CEAPS têm regras e valores
+    //  próprios por UF. Um ranking que os misture põe no mesmo eixo números que não medem
+    //  a mesma coisa.
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Sem_a_casa_o_ranking_recusa_em_vez_de_escolher_uma()
+    {
+        // É a mesma classe de erro do idLegislatura da Câmara, que responde 200 com lista
+        // vazia: pedido incompleto precisa falhar alto, não devolver algo plausível. Um
+        // padrão silencioso faria quem esquecesse o parâmetro receber uma casa só achando
+        // que recebeu as duas.
+        var resposta = await Cliente.GetAsync("/api/v1/parlamentares?ordenar=volume");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+        var corpo = await resposta.Content.ReadAsStringAsync();
+        corpo.ShouldContain("deputados");
+        corpo.ShouldContain("senadores");
+    }
+
+    [Fact]
+    public async Task O_ranking_de_deputados_nao_traz_senador()
+    {
+        var pagina = await LerAsync<Pagina<ItemDoRanking>>(
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&ordenar=volume"));
+
+        pagina.Itens.Select(i => i.Id).ShouldNotContain(api.SenadorSemeado);
+        pagina.Itens.ShouldAllBe(i => i.Casa == "Câmara dos Deputados");
+    }
+
+    [Fact]
+    public async Task O_ranking_de_senadores_nao_traz_deputado()
+    {
+        var pagina = await LerAsync<Pagina<ItemDoRanking>>(
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=senadores&ordenar=volume"));
+
+        pagina.Total.ShouldBe(1);
+        pagina.Itens.Single().Id.ShouldBe(api.SenadorSemeado);
+        pagina.Itens.Single().Casa.ShouldBe("Senado Federal");
+    }
+
+    [Fact]
+    public async Task Cada_linha_diz_de_que_casa_fala()
+    {
+        // Redundante com o filtro do pedido, e é assim de propósito: uma linha que circule
+        // fora do contexto — num card compartilhado, numa exportação do painel Pro —
+        // precisa dizer sozinha de que casa ela fala.
+        var pagina = await LerAsync<Pagina<ItemDoRanking>>(
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=senadores&ordenar=volume"));
+
+        pagina.Itens.ShouldAllBe(i => !string.IsNullOrWhiteSpace(i.Casa));
+    }
+
+    [Fact]
+    public async Task O_piso_amostral_vale_dentro_da_casa()
+    {
+        // A senadora semeada tem 8 despesas, bem abaixo do piso de 100. Ela sai do ranking
+        // de risco DO SENADO — e não por comparação com os deputados.
+        var porVolume = await LerAsync<Pagina<ItemDoRanking>>(
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=senadores&ordenar=volume"));
+
+        var porIndice = await LerAsync<Pagina<ItemDoRanking>>(
+            await Cliente.GetAsync("/api/v1/parlamentares?casa=senadores&ordenar=indice"));
+
+        porVolume.Itens.Select(i => i.Id).ShouldContain(api.SenadorSemeado);
+        porIndice.Itens.Select(i => i.Id).ShouldNotContain(api.SenadorSemeado);
     }
 
     // ------------------------------------------------------------------
@@ -414,7 +486,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     // ------------------------------------------------------------------
 
     [Theory]
-    [InlineData("/api/v1/parlamentares")]
+    [InlineData("/api/v1/parlamentares?casa=deputados")]
     public async Task A_leitura_declara_que_pode_ser_cacheada(string caminho)
     {
         // Sem este cabeçalho a CDN não guarda nada, e cada acesso do pico viral atravessa
@@ -445,7 +517,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
         // Um 404 cacheado por cinco minutos sobrevive ao parlamentar passar a existir — e
         // um 400 cacheado ensina a CDN a repetir a recusa para quem corrigiu o filtro.
         var inexistente = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");
-        var filtroRuim = await Cliente.GetAsync("/api/v1/parlamentares?ordenar=inventada");
+        var filtroRuim = await Cliente.GetAsync("/api/v1/parlamentares?casa=deputados&ordenar=inventada");
 
         inexistente.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
         filtroRuim.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();

@@ -1,3 +1,5 @@
+using Explanando.Domain.Parlamentares;
+
 namespace Explanando.Application.Consultas;
 
 /// <summary>
@@ -23,8 +25,14 @@ public interface IConsultasPublicas
     /// ordenação por densidade — mas continua no de volume, que não depende de amostra.
     /// Ordenar por um índice que não se sustenta seria publicar ruído com nome e foto.</para>
     /// </summary>
+    /// <para><b>A casa é obrigatória, e não um filtro opcional.</b> Deputado e senador
+    /// disputam cotas distintas — a CEAP e a CEAPS têm regras e valores próprios —, e um
+    /// ranking que os misture põe no mesmo eixo coisas que não se comparam. Sem parâmetro
+    /// padrão aqui, esquecer de separar deixa de ser possível: vira erro de compilação, e
+    /// não uma lista silenciosamente errada.</para>
     Task<Pagina<ItemDoRanking>> RanquearAsync(
         OrdenacaoDoRanking ordenacao,
+        TipoParlamentar casa,
         int pagina,
         int itensPorPagina,
         CancellationToken cancelamento = default);

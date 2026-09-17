@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Explanando.Application.Consultas;
+using Explanando.Domain.Parlamentares;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace Explanando.Infrastructure.Persistencia.Consultas;
@@ -34,20 +35,22 @@ public sealed class ConsultasComCache(IConsultasPublicas interna, HybridCache ca
 
     public async Task<Pagina<ItemDoRanking>> RanquearAsync(
         OrdenacaoDoRanking ordenacao,
+        TipoParlamentar casa,
         int pagina,
         int itensPorPagina,
         CancellationToken cancelamento = default)
     {
-        // A chave carrega os tres parametros: ordenacoes diferentes sao respostas
-        // diferentes, e servir a errada seria pior que nao cachear.
+        // A chave carrega os quatro parametros. A CASA e' o mais critico deles: sem ela na
+        // chave, o ranking da Camara seria servido para quem pediu o do Senado durante os
+        // cinco minutos da janela — dado certo, casa errada, e nada no corpo denunciaria.
         var chave = string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"ranking:{ordenacao}:{pagina}:{itensPorPagina}");
+            $"ranking:{casa}:{ordenacao}:{pagina}:{itensPorPagina}");
 
         return await cache.GetOrCreateAsync(
             chave,
             async token => await interna
-                .RanquearAsync(ordenacao, pagina, itensPorPagina, token)
+                .RanquearAsync(ordenacao, casa, pagina, itensPorPagina, token)
                 .ConfigureAwait(false),
             new HybridCacheEntryOptions
             {

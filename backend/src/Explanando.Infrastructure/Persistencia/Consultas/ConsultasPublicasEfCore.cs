@@ -21,16 +21,27 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
 
     public async Task<Pagina<ItemDoRanking>> RanquearAsync(
         OrdenacaoDoRanking ordenacao,
+        TipoParlamentar casa,
         int pagina,
         int itensPorPagina,
         CancellationToken cancelamento = default)
     {
         var (numero, tamanho) = Normalizar(pagina, itensPorPagina);
 
+        // Resolvido AQUI, e nao dentro da projecao: `NomeDaCasa` e' metodo C# e o EF nao o
+        // traduz para SQL — dentro do Select ele quebraria em tempo de execucao, nao de
+        // compilacao. Como a consulta ja esta filtrada por uma casa so', o nome e' constante
+        // para todas as linhas e entra como parametro.
+        var nomeDaCasa = NomeDaCasa(casa);
+
+        // O filtro por casa vem ANTES de tudo, inclusive do piso amostral: cada ranking e'
+        // uma competicao fechada. Um senador com 200 despesas disputa com os outros 117
+        // senadores, nao com 513 deputados cuja cota tem outra regra e outro valor.
         var consulta =
             from score in contexto.ScoresRisco.AsNoTracking()
             join parlamentar in contexto.Parlamentares.AsNoTracking()
                 on score.ParlamentarId equals parlamentar.Id
+            where parlamentar.Tipo == casa
             select new { score, parlamentar };
 
         // Quem esta abaixo do piso sai das ordenacoes por densidade, e so' delas. O volume
@@ -73,6 +84,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                 SiglaPartido = linha.parlamentar.SiglaPartido,
                 Uf = linha.parlamentar.Uf,
                 FotoUrl = linha.parlamentar.FotoUrl,
+                Casa = nomeDaCasa,
                 VolumeTotalGasto = linha.score.VolumeTotalGasto,
                 DespesasAvaliadas = linha.score.DespesasAvaliadas,
 

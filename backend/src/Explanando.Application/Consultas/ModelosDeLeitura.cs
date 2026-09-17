@@ -37,6 +37,16 @@ public sealed record ItemDoRanking
     public required string Uf { get; init; }
     public string? FotoUrl { get; init; }
 
+    /// <summary>
+    /// A casa, por extenso. Redundante com o filtro do pedido — e é assim de propósito.
+    ///
+    /// <para>Uma linha de ranking que circula fora do contexto do pedido, num card
+    /// compartilhado ou numa exportação do painel Pro, precisa dizer sozinha de que casa
+    /// ela fala. Deputado e senador têm cotas distintas, com valores próprios por UF, e
+    /// misturá-los num mesmo eixo compara coisas diferentes.</para>
+    /// </summary>
+    public required string Casa { get; init; }
+
     /// <summary>O número do B2C. Sempre publicável — não depende de amostra.</summary>
     public decimal VolumeTotalGasto { get; init; }
 

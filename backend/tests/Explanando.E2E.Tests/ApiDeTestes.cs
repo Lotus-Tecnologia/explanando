@@ -43,6 +43,12 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Deputado com poucas despesas: sai do ranking de risco, fica no de volume.</summary>
     public Guid ParlamentarSemAmostra { get; private set; }
 
+    /// <summary>
+    /// Senador. Existe para que a separação dos rankings seja provável: sem alguém da outra
+    /// casa na semente, um filtro quebrado passaria nos testes sem ninguém notar.
+    /// </summary>
+    public Guid SenadorSemeado { get; private set; }
+
     /// <summary>Despesa cujo comprovante a origem não publicou.</summary>
     public Guid DespesaSemComprovante { get; private set; }
 
@@ -116,17 +122,19 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
 
         var ranqueado = Deputado(101, "Deputada Ranqueada", "AP");
         var semAmostra = Deputado(102, "Deputado Sem Amostra", "SP");
+        var senador = Senador(201, "Senadora Semeada", "BA");
 
         // A carteira e' o que permite reconstruir o link do comprovante.
         ranqueado.RegistrarNumeroDeCarteira(1472);
 
-        contexto.Parlamentares.AddRange(ranqueado, semAmostra);
+        contexto.Parlamentares.AddRange(ranqueado, semAmostra, senador);
         contexto.Fornecedores.Add(fornecedor);
         contexto.LimitesCota.Add(LimiteCota.Criar("AP", 50_000m, new DateOnly(2026, 1, 1)));
         await contexto.SaveChangesAsync();
 
         ParlamentarRanqueado = ranqueado.Id;
         ParlamentarSemAmostra = semAmostra.Id;
+        SenadorSemeado = senador.Id;
 
         var despesas = new List<Despesa>();
 
@@ -198,6 +206,32 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
             despesas.Add(despesa);
         }
 
+        // Poucas despesas de propósito: o senador precisa aparecer no ranking de volume
+        // sem alcançar o piso amostral, o que também prova que o piso vale por casa.
+        for (var i = 1; i <= 8; i++)
+        {
+            var doSenador = Despesa.Criar(new NovaDespesa
+            {
+                ParlamentarId = senador.Id,
+                DocumentoFornecedor = fornecedor.Documento,
+                NomeFornecedor = "AUTO POSTO BOMTEMPO LTDA",
+                Competencia = Competencia.Criar(2026, i),
+                TipoDespesa = "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes",
+                CodigoDocumento = $"sen-{i:D3}",
+                NumeroDocumento = i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                CodigoTipoDocumento = 0,
+                DataDocumento = new DateTimeOffset(2026, i, 9, 0, 0, 0, TimeSpan.Zero),
+                ValorDocumento = 700m,
+                ValorLiquido = 700m,
+
+                // Nula, não zero: a CEAPS não publica glosa (ADR-0012 §2).
+                ValorGlosa = null,
+            });
+
+            doSenador.AssociarFornecedor(fornecedor.Id);
+            despesas.Add(doSenador);
+        }
+
         contexto.Despesas.AddRange(despesas);
         await contexto.SaveChangesAsync();
 
@@ -209,6 +243,7 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
         var varredura = servicos.GetRequiredService<Application.Auditoria.ServicoDeVarredura>();
         await varredura.VarrerAsync(ranqueado.Id);
         await varredura.VarrerAsync(semAmostra.Id);
+        await varredura.VarrerAsync(senador.Id);
 
         var retencao = servicos.GetRequiredService<Application.Retencao.ServicoDeRetencao>();
         await retencao.AplicarAsync(JanelaDeRetencao.Ilimitada);
@@ -224,6 +259,18 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
             Uf = uf,
             Tipo = TipoParlamentar.DeputadoFederal,
             FotoUrl = "https://www.camara.leg.br/foto.jpg",
+        });
+
+    private static Parlamentar Senador(int idExterno, string nome, string uf) =>
+        Parlamentar.Criar(new NovoParlamentar
+        {
+            IdExterno = idExterno,
+            NomeCivil = $"{nome} de Souza",
+            NomeParlamentar = nome,
+            SiglaPartido = "ABC",
+            Uf = uf,
+            Tipo = TipoParlamentar.Senador,
+            FotoUrl = "https://www.senado.leg.br/foto.jpg",
         });
 }
 
