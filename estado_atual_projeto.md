@@ -1,6 +1,6 @@
 # Estado atual do projeto — handoff
 
-**Gerado em:** 2026-08-25 · **Último commit:** `21b8c1e` · **Branch:** `main` (sincronizada)
+**Gerado em:** 2026-09-17 · **Último commit:** `69ecf39` · **Branch:** `main` (sincronizada)
 
 Este documento existe para que outra sessão retome sem reler o histórico. O que está aqui foi
 **verificado contra o banco e o código**, não escrito de memória.
@@ -12,12 +12,16 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
 apontar inconsistências financeiras.
 
-**As etapas 00 a 06 estão concluídas. A 07 (observabilidade e deploy) está quase fechada.**
+**As etapas 00 a 06, 08 e 09 estão concluídas. A 07 (observabilidade e deploy) está quase
+fechada.**
 
-> **O marco desta sessão: o produto saiu do `localhost`.** A base de produção na Neon está
-> **completa e verificada** — 513 parlamentares, 713.383 despesas, 21.078 flags — e o frontend
-> está publicado no Cloudflare Workers. O que falta é a API subir no Cloud Run e o frontend
-> ser reconstruído contra ela.
+> **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
+> 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o
+> frontend ser reconstruído contra ela.
+>
+> **E um achado que trava a publicação do Senado:** a taxa de sinalização dele é 19,8% contra
+> 2,955% da Câmara, por lacuna na tabela CNAE × rubrica — artefato, não comportamento. Ver
+> [Etapa 09](docs/registro/etapa-09-ingestao-do-senado.md) §5.4 e a §4.5 aqui.
 
 | Etapa | Situação |
 |---|---|
@@ -26,9 +30,10 @@ apontar inconsistências financeiras.
 | 04 Motor · 04b Calibragem · 04c Armazenamento · 04d Coleta completa | ✅ |
 | 05 API pública de leitura · 06 Frontend Next.js | ✅ |
 | **07 Observabilidade e deploy** | 🚧 **falta a API no Cloud Run e o DNS** |
+| 08 Linguagem da interface · 09 Ingestão do Senado | ✅ |
 
-**Testes:** 695 no backend (423 domínio, 54 aplicação, 167 integração, 10 arquitetura, 41
-ponta a ponta) + **110 no frontend**. CI verde nos quatro jobs.
+**Testes:** 711 no backend (428 domínio, 54 aplicação, 177 integração, 10 arquitetura, 42
+ponta a ponta) + **113 no frontend**. CI verde nos quatro jobs.
 
 ---
 
@@ -158,16 +163,17 @@ agora é a Neon**, e ela está completa:
 
 | Tabela | Linhas |
 |---|---|
-| `parlamentares` | **513** |
-| `despesas` | **713.383** |
+| `parlamentares` | **631** (513 deputados + 118 senadores) |
+| `despesas` | **791.515** |
 | `fornecedores` | **40.860** |
-| `flags_anomalias` | **21.078** |
-| `consolidados_mensais` | **20.115** |
-| `checkpoints_ingestao` | **513**, e **0 com alerta** |
+| `flags_anomalias` | **36.527** |
+| `consolidados_mensais` | **23.655** |
+| `checkpoints_ingestao` | **631**, e **0 com alerta** |
 | **Tamanho** | **300 MB** de 512 (41% de folga) |
 
-Volume total: **R$ 803.468.145,38**. Taxa de sinalização: **2,955%** — contra 2,96% da base
-anterior, o que revalida os limiares do `ParametrosDoMotor` sobre dado novo.
+Volume total: **R$ 924.487.309,77**. A **Câmara** sinaliza **2,955%** — contra 2,96% da base
+anterior, o que revalida os limiares do `ParametrosDoMotor`. O **Senado sinaliza 19,773%**, e
+isso é defeito de calibragem, não de comportamento: ver §4.5.
 
 **A string de conexão vive em `backend/.env.neon`** (ignorado pelo git). Ela está no formato
 chave-valor do Npgsql; a Neon entrega URI, e `backend/converter-conexao.py` traduz sem
@@ -234,7 +240,7 @@ npm run cf:build  # bundle do Cloudflare — NÃO roda no Windows
 
 | | Onde | Estado |
 |---|---|---|
-| **Banco** | Neon (`ep-spring-mode-...sa-east-1`) | ✅ completo, 513/713.383/21.078 |
+| **Banco** | Neon (`ep-spring-mode-...sa-east-1`) | ✅ duas casas, 631/791.515/36.527 |
 | **Frontend** | `https://explanando.gustavo-criado.workers.dev` | ⚠️ publicado, mas **degradado** |
 | **Repositório** | `Lotus-Tecnologia/explanando`, privado | ✅ |
 | **Domínio** | `explanando.com.br` | comprado, **ainda não aponta para nada** |
@@ -301,13 +307,15 @@ depois do `WaitForExit`.
 
 | Pendência | Impacto | De quem é |
 |---|---|---|
-| **Limites da CEAP 2023–2025** | **Alto** | **Sua** — Atos da Mesa, não vem em API. `REG_TX_002` responde `SemDado` nas 713 mil despesas |
+| **Curar a tabela CNAE × rubrica do Senado** | **Alto — trava publicar a casa** | **Sua** — pedida desde a Etapa 01b, agora com medição. A CEAPS tem 7 rubricas onde a CEAP tem 24, e o pacote "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes" não cobre `77` (locadora), `81` (condomínio), `94` (associação) nem o CNAE de tecnologia do Uber. Depois de curar, `varrer` recalcula — não precisa recoletar |
+| **Limites da CEAP 2023–2025** | **Alto** | **Sua** — Atos da Mesa, não vem em API. `REG_TX_002` responde `SemDado` nas 791 mil despesas |
 | **Limites da CEAPS por UF** | Alto para o Senado | **Sua** — idem |
 | **Avaliação de legítimo interesse documentada** | Alto | **Sua** — a ANPD pode solicitá-la (art. 7º, IX) |
 | **Revisão jurídica da política publicada** | Médio | **Sua** |
 | Revisar a tabela CNAE × tipo do Senado | Médio | **Sua** — pedida desde a Etapa 01b |
 | Índice de risco × opacidade da fonte | Médio | **Sua** — decisão em aberto no [ADR-0014](docs/decisoes/ADR-0014-lacuna-camada-2-e-base-legal.md) |
-| Cliente e ingestão do Senado | Médio | Minha — conversor e 68 testes prontos |
+| Acrescentar a casa à chave de `checkpoints_ingestao` | Baixo | Minha — hoje protegido por guarda no comando, não por esquema |
+| Escritórios de apoio do Senado (`REG_NET_003`) | Médio | Minha — a fonte existe e não foi ingerida |
 | Card viral com disclaimer na imagem | Médio | Minha — client-side, não depende de backend |
 | Catalogar os 4 tipos de despesa | Baixo | Minha — grafia em mãos (Etapa 04c §3.5) |
 | 62 despesas rejeitadas por glosa inconsistente | Baixo | Minha — investigar origem × rigidez |
