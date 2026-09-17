@@ -29,7 +29,47 @@ public sealed class CompatibilidadeCnaeTests
         //
         // Se qualquer das casas criar um tipo novo, o teste nao quebra — mas o tipo
         // desconhecido faz a regra se abster, e isso aparece como SemDado na cobertura.
-        CompatibilidadeCnae.TiposCobertos.Count.ShouldBe(30);
+        //
+        // Sao 29 e nao 30 porque a rubrica de consultorias do Senado SAIU da tabela de
+        // proposito. Ver o teste logo abaixo.
+        CompatibilidadeCnae.TiposCobertos.Count.ShouldBe(29);
+    }
+
+    [Fact]
+    public void A_rubrica_aberta_do_senado_fica_FORA_da_tabela()
+    {
+        // "...e outros serviços de apoio ao exercício do mandato parlamentar." O texto da
+        // propria rubrica admite um conjunto ABERTO — e contra um conjunto aberto nenhum
+        // ramo de atividade pode ser declarado incompativel.
+        //
+        // Ela estava na tabela com a lista da rubrica equivalente da Camara, e a medicao
+        // contra a base real mostrou o resultado: 4.405 flags em 8.462 despesas, 52,06%.
+        // Uma regra que sinaliza MAIS DA METADE do que examina nao esta achando desencontro
+        // grosseiro — esta reportando gasto rotineiro. 3.800 das 4.405 eram uma agencia de
+        // viagens (CNAE 79) faturando nesta rubrica, que e' escolha de classificacao do
+        // gabinete, nao incompatibilidade do fornecedor.
+        //
+        // Abster nao e' esconder: a cobertura passa a exibir "nao avaliado" com o motivo,
+        // que e' o desenho do ADR-0007 e do ADR-0013 §2.
+        const string Aberta =
+            "Contratação de consultorias, assessorias, pesquisas, trabalhos técnicos e outros "
+            + "serviços de apoio ao exercício do mandato parlamentar";
+
+        CompatibilidadeCnae.ConheceOTipo(Aberta).ShouldBeFalse();
+
+        CompatibilidadeCnae
+            .Avaliar(Aberta, ["7911200"])
+            .ShouldBe(ResultadoDeCompatibilidade.SemBaseParaAvaliar);
+    }
+
+    [Fact]
+    public void A_rubrica_de_consultoria_da_CAMARA_continua_valendo()
+    {
+        // A da Camara e' fechada — "consultorias, pesquisas e trabalhos tecnicos", sem
+        // "e outros servicos". Tirar a do Senado nao pode levar esta junto.
+        CompatibilidadeCnae
+            .Avaliar("CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.", ["4120400"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel);
     }
 
     [Fact]
@@ -71,6 +111,75 @@ public sealed class CompatibilidadeCnaeTests
         CompatibilidadeCnae
             .Avaliar(Generica, ["4120400"])
             .ShouldBe(ResultadoDeCompatibilidade.Incompativel);
+    }
+
+    // ------------------------------------------------------------------
+    //  O que a calibragem contra a base real do Senado acrescentou
+    //
+    //  Cada caso abaixo tem contagem medida em `flags_anomalias`: nao sao hipoteses
+    //  sobre o que PODERIA aparecer, sao os fornecedores que de fato apareceram.
+    // ------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("7711000", "locadora de veiculos — 1.052 despesas sinalizadas")]
+    [InlineData("7490104", "agenciamento de viagens — 1.655")]
+    [InlineData("9430800", "associacao de taxistas — 115")]
+    [InlineData("4520001", "reparacao de veiculos — 101")]
+    [InlineData("4711302", "supermercado, para a alimentacao da rubrica — 100")]
+    public void Locomocao_do_senado_aceita_o_que_locomocao_de_fato_contrata(
+        string cnae,
+        string caso)
+    {
+        CompatibilidadeCnae
+            .Avaliar("Locomoção, hospedagem, alimentação, combustíveis e lubrificantes", [cnae])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel, caso);
+    }
+
+    [Theory]
+    [InlineData("8112500", "condominio e administracao predial — 1.638 despesas sinalizadas")]
+    [InlineData("8011101", "vigilancia do predio — 201")]
+    [InlineData("4321500", "instalacoes eletricas — 141")]
+    [InlineData("9511800", "reparacao e manutencao — 59")]
+    public void Aluguel_aceita_o_que_e_concernente_ao_imovel(string cnae, string caso)
+    {
+        // A rubrica diz, ela mesma, "compreendendo despesas concernentes a eles". Taxa de
+        // condominio e' o exemplo mais claro: e' custo do imovel alugado, nao desencontro.
+        CompatibilidadeCnae
+            .Avaliar(
+                "Aluguel de imóveis para escritório político, compreendendo despesas "
+                + "concernentes a eles.",
+                [cnae])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel, caso);
+    }
+
+    [Fact]
+    public void Aluguel_ainda_estranha_o_que_nao_concerne_ao_imovel()
+    {
+        // O limite da generosidade. "Concernente ao imovel" e' amplo e nao e' infinito —
+        // se fosse, a rubrica teria de sair da tabela como a 20 saiu.
+        CompatibilidadeCnae
+            .Avaliar(
+                "Aluguel de imóveis para escritório político, compreendendo despesas "
+                + "concernentes a eles.",
+                ["5611201"])
+            .ShouldBe(ResultadoDeCompatibilidade.Incompativel);
+    }
+
+    [Theory]
+    [InlineData("4789099", "varejo em geral — 724 despesas sinalizadas")]
+    [InlineData("4649408", "atacado de material de escritorio — 86")]
+    public void Material_de_escritorio_se_compra_no_varejo_e_no_atacado(string cnae, string caso)
+    {
+        // A lista antiga tinha so' subclasses estreitas — 476 livraria, 475 eletro, 464
+        // atacado de bens de consumo. Material de consumo de escritorio se compra em
+        // qualquer varejo, e era isso que 724 despesas estavam dizendo.
+        CompatibilidadeCnae
+            .Avaliar(
+                "Aquisição de material de consumo para uso no escritório político, inclusive "
+                + "aquisição ou locação de software, despesas postais, aquisição de "
+                + "publicações, locação de móveis e de equipamentos.",
+                [cnae])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel, caso);
     }
 
     [Fact]

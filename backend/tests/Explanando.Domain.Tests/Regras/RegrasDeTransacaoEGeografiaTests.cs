@@ -349,4 +349,38 @@ public sealed class RegrasDeTransacaoEGeografiaTests
             .Rodar(new RegraGastoEmRecesso())
             .ShouldBeEmpty();
     }
+
+    [Fact]
+    public void Recesso_se_cala_quando_a_rubrica_junta_estadia_com_combustivel()
+    {
+        // A rubrica da CEAPS que junta cinco coisas. Ela contém os três marcadores de
+        // estadia E combustível — e responde por 43% das despesas do Senado.
+        //
+        // Sem a ressalva, um tanque de gasolina no recesso virava "alimentação ou hospedagem
+        // expressiva". Medido contra a base real: 480 das 480 flags de REG_GEO_003 no Senado
+        // saíam daqui, 22 vezes a taxa da Câmara.
+        const string RubricaDoSenado =
+            "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes";
+
+        new CenarioDeAvaliacao()
+            .ComFornecedor()
+            .ComDespesa(3_000m, mes: 7, dia: 25, tipo: RubricaDoSenado)
+            .Rodar(new RegraGastoEmRecesso())
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Recesso_continua_falando_na_rubrica_agrupada_da_CAMARA()
+    {
+        // O limite da ressalva, e a diferença exata entre as duas casas: a rubrica agrupada
+        // da Câmara junta locomoção, alimentação e hospedagem — mas NÃO combustível. Ela
+        // segue conclusiva, e a correção não pode levá-la junto.
+        const string RubricaDaCamara = "LOCOMOÇÃO, ALIMENTAÇÃO E HOSPEDAGEM";
+
+        new CenarioDeAvaliacao()
+            .ComFornecedor()
+            .ComDespesa(3_000m, mes: 7, dia: 25, tipo: RubricaDaCamara)
+            .Rodar(new RegraGastoEmRecesso())
+            .Count.ShouldBe(1);
+    }
 }

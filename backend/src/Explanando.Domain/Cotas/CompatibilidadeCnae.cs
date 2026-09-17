@@ -166,19 +166,62 @@ public static class CompatibilidadeCnae
         //  jogar fora sinal que existe.
 
         // 45 — locomocao + hospedagem + alimentacao + combustivel, tudo numa rubrica.
+        //
+        //  Os seis ultimos prefixos entraram na calibragem contra a base real do Senado,
+        //  cada um com a contagem do que estava sendo sinalizado indevidamente:
+        //
+        //    77  locadora de veiculos          1.052   alugar carro E' locomocao
+        //    74  agenciamento de viagens       1.655   intermediacao, CNAE profissional
+        //    94  associacao de taxistas          115   taxi cooperativado
+        //    45  comercio e reparacao de veic.   101   oficina e revenda de combustivel
+        //    47  varejo em geral                 100   a rubrica inclui ALIMENTACAO
+        //    82  servicos de apoio a escritorio    55   vale-refeicao e vale-combustivel
+        //
+        //  `47` subsume o antigo `473`, que ficou de fora por redundancia: prefixo de dois
+        //  digitos ja casa toda a divisao.
         ["locomocao, hospedagem, alimentacao, combustiveis e lubrificantes"] =
-            ["49", "50", "51", "55", "56", "79", "473", "468", "192", "522", "5229"],
+            ["49", "50", "51", "55", "56", "79", "47", "468", "192", "52", "77", "74", "94", "45", "82"],
 
         // 46 — aluguel de imovel para escritorio politico.
+        //
+        //  A rubrica diz, ela mesma, "compreendendo despesas CONCERNENTES A ELES" — e o que
+        //  concerne a um imovel alugado e' enumeravel. O que a base real mostrou faltando:
+        //
+        //    81  servicos para edificios       1.638   TAXA DE CONDOMINIO, a maior lacuna
+        //    80  vigilancia e seguranca          201   portaria do predio
+        //    47  varejo                          168   material de manutencao
+        //    82  servicos de apoio a escritorio  145
+        //    43  instalacoes e acabamentos       141   eletrica, hidraulica, ar
+        //    97  servicos domesticos             104   limpeza contratada de PF
+        //    41  construcao de edificios          86   reforma da sala
+        //    95  reparacao e manutencao           59
+        //
+        //  Ficaram DE FORA de proposito, e continuam sinalizando: `69` contabilidade,
+        //  `64` fomento mercantil e `73` publicidade. Nenhum dos tres concerne a um imovel,
+        //  e e' exatamente esse o sinal que a rubrica ainda pode dar.
         ["aluguel de imoveis para escritorio politico, compreendendo despesas concernentes a eles"] =
-            ["68", "6810", "6821", "35", "36", "37", "61"],
+            ["68", "6810", "6821", "35", "36", "37", "61", "81", "80", "47", "82", "43", "97", "41", "95"],
 
         // 47 — passagens, de qualquer modal.
         ["passagens aereas, aquaticas e terrestres nacionais"] = ["49", "50", "51", "79"],
 
-        // 48 — consultorias e assessorias. Mesmo dominio da rubrica equivalente da Camara.
-        ["contratacao de consultorias, assessorias, pesquisas, trabalhos tecnicos e outros servicos de apoio ao exercicio do mandato parlamentar"] =
-            ["69", "70", "71", "72", "73", "62", "63", "85"],
+        // 48 — a rubrica de consultorias do Senado NAO tem entrada, e a ausencia e' a
+        //  decisao.
+        //
+        //  Ela estava aqui com a lista da rubrica equivalente da Camara, o que parecia
+        //  razoavel: mesmo dominio, mesma familia de CNAEs. A medicao contra a base real
+        //  desmentiu — 4.405 flags em 8.462 despesas, 52,06%. Uma regra que sinaliza mais da
+        //  METADE do que examina nao esta achando desencontro grosseiro.
+        //
+        //  A causa esta no texto da propria rubrica, que a da Camara nao tem:
+        //  "...E OUTROS SERVICOS DE APOIO AO EXERCICIO DO MANDATO PARLAMENTAR". Isso e' um
+        //  conjunto ABERTO, e contra um conjunto aberto nenhum ramo de atividade pode ser
+        //  declarado incompativel. Das 4.405, 3.800 eram uma agencia de viagens faturando
+        //  nesta rubrica — escolha de classificacao do gabinete, nao desencontro do
+        //  fornecedor.
+        //
+        //  Sem entrada, `Avaliar` devolve SemBaseParaAvaliar e a cobertura exibe "nao
+        //  avaliado" com o motivo. Nao e' esconder: e' declarar, que e' o ADR-0007.
 
         // 49 — divulgacao NAO tem entrada propria: a rubrica do Senado normaliza para a
         //  mesma chave da Camara ("DIVULGACAO DA ATIVIDADE PARLAMENTAR." perde o ponto
@@ -187,8 +230,12 @@ public static class CompatibilidadeCnae
 
         // 50 — material de consumo, software, postais, publicacoes e locacao de moveis.
         //  Outra rubrica-guarda-chuva: o proprio texto dela lista cinco coisas diferentes.
+        //  A lista antiga so' tinha subclasses estreitas de comercio — `476` livraria,
+        //  `475` eletro, `464` atacado de bens de consumo. Material de consumo de escritorio
+        //  se compra em QUALQUER varejo, e eram 724 despesas dizendo isso; mais 86 no
+        //  atacado. `47` e `46` subsumem as tres antigas.
         ["aquisicao de material de consumo para uso no escritorio politico, inclusive aquisicao ou locacao de software, despesas postais, aquisicao de publicacoes, locacao de moveis e de equipamentos"] =
-            ["476", "464", "475", "17", "18", "77", "62", "63", "53", "58"],
+            ["47", "46", "17", "18", "77", "62", "63", "53", "58"],
 
         // 51 — seguranca privada.
         ["servicos de seguranca privada"] = ["80"],

@@ -115,16 +115,45 @@ public sealed class CatalogoDeTiposDeDespesaTests
     //  Coerência com a tabela curada de CNAE
     // ------------------------------------------------------------------
 
+    /// <summary>
+    /// As rubricas que ficam fora da tabela de CNAE <b>de propósito</b>.
+    ///
+    /// <para>Abstenção deliberada é decisão de produto e mora aqui, nomeada. Abstenção por
+    /// erro de grafia é defeito, e é o que o teste abaixo continua pegando.</para>
+    /// </summary>
+    private static readonly string[] AbstencoesDeliberadas =
+    [
+        // "...e outros serviços de apoio ao exercício do mandato parlamentar" — conjunto
+        // aberto. Com a lista herdada da Câmara, sinalizava 52,06% das despesas dela:
+        // 4.405 em 8.462. Ver CompatibilidadeCnae, entrada 48.
+        "Contratação de consultorias, assessorias, pesquisas, trabalhos técnicos e outros "
+        + "serviços de apoio ao exercício do mandato parlamentar",
+    ];
+
     [Fact]
     public void Todo_tipo_catalogado_e_reconhecido_pela_tabela_de_cnae()
     {
         // Se um tipo entrasse no catálogo com grafia que a tabela curada não reconhece,
-        // REG_KYB_001 se absteria em silêncio sobre todas as despesas dele.
+        // REG_KYB_001 se absteria em silêncio sobre todas as despesas dele. O teste
+        // continua guardando isso — a lista de exceções é explícita e curta de propósito.
         var desconhecidos = CatalogoDeTiposDeDespesa.Nomes
             .Where(nome => !CompatibilidadeCnae.ConheceOTipo(nome))
+            .Where(nome => !AbstencoesDeliberadas.Contains(nome, StringComparer.Ordinal))
             .ToList();
 
         desconhecidos.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void As_abstencoes_deliberadas_existem_no_catalogo()
+    {
+        // A lista de exceções não pode virar depósito de grafia velha: se a origem mudar o
+        // texto da rubrica, a exceção para de casar e o teste de cima volta a acusar.
+        foreach (var nome in AbstencoesDeliberadas)
+        {
+            CatalogoDeTiposDeDespesa.Nomes.ShouldContain(nome);
+            CompatibilidadeCnae.ConheceOTipo(nome).ShouldBeFalse();
+        }
     }
 }
 

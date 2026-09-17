@@ -78,9 +78,16 @@ public sealed class MotorDeRegras(
     /// <item><b>1</b> — 11 regras, calibragem inicial (Etapa 04).</item>
     /// <item><b>2</b> — tabela CNAE calibrada contra 28.540 despesas reais (Etapa 04b).</item>
     /// <item><b>3</b> — REG_NET_004 (concentracao partidaria) e metadados de cobertura.</item>
+    /// <item><b>4</b> — calibragem para as rubricas do Senado (Etapa 10). A CEAPS tem sete
+    /// rubricas onde a CEAP tem vinte e quatro, e as listas herdadas da Camara faziam o
+    /// Senado sinalizar 19,8% contra 2,955%. Duas mudancas: a tabela CNAE perdeu a rubrica
+    /// aberta de consultorias e ganhou, em locomocao, aluguel e material, as familias que a
+    /// base real mostrou faltando; e REG_GEO_003 passou a se abster quando a rubrica junta
+    /// estadia com combustivel, porque ali nao da' para saber se a despesa foi hotel ou
+    /// tanque cheio.</item>
     /// </list>
     /// </summary>
-    public const int VersaoAtual = 3;
+    public const int VersaoAtual = 4;
 
     /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
     public int Versao { get; } = versao;

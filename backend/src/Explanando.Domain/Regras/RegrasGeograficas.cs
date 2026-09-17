@@ -30,9 +30,33 @@ internal static class TiposPresenciais
 
     private static readonly string[] MarcadoresDeEstadia = ["ALIMENTA", "HOSPEDAGEM", "LOCOMO"];
 
+    /// <summary>
+    /// O que torna a rubrica <b>ambígua</b> para efeito de estadia.
+    ///
+    /// <para>O casamento por marcador funciona enquanto a rubrica nomeia uma coisa só. A
+    /// CEAPS do Senado tem uma que junta cinco: <i>"Locomoção, hospedagem, alimentação,
+    /// combustíveis e lubrificantes"</i> — ela contém os três marcadores de estadia <b>e</b>
+    /// combustível, e sozinha responde por 43% das despesas do Senado.</para>
+    ///
+    /// <para>Sem esta ressalva, um tanque de gasolina no recesso virava "alimentação ou
+    /// hospedagem expressiva durante o recesso". Não é hipótese: <b>480 das 480</b> flags de
+    /// <c>REG_GEO_003</c> no Senado saíam dessa rubrica, uma taxa 22 vezes a da Câmara.</para>
+    ///
+    /// <para>A rubrica agrupada da Câmara — <i>"LOCOMOÇÃO, ALIMENTAÇÃO E HOSPEDAGEM"</i> —
+    /// <b>não</b> traz combustível, então continua conclusiva e nada muda para ela. Esta é a
+    /// diferença exata entre as duas casas.</para>
+    ///
+    /// <para>Abster é o ADR-0007: a rubrica não permite afirmar que <i>esta</i> despesa foi
+    /// estadia, e afirmar assim mesmo seria inventar a natureza do gasto.</para>
+    /// </summary>
+    private static readonly string[] MarcadoresQueTornamAmbiguo = ["COMBUST"];
+
     public static bool EhAlimentacaoOuHospedagem(string tipoDespesa) =>
         Array.Exists(
             MarcadoresDeEstadia,
+            marcador => tipoDespesa.Contains(marcador, StringComparison.OrdinalIgnoreCase))
+        && !Array.Exists(
+            MarcadoresQueTornamAmbiguo,
             marcador => tipoDespesa.Contains(marcador, StringComparison.OrdinalIgnoreCase));
 }
 
