@@ -1,6 +1,6 @@
 # Estado atual do projeto — handoff
 
-**Gerado em:** 2026-09-17 · **Último commit:** `69ecf39` · **Branch:** `main` (sincronizada)
+**Gerado em:** 2026-09-17 · **Último commit:** `53c6e0f` · **Branch:** `main` (sincronizada)
 
 Este documento existe para que outra sessão retome sem reler o histórico. O que está aqui foi
 **verificado contra o banco e o código**, não escrito de memória.
@@ -12,16 +12,18 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
 apontar inconsistências financeiras.
 
-**As etapas 00 a 06, 08 e 09 estão concluídas. A 07 (observabilidade e deploy) está quase
+**As etapas 00 a 06 e 08 a 10 estão concluídas. A 07 (observabilidade e deploy) está quase
 fechada.**
 
 > **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
 > 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o
 > frontend ser reconstruído contra ela.
 >
-> **E um achado que trava a publicação do Senado:** a taxa de sinalização dele é 19,8% contra
-> 2,955% da Câmara, por lacuna na tabela CNAE × rubrica — artefato, não comportamento. Ver
-> [Etapa 09](docs/registro/etapa-09-ingestao-do-senado.md) §5.4 e a §4.5 aqui.
+> **O Senado foi calibrado e os rankings separados.** A taxa dele caiu de 19,8% para 5,080%,
+> contra 2,957% da Câmara — e em gravidade alta ficou **abaixo** dela. Os dois rankings são
+> separados porque as cotas são: a casa é parâmetro obrigatório na API, e o piso amostral do
+> ADR-0009 vale dentro dela. Ver
+> [Etapa 10](docs/registro/etapa-10-calibragem-e-rankings-por-casa.md).
 
 | Etapa | Situação |
 |---|---|
@@ -30,10 +32,10 @@ fechada.**
 | 04 Motor · 04b Calibragem · 04c Armazenamento · 04d Coleta completa | ✅ |
 | 05 API pública de leitura · 06 Frontend Next.js | ✅ |
 | **07 Observabilidade e deploy** | 🚧 **falta a API no Cloud Run e o DNS** |
-| 08 Linguagem da interface · 09 Ingestão do Senado | ✅ |
+| 08 Linguagem da interface · 09 Ingestão do Senado · 10 Calibragem e rankings por casa | ✅ |
 
-**Testes:** 711 no backend (428 domínio, 54 aplicação, 177 integração, 10 arquitetura, 42
-ponta a ponta) + **113 no frontend**. CI verde nos quatro jobs.
+**Testes:** 735 no backend (445 domínio, 54 aplicação, 179 integração, 10 arquitetura, 47
+ponta a ponta) + **116 no frontend**. CI verde nos quatro jobs.
 
 ---
 
@@ -166,14 +168,15 @@ agora é a Neon**, e ela está completa:
 | `parlamentares` | **631** (513 deputados + 118 senadores) |
 | `despesas` | **791.515** |
 | `fornecedores` | **40.860** |
-| `flags_anomalias` | **36.527** |
+| `flags_anomalias` | **25.047** |
 | `consolidados_mensais` | **23.655** |
 | `checkpoints_ingestao` | **631**, e **0 com alerta** |
 | **Tamanho** | **300 MB** de 512 (41% de folga) |
 
-Volume total: **R$ 924.487.309,77**. A **Câmara** sinaliza **2,955%** — contra 2,96% da base
-anterior, o que revalida os limiares do `ParametrosDoMotor`. O **Senado sinaliza 19,773%**, e
-isso é defeito de calibragem, não de comportamento: ver §4.5.
+Volume total: **R$ 924.487.309,77**. A **Câmara** sinaliza **2,957%** — contra 2,96% da base
+anterior, o que revalida os limiares do `ParametrosDoMotor`. O **Senado sinaliza 5,080%**
+depois da calibragem da Etapa 10, e em gravidade alta fica abaixo da Câmara (0,061% contra
+0,097%). O motor está na **versão 4**.
 
 **A string de conexão vive em `backend/.env.neon`** (ignorado pelo git). Ela está no formato
 chave-valor do Npgsql; a Neon entrega URI, e `backend/converter-conexao.py` traduz sem
@@ -240,7 +243,7 @@ npm run cf:build  # bundle do Cloudflare — NÃO roda no Windows
 
 | | Onde | Estado |
 |---|---|---|
-| **Banco** | Neon (`ep-spring-mode-...sa-east-1`) | ✅ duas casas, 631/791.515/36.527 |
+| **Banco** | Neon (`ep-spring-mode-...sa-east-1`) | ✅ duas casas, 631/791.515/25.047 |
 | **Frontend** | `https://explanando.gustavo-criado.workers.dev` | ⚠️ publicado, mas **degradado** |
 | **Repositório** | `Lotus-Tecnologia/explanando`, privado | ✅ |
 | **Domínio** | `explanando.com.br` | comprado, **ainda não aponta para nada** |
@@ -307,7 +310,7 @@ depois do `WaitForExit`.
 
 | Pendência | Impacto | De quem é |
 |---|---|---|
-| **Curar a tabela CNAE × rubrica do Senado** | **Alto — trava publicar a casa** | **Sua** — pedida desde a Etapa 01b, agora com medição. A CEAPS tem 7 rubricas onde a CEAP tem 24, e o pacote "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes" não cobre `77` (locadora), `81` (condomínio), `94` (associação) nem o CNAE de tecnologia do Uber. Depois de curar, `varrer` recalcula — não precisa recoletar |
+| **`REG_TX_001` no Senado** | Médio | **Sua** — 25× a taxa da Câmara, 946 das 1.467 em passagens. Não é calibragem: a regra agrupa por fornecedor e mês e descreve corretamente o que vê. Várias notas da mesma agência no mês é padrão real de contratação. Se vale mostrar é decisão de produto |
 | **Limites da CEAP 2023–2025** | **Alto** | **Sua** — Atos da Mesa, não vem em API. `REG_TX_002` responde `SemDado` nas 791 mil despesas |
 | **Limites da CEAPS por UF** | Alto para o Senado | **Sua** — idem |
 | **Avaliação de legítimo interesse documentada** | Alto | **Sua** — a ANPD pode solicitá-la (art. 7º, IX) |

@@ -13,18 +13,18 @@ para leitura do cidadão.
 
 ## Estado atual
 
-**Etapas 00 a 06, 08 e 09 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
+**Etapas 00 a 06 e 08 a 10 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
 contratos reais das APIs, domínio, persistência, ingestão das duas casas, motor de regras,
 calibragem, API pública de leitura e interface em Next.js.
 
-**711 testes no backend** (428 de domínio, 54 de aplicação, 177 de integração, 42 de ponta a
-ponta e 10 de arquitetura) e **113 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
+**735 testes no backend** (445 de domínio, 54 de aplicação, 179 de integração, 47 de ponta a
+ponta e 10 de arquitetura) e **116 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
 
 ### O que já está no ar
 
 | | Onde | Situação |
 |---|---|---|
-| **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 36.527 indicadores |
+| **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 25.047 indicadores |
 | **Frontend** | Cloudflare Workers | ⚠️ publicado, e **degradado de propósito** |
 | **API** | — | ❌ ainda só local |
 | **Domínio** | `explanando.com.br` | comprado; ainda não aponta para nada |
@@ -62,10 +62,12 @@ abaixo de quem tem zero.
 > [ADR-0012](docs/decisoes/ADR-0012-assimetria-camara-senado.md): o Senado não publica
 > comprovante e não publica glosa, e a interface diz isso em vez de preencher com zero.
 >
-> **O Senado ainda não está calibrado.** A taxa de sinalização dele é 19,8% contra 2,955% da
-> Câmara, porque a CEAPS tem sete rubricas onde a CEAP tem vinte e quatro e a tabela de
-> CNAE × rubrica não cobre os pacotes. É artefato de tabela, não comportamento — ver
-> [Etapa 09](docs/registro/etapa-09-ingestao-do-senado.md) §5.4.
+> **Os dois rankings são separados, e a casa é obrigatória na API.** As cotas são distintas —
+> a CEAP e a CEAPS têm regras e valores próprios por UF —, então o mesmo eixo poria lado a
+> lado números que não medem a mesma coisa. O piso amostral do ADR-0009 vale dentro da casa.
+> A [Etapa 10](docs/registro/etapa-10-calibragem-e-rankings-por-casa.md) calibrou o motor
+> para as rubricas da CEAPS: o Senado saiu de 19,8% para **5,080%**, contra 2,957% da Câmara,
+> e em gravidade alta ficou **abaixo** dela.
 
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md); e o estado corrente
