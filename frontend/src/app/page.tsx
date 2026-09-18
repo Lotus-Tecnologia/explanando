@@ -118,16 +118,32 @@ function SecaoDaCasa({
         </p>
       )}
 
-      <ul className="mt-4 space-y-1.5">
+      {/*
+        Os três caminhos precisam PARECER caminhos.
+
+        Eram texto em negrito com sublinhado no `hover` — e em celular não existe hover.
+        Numa página cuja única função é encaminhar, a rota que não se anuncia como rota é a
+        falha mais cara possível. Agora cada uma é um alvo com borda, seta e área de toque
+        cheia, com o mesmo vocabulário das pílulas da página de ranking.
+      */}
+      <ul className="mt-4 flex flex-col gap-2">
         {ORDENACOES.map((ordenacao) => (
           <li key={ordenacao.chave}>
             <Link
               href={caminhoDoRanking(casa, ordenacao)}
-              className="text-sm font-semibold text-titulo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+              className="flex items-center justify-between gap-3 border border-borda-suave bg-surface px-3 py-2.5 hover:border-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
             >
-              {ordenacao.rotulo}
+              <span>
+                <span className="block text-sm font-semibold text-titulo">
+                  {ordenacao.rotulo}
+                </span>
+                <span className="block text-xs text-texto-suave">{ordenacao.resumo}</span>
+              </span>
+
+              <span aria-hidden="true" className="text-titulo">
+                →
+              </span>
             </Link>
-            <span className="block text-xs text-texto-suave">{ordenacao.explicacao}</span>
           </li>
         ))}
       </ul>

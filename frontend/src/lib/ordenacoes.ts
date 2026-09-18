@@ -25,7 +25,22 @@ export interface Ordenacao {
   rotulo: string;
   titulo: string;
   descricao: string;
+
+  /**
+   * A explicação longa, que vive ao lado da tabela. É ela que impede a leitura errada:
+   * "densidade" que exclui gente sem dizer por quê faz o leitor concluir que essas pessoas
+   * não têm indicador nenhum.
+   */
   explicacao: string;
+
+  /**
+   * A versão curta, para a home.
+   *
+   * A home existe para encaminhar, não para ensinar. Repetir ali a explicação inteira põe
+   * seis blocos de texto denso entre quem chegou e o primeiro clique — e a explicação longa
+   * continua esperando na página de destino, que é onde ela é necessária.
+   */
+  resumo: string;
 }
 
 export const ORDENACOES: readonly Ordenacao[] = [
@@ -38,6 +53,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
       "Quanto cada parlamentar consumiu da cota, em reais, com estornos abatidos. Dados públicos da Câmara dos Deputados.",
     explicacao:
       "Soma em reais, com estornos abatidos. Inclui todos os parlamentares — gasto não depende de amostra.",
+    resumo: "Quanto se gastou, em reais.",
   },
   {
     chave: "indice",
@@ -48,6 +64,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
       "Indicadores de um motor de regras determinístico, medidos por 100 despesas analisadas. Descreve inconsistências; não imputa conduta.",
     explicacao:
       "Indicadores por 100 despesas. Exclui quem tem menos de 100 despesas analisadas, onde a densidade seria ruído — essas pessoas continuam no ranking de volume.",
+    resumo: "Achados por 100 despesas analisadas.",
   },
   {
     chave: "gravidade",
@@ -58,6 +75,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
       "Ordenado apenas pelos achados de maior peso, que são 3,3% do total. Descreve inconsistências; não imputa conduta.",
     explicacao:
       "Ordena apenas pelos achados de maior peso — pelo total, quem tem muitos achados graves fica abaixo de quem tem zero. Exclui quem tem menos de 100 despesas analisadas.",
+    resumo: "Só os achados de maior peso.",
   },
 ];
 
