@@ -5,7 +5,6 @@ import { ORDENACOES, caminhoDoRanking, type Ordenacao } from "@/lib/ordenacoes";
 import { CASAS, type Casa } from "@/lib/casas";
 import { TabelaDoRanking } from "./TabelaDoRanking";
 import { CartoesDeNumero } from "./CartoesDeNumero";
-import { AlternadorDeTema } from "./AlternadorDeTema";
 
 /**
  * O corpo das três páginas de ranking.
@@ -26,14 +25,10 @@ export async function PaginaDoRanking({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-titulo">
-          Gastos da cota parlamentar
-          <span className="block text-texto-suave">{casa.nomeOficial}</span>
-        </h1>
-
-        <AlternadorDeTema />
-      </div>
+      <h1 className="font-display text-3xl font-bold tracking-tight text-titulo">
+        Gastos da cota parlamentar
+        <span className="block text-texto-suave">{casa.nomeOficial}</span>
+      </h1>
 
       <p className="mt-2 max-w-3xl text-sm">
         Dados públicos {casa.chave === "camara" ? "da" : "do"} {casa.nomeOficial}, cota{" "}
@@ -105,7 +100,7 @@ export async function PaginaDoRanking({
         apresentada como resultado.
       */}
       {itens === null ? (
-        <p className="mt-6 border border-borda-suave bg-abstencao-fundo p-4 text-sm text-abstencao-texto">
+        <p className="mt-6 rounded-cartao border border-borda-suave bg-abstencao-fundo p-4 text-sm text-abstencao-texto">
           O ranking não pôde ser carregado agora. A falha é da plataforma, não do dado
           público — os registros seguem disponíveis nas fontes originais da Câmara e do
           Senado. Esta página se atualiza sozinha em poucos minutos.
@@ -124,9 +119,15 @@ export async function PaginaDoRanking({
           <p className="mt-3 text-xs text-texto-suave">
             {ordenacao.chave === "volume" ? (
               <>
+                {/*
+                  "estão neste ranking", e não "aparecem aqui": com a exibição paginada, a
+                  segunda frase passou a ser falsa — só 25 aparecem por vez. A ressalva sobre
+                  a busca é o que garante que paginar não escondeu ninguém.
+                */}
                 {"Os "}
                 <strong className="numeros">{formatarNumero(itens.length)}</strong>{" "}
-                {casa.integrantes} da base aparecem aqui.
+                {casa.integrantes} da base estão neste ranking, e a busca acha qualquer um
+                deles.
               </>
             ) : (
               <>

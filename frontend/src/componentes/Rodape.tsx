@@ -21,7 +21,7 @@ export function Rodape() {
       <p>
         Dados obtidos das APIs de dados abertos da Câmara dos Deputados, do Senado Federal e
         da Receita Federal (via BrasilAPI). Os indicadores são produzidos por um motor de
-        regras determinístico, identificados pelo código da regra, e{" "}
+        regras determinístico, que diz o que procurou em cada achado, e{" "}
         <strong>não caracterizam, por si, irregularidade</strong>. A conclusão é de quem lê.
       </p>
 

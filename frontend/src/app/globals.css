@@ -44,6 +44,23 @@
   --color-abstencao-fundo: #f1f5f9;
   --color-abstencao-texto: #475569;
 
+  /*
+    Cantos arredondados, e não é enfeite: canto vivo é vocabulário de planilha e de sistema
+    interno. O produto é lido por quem não navega com naturalidade, e forma macia sinaliza
+    "isto é para você" antes de qualquer palavra ser lida. As seis referências arredondam
+    tudo — é a única escolha visual unânime entre elas.
+  */
+  --radius-cartao: 0.875rem;
+  --radius-campo: 0.625rem;
+  --radius-selo: 999px;
+
+  /*
+    Sombra em duas camadas: um contorno de 1px que define a borda e um halo largo e fraco
+    que dá profundidade. Uma sombra só, difusa, borra em vez de levantar.
+  */
+  --shadow-cartao: 0 1px 2px rgb(15 23 42 / 0.05), 0 12px 32px -20px rgb(15 23 42 / 0.28);
+  --shadow-flutuante: 0 2px 4px rgb(15 23 42 / 0.06), 0 18px 40px -24px rgb(15 23 42 / 0.4);
+
   --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
 
   /*
@@ -90,6 +107,10 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --color-fundo: #0f172a;
+
+    /* Sombra sobre fundo escuro precisa ser preta de verdade; o cinza-azulado some. */
+    --shadow-cartao: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 32px -20px rgb(0 0 0 / 0.9);
+    --shadow-flutuante: 0 2px 4px rgb(0 0 0 / 0.55), 0 18px 40px -24px rgb(0 0 0 / 0.95);
     --color-surface: #1e293b;
 
     --color-borda-estrutural: #64748b;
@@ -116,6 +137,10 @@
 
 :root[data-theme="dark"] {
   --color-fundo: #0f172a;
+
+    /* Sombra sobre fundo escuro precisa ser preta de verdade; o cinza-azulado some. */
+    --shadow-cartao: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 32px -20px rgb(0 0 0 / 0.9);
+    --shadow-flutuante: 0 2px 4px rgb(0 0 0 / 0.55), 0 18px 40px -24px rgb(0 0 0 / 0.95);
   --color-surface: #1e293b;
 
   --color-borda-estrutural: #64748b;

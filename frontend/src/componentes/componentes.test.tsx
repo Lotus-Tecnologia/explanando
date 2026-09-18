@@ -337,10 +337,83 @@ const TRES = [
 ];
 
 describe("TabelaDoRanking", () => {
-  it("mostra todos os parlamentares recebidos", () => {
+  /** Mais gente do que cabe numa página, para a paginação ter o que fazer. */
+  const MUITOS: ItemDoRanking[] = Array.from({ length: 60 }, (_, i) =>
+    doRanking({
+      id: `p${i}`,
+      idExterno: 1000 + i,
+      nomeParlamentar: `PARLAMENTAR ${String(i).padStart(2, "0")}`,
+      volumeTotalGasto: 100000 - i,
+    }),
+  );
+
+  it("mostra todos os parlamentares recebidos quando cabem numa pagina", () => {
     render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
 
     expect(screen.getAllByRole("row")).toHaveLength(TRES.length + 1);
+  });
+
+  // ------------------------------------------------------------------
+  //  Paginacao de EXIBICAO, busca sobre o CONJUNTO
+  //
+  //  A decisao anterior era nao paginar, e o motivo registrado era bom: paginar de 50 em 50
+  //  esconderia 463 pessoas atras de dez cliques, num produto cujo leitor tipico chega
+  //  procurando UMA pessoa. Essa preocupacao e' o que estes testes protegem.
+  // ------------------------------------------------------------------
+
+  it("nao despeja 60 linhas de uma vez", () => {
+    render(<TabelaDoRanking itens={MUITOS} rotulo="Volume gasto" />);
+
+    // 25 da pagina mais a linha de cabecalho.
+    expect(screen.getAllByRole("row")).toHaveLength(26);
+  });
+
+  it("a busca varre o CONJUNTO INTEIRO, e nao a pagina visivel", async () => {
+    // O teste que sustenta a decisao. PARLAMENTAR 59 cairia na terceira pagina; se a busca
+    // filtrasse so' o que esta na tela, ele seria inalcancavel — que e' exatamente o que a
+    // decisao de nao paginar existia para impedir.
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={MUITOS} rotulo="Volume gasto" />);
+
+    expect(screen.queryByText("PARLAMENTAR 59")).not.toBeInTheDocument();
+
+    await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 59");
+
+    expect(screen.getByText("PARLAMENTAR 59")).toBeInTheDocument();
+  });
+
+  it("a contagem diz X de Y, para que ninguem pareca escondido", async () => {
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={MUITOS} rotulo="Volume gasto" />);
+
+    await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 59");
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 parlamentar de 60");
+  });
+
+  it("buscar de novo volta para a primeira pagina", async () => {
+    // Sem isto, quem estivesse na pagina 3 e digitasse algo com dois resultados veria uma
+    // tabela vazia e concluiria que a busca nao achou nada.
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={MUITOS} rotulo="Volume gasto" />);
+
+    await usuario.click(screen.getByRole("button", { name: /próxima/i }));
+    expect(screen.getByText("PARLAMENTAR 25")).toBeInTheDocument();
+
+    await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 0");
+
+    expect(screen.getByText("PARLAMENTAR 00")).toBeInTheDocument();
+  });
+
+  it("a posicao sobrevive a virada de pagina", async () => {
+    // O numero e' a colocacao no ranking, nao o indice da linha na tela.
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={MUITOS} rotulo="Volume gasto" />);
+
+    await usuario.click(screen.getByRole("button", { name: /próxima/i }));
+
+    const linha = screen.getByText("PARLAMENTAR 25").closest("tr")!;
+    expect(within(linha).getAllByRole("cell")[0]).toHaveTextContent("26");
   });
 
   it("filtra por nome enquanto se digita", async () => {

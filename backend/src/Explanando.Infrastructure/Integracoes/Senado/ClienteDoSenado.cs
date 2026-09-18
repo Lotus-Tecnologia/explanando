@@ -257,13 +257,32 @@ public sealed class ClienteDoSenado(HttpClient http) : IFonteDeParlamentares, ID
                 NomeCompleto = Primeiro(identificacao.NomeCompletoParlamentar),
                 Partido = Primeiro(identificacao.SiglaPartidoParlamentar),
                 Uf = uf,
-                FotoUrl = Primeiro(identificacao.UrlFotoParlamentar),
+                FotoUrl = ComEsquemaSeguro(Primeiro(identificacao.UrlFotoParlamentar)),
             };
         }
     }
 
     private static string? Primeiro(string? valor) =>
         string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+
+    /// <summary>
+    /// O retrato em <c>https</c>, porque o Senado o publica em <c>http</c>.
+    ///
+    /// <para>Verificado: o cadastro devolve
+    /// <c>http://www.senado.leg.br/senadores/img/fotos-oficiais/senadorNNNN.jpg</c>. Numa
+    /// página servida por HTTPS o navegador bloqueia isso como conteúdo misto, e o retrato
+    /// some <b>sem erro visível</b> — a pior forma de falhar, porque ninguém percebe.</para>
+    ///
+    /// <para>Elevar o esquema é seguro: medido, o endereço seguro responde 301 para
+    /// <c>legis.senado.leg.br/senadores/fotos-oficiais/NNNN</c> e entrega a mesma imagem.</para>
+    ///
+    /// <para>Só para o host do Senado. Reescrever URL de host arbitrário não é conta nossa —
+    /// e a Câmara já publica em <c>https</c>.</para>
+    /// </summary>
+    private static string? ComEsquemaSeguro(string? url) =>
+        url is not null && url.StartsWith("http://www.senado.leg.br/", StringComparison.OrdinalIgnoreCase)
+            ? string.Concat("https://", url.AsSpan("http://".Length))
+            : url;
 
     private async Task<string?> BaixarAsync(string url, CancellationToken cancelamento)
     {

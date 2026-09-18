@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Familjen_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+import { Cabecalho } from "@/componentes/Cabecalho";
 import { Rodape } from "@/componentes/Rodape";
 import { URL_BASE, ehIndexavel } from "@/lib/site";
 import { SCRIPT_DE_TEMA } from "@/componentes/AlternadorDeTema";
@@ -74,6 +75,8 @@ export default function RootLayout({
         >
           Pular para o conteúdo
         </a>
+
+        <Cabecalho />
 
         <div id="conteudo">{children}</div>
 

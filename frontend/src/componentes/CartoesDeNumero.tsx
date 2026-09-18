@@ -34,7 +34,7 @@ export function CartoesDeNumero({
   const taxa = despesas === 0 ? null : (indicadores / despesas) * 100;
 
   return (
-    <dl className="mt-6 grid gap-px border border-borda-suave bg-borda-suave sm:grid-cols-2 lg:grid-cols-4">
+    <dl className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave bg-borda-suave shadow-cartao sm:grid-cols-2 lg:grid-cols-4">
       <Cartao rotulo={`${casa.integrantes} na base`} valor={formatarNumero(itens.length)} />
 
       <Cartao
