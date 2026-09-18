@@ -4,6 +4,7 @@ import { ranquearTudo } from "@/lib/api";
 import { CASAS, type Casa } from "@/lib/casas";
 import { formatarNumero, formatarReais } from "@/lib/formato";
 import { ORDENACOES, caminhoDoRanking } from "@/lib/ordenacoes";
+import { AlternadorDeTema } from "@/componentes/AlternadorDeTema";
 
 /* Ver a nota em camara/page.tsx: precisa ser literal. */
 export const revalidate = 300;
@@ -37,7 +38,13 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-titulo">Gastos da cota parlamentar</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-titulo">
+          Gastos da cota parlamentar
+        </h1>
+
+        <AlternadorDeTema />
+      </div>
 
       <p className="mt-2 max-w-3xl text-sm">
         Dados públicos da Câmara dos Deputados e do Senado Federal. Um motor de regras
@@ -81,7 +88,10 @@ function SecaoDaCasa({
       aria-labelledby={`casa-${casa.chave}`}
       className="border border-borda-suave bg-fundo p-5"
     >
-      <h2 id={`casa-${casa.chave}`} className="text-lg font-bold text-titulo">
+      <h2
+        id={`casa-${casa.chave}`}
+        className="font-display text-xl font-bold tracking-tight text-titulo"
+      >
         {casa.nomeOficial}
       </h2>
 
@@ -96,10 +106,15 @@ function SecaoDaCasa({
         </p>
       ) : (
         <p className="mt-2 text-sm text-texto-suave">
-          <strong className="numeros text-titulo">{formatarNumero(itens.length)}</strong>{" "}
+          <strong className="numeros font-display text-lg text-titulo">
+            {formatarNumero(itens.length)}
+          </strong>{" "}
           {casa.integrantes} · cota {casa.cota}
           <br />
-          <strong className="numeros text-titulo">{formatarReais(total)}</strong> no período
+          <strong className="numeros font-display text-lg text-titulo">
+            {formatarReais(total)}
+          </strong>{" "}
+          no período
         </p>
       )}
 

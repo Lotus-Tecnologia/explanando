@@ -140,3 +140,62 @@ para daltonismo e para leitor de tela, e severidade é o atributo que menos pode
 **Omitir a regra abstida da tela.** Interface mais limpa. Descartada: é o mesmo erro do
 `Falhas: 0` que nos enganou na coleta — ausência apresentada como resultado. A abstenção
 precisa ocupar espaço para ser lida.
+
+---
+
+## Emenda de 2026-09-18 — o tema escuro entra, e a objeção original continua valendo
+
+Este ADR não previa tema escuro, e o `globals.css` carregava a justificativa:
+
+> *Sem bloco de tema escuro. O design se compromete com texto escuro sobre fundo claro — é a
+> estética de portal de transparência, e alternar **inverteria o significado das cores de
+> risco**, que são o único lugar onde a cor carrega informação.*
+
+O Gustavo pediu o tema escuro com alternância, e a decisão muda. **Mas a objeção era boa, e é
+ela que define como a mudança foi feita:** nada inverte.
+
+Âmbar continua sendo o peso médio e vermelho continua sendo o alto. As formas — círculo,
+triângulo, octógono, círculo tracejado — e os rótulos seguem idênticos. O que muda é só o par
+fundo/texto de cada peso, recalculado para fundo escuro, de modo que a hierarquia
+`baixa < média < alta` se leia igual nos dois temas.
+
+O vermelho segue **estritamente** com os 3,3% de gravidade alta, e não existe estado de
+"aprovado" em tema nenhum.
+
+### A paleta escura, calculada
+
+| Token | Valor | Sobre | Contraste |
+|---|---|---|---|
+| `titulo` | `#6EE7B7` | `#0F172A` | **11,71** AAA |
+| `texto` | `#E2E8F0` | `#0F172A` | **14,48** AAA |
+| `textoSuave` | `#ADBCD0` | `#1E293B` | **7,58** AAA |
+| `acento` | `#34D399` | `#0F172A` | **9,29** AAA |
+| Baixa | `#CBD5E1` | `#1E293B` | **9,85** AAA |
+| Média | `#FCD34D` | `#422006` | **10,11** AAA |
+| Alta | `#FCA5A5` | `#450A0A` | **8,51** AAA |
+| Não avaliado | `#ADBCD0` | `#1E293B` | **7,58** AAA |
+
+**Uma assimetria que só o cálculo revela.** No escuro o acento alcança **9,29** e *pode* ser
+texto; no claro, `#059669` dá **3,77** e não pode. A regra "acento só em elemento não textual"
+vale para o tema claro, não para os dois — e escrevê-la sem essa ressalva teria proibido um uso
+legítimo.
+
+### Três estados, não dois
+
+Quem nunca escolheu segue `prefers-color-scheme` e não tem nada marcado no `<html>`; quem
+escolheu carrega `data-theme` e vence a preferência do sistema **nos dois sentidos**. Tratar
+como booleano quebraria o caso mais comum: sistema no escuro, pessoa que quer claro.
+
+A escolha é aplicada por um script inline no `<head>`, antes da primeira pintura. Sem ele, quem
+escolheu escuro recebe um lampejo branco a cada navegação, porque o React só hidrata depois de
+o navegador já ter pintado.
+
+### A tipografia ganha um display
+
+**Inter continua no corpo e nas tabelas**, onde as figuras tabulares importam. Os títulos e os
+números grandes passam a usar **Familjen Grotesk**, com `latin-ext` — sem esse subconjunto, "ã",
+"õ" e "ç" caem no fallback e a linha aparece com duas fontes misturadas, o que num produto em
+português acontece já no primeiro título.
+
+O motivo não é estético: a queixa que abriu o redesenho foi o site parecer painel genérico, e é
+nos títulos que um rosto próprio resolve isso sem custar legibilidade ao corpo do texto.

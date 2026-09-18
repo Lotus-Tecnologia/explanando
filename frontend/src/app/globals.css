@@ -45,15 +45,114 @@
   --color-abstencao-texto: #475569;
 
   --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /*
+    Display só para título e número grande. A Inter continua no corpo e nas tabelas, onde as
+    figuras tabulares importam — a queixa que abriu o redesenho foi o site parecer painel
+    genérico, e é nos títulos que um rosto próprio resolve isso sem custar legibilidade.
+  */
+  --font-display: var(--fonte-familjen), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 /*
-  Sem bloco de tema escuro. O design se compromete com texto escuro sobre fundo claro — é a
-  estética de portal de transparência, e alternar inverteria o significado das cores de
-  risco, que são o único lugar onde a cor carrega informação.
+  ------------------------------------------------------------------------------------
+  TEMA ESCURO
+
+  Havia aqui uma decisão de NÃO ter tema escuro, e a objeção registrada era boa:
+  "alternar inverteria o significado das cores de risco, que são o único lugar onde a cor
+  carrega informação".
+
+  Ela foi respeitada, não descartada. Nada inverte: âmbar continua sendo o médio, vermelho
+  continua sendo o alto, e as formas e rótulos do ADR-0013 seguem intactos — o que muda é
+  só o par fundo/texto de cada peso, recalculado para fundo escuro. A hierarquia
+  baixa < média < alta se lê igual nos dois temas.
+
+  Todos os valores abaixo foram CALCULADOS, e todos passam:
+
+    titulo      #6EE7B7 sobre #0F172A   11,71  AAA
+    texto       #E2E8F0 sobre #0F172A   14,48  AAA
+    texto-suave #ADBCD0 sobre #1E293B    7,58  AAA
+    acento      #34D399 sobre #0F172A    9,29  AAA
+    baixa       #CBD5E1 sobre #1E293B    9,85  AAA
+    média       #FCD34D sobre #422006   10,11  AAA
+    alta        #FCA5A5 sobre #450A0A    8,51  AAA
+    abstenção   #ADBCD0 sobre #1E293B    7,58  AAA
+
+  Uma assimetria que só o cálculo revela: no escuro o acento alcança 9,29 e PODE ser texto.
+  No claro, #059669 dá 3,77 e não pode. A regra troca de lado conforme o tema.
+
+  A estrutura tem três estados de propósito. O `:root` acima define o tema claro completo;
+  o bloco de mídia atende quem nunca escolheu e tem o sistema no escuro; o seletor de
+  atributo atende quem clicou no botão — e vence nos dois sentidos, para que escolher claro
+  com o sistema no escuro funcione.
+  ------------------------------------------------------------------------------------
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-fundo: #0f172a;
+    --color-surface: #1e293b;
+
+    --color-borda-estrutural: #64748b;
+    --color-borda-suave: #334155;
+
+    --color-titulo: #6ee7b7;
+    --color-titulo-hover: #a7f3d0;
+    --color-texto: #e2e8f0;
+    --color-texto-suave: #adbcd0;
+
+    --color-acento: #34d399;
+    --color-realce: #064e3b;
+
+    --color-baixa-fundo: #1e293b;
+    --color-baixa-texto: #cbd5e1;
+    --color-media-fundo: #422006;
+    --color-media-texto: #fcd34d;
+    --color-alta-fundo: #450a0a;
+    --color-alta-texto: #fca5a5;
+    --color-abstencao-fundo: #1e293b;
+    --color-abstencao-texto: #adbcd0;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-fundo: #0f172a;
+  --color-surface: #1e293b;
+
+  --color-borda-estrutural: #64748b;
+  --color-borda-suave: #334155;
+
+  --color-titulo: #6ee7b7;
+  --color-titulo-hover: #a7f3d0;
+  --color-texto: #e2e8f0;
+  --color-texto-suave: #adbcd0;
+
+  --color-acento: #34d399;
+  --color-realce: #064e3b;
+
+  --color-baixa-fundo: #1e293b;
+  --color-baixa-texto: #cbd5e1;
+  --color-media-fundo: #422006;
+  --color-media-texto: #fcd34d;
+  --color-alta-fundo: #450a0a;
+  --color-alta-texto: #fca5a5;
+  --color-abstencao-fundo: #1e293b;
+  --color-abstencao-texto: #adbcd0;
+}
+
+/*
+  `light dark` para que os controles nativos — barra de rolagem, seletor de data, foco —
+  sigam o tema. Os dois blocos abaixo fixam o valor quando a pessoa escolheu.
 */
 html {
+  color-scheme: light dark;
+}
+
+:root:not([data-theme="dark"]) {
   color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {

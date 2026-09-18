@@ -4,6 +4,8 @@ import { formatarNumero } from "@/lib/formato";
 import { ORDENACOES, caminhoDoRanking, type Ordenacao } from "@/lib/ordenacoes";
 import { CASAS, type Casa } from "@/lib/casas";
 import { TabelaDoRanking } from "./TabelaDoRanking";
+import { CartoesDeNumero } from "./CartoesDeNumero";
+import { AlternadorDeTema } from "./AlternadorDeTema";
 
 /**
  * O corpo das três páginas de ranking.
@@ -24,9 +26,14 @@ export async function PaginaDoRanking({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-titulo">
-        Gastos da cota parlamentar — {casa.nomeOficial}
-      </h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-titulo">
+          Gastos da cota parlamentar
+          <span className="block text-texto-suave">{casa.nomeOficial}</span>
+        </h1>
+
+        <AlternadorDeTema />
+      </div>
 
       <p className="mt-2 max-w-3xl text-sm">
         Dados públicos {casa.chave === "camara" ? "da" : "do"} {casa.nomeOficial}, cota{" "}
@@ -105,6 +112,13 @@ export async function PaginaDoRanking({
         </p>
       ) : (
         <>
+          {/*
+            Os números da casa antes da tabela: quem chega precisa saber o que está olhando
+            antes de encarar 513 linhas. Depois da checagem de nulo, porque cartão com
+            "R$ 0,00" afirmaria que ninguém gastou quando a fonte só não respondeu.
+          */}
+          <CartoesDeNumero casa={casa} itens={itens} />
+
           <TabelaDoRanking itens={itens} rotulo={ordenacao.rotulo} />
 
           <p className="mt-3 text-xs text-texto-suave">
