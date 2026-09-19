@@ -259,6 +259,20 @@ export interface NoDoEstado {
   /** Quantas unidades pendem deste nó, em qualquer profundidade. Dá escala ao desenho. */
   unidadesSubordinadas: number;
   ativa: boolean;
+
+  /**
+   * Servidores lotados **nesta** unidade, ou `null`.
+   *
+   * `null` e `0` dizem coisas opostas, e e' o ADR-0009 de novo: `null` e' "nao conseguimos
+   * ligar esta unidade ao cadastro de pessoal", `0` e' "ligamos, e nao ha' ninguem".
+   */
+  servidores: number | null;
+
+  /** Quantos deles ocupam funcao de confianca (DAS, FCE, FG...). */
+  emFuncaoDeConfianca: number | null;
+
+  /** Servidores em todo o ramo. E' o numero que da' sentido a um ministerio. */
+  servidoresNoRamo: number | null;
 }
 
 export interface ContagemDoEstado {
@@ -282,6 +296,15 @@ export interface MapaDoEstado {
   porTipo: ContagemDoEstado[];
   porBaseLegal: ContagemDoEstado[];
   ultimaColeta: string | null;
+
+  /** O mes do quadro de pessoal, como "2026-07". Outra fonte, outra cadencia. */
+  competenciaDoPessoal: string | null;
+
+  /** Total de vinculos no mes, incluindo os que nao chegaram a no' nenhum. */
+  totalDeServidores: number | null;
+
+  /** A fracao dos vinculos que a ponte ligou ao grafo. Vai para a tela, nao so' para o log. */
+  coberturaDoPessoal: number | null;
 
   /**
    * Se já houve uma segunda coleta.

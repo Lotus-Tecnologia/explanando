@@ -42,6 +42,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 09 | A ingestão do Senado | ✅ Concluída | [etapa-09-ingestao-do-senado.md](etapa-09-ingestao-do-senado.md) |
 | 10 | Calibragem do Senado e rankings por casa | ✅ Concluída | [etapa-10-calibragem-e-rankings-por-casa.md](etapa-10-calibragem-e-rankings-por-casa.md) |
 | 11 | O grafo do Estado — 96.658 unidades do SIORG | ✅ Concluída | [etapa-11-grafo-do-estado.md](etapa-11-grafo-do-estado.md) |
+| 12 | Quem trabalha no Estado — 759.351 vínculos, sem um nome no banco | ✅ Concluída | [etapa-12-quadro-de-pessoal.md](etapa-12-quadro-de-pessoal.md) |
 
 ## Incidentes
 

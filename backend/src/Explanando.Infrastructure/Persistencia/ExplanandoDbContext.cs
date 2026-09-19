@@ -65,6 +65,14 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
 
     public DbSet<MudancaEstrutural> MudancasEstruturais => Set<MudancaEstrutural>();
 
+    /// <summary>
+    /// O quadro de pessoal, em contagens. Nao ha' tabela de servidor: a agregacao acontece
+    /// na ingestao, e nenhum nome chega ao banco.
+    /// </summary>
+    public DbSet<LotacaoDoOrgao> LotacoesDoOrgao => Set<LotacaoDoOrgao>();
+
+    public DbSet<ContagemPorFuncao> ContagensPorFuncao => Set<ContagemPorFuncao>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);

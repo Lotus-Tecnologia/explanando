@@ -3,6 +3,7 @@ using Explanando.Infrastructure.Integracoes.BrasilApi;
 using Explanando.Infrastructure.Integracoes.Camara;
 using Explanando.Application.Estado;
 using Explanando.Infrastructure.Integracoes.Senado;
+using Explanando.Infrastructure.Integracoes.Pessoal;
 using Explanando.Infrastructure.Integracoes.Siorg;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -138,6 +139,24 @@ public static class ServicosDeIntegracao
 
         servicos.AddScoped<IFonteDaEstruturaDoEstado>(provedor =>
             provedor.GetRequiredService<ClienteSiorg>());
+
+        // ---------------------------------------------------------------
+        //  Portal da Transparencia — o quadro de pessoal
+        //
+        //  Uma requisicao por mes, de 83 MB. O timeout e' o de um download, nao o de uma
+        //  API: errar para menos aqui mata a coleta no meio do arquivo, e nao ha' retomada
+        //  parcial — a proxima tentativa baixa tudo de novo.
+        //
+        //  Sem disjuntor: com UMA chamada por execucao, ele nunca teria amostra para
+        //  decidir nada, e abriria no primeiro tropeco derrubando a coleta inteira.
+        // ---------------------------------------------------------------
+        servicos
+            .AddHttpClient<IFonteDePessoal, ClienteDoPortalDaTransparencia>(http =>
+            {
+                http.Timeout = TimeSpan.FromMinutes(15);
+                http.DefaultRequestHeaders.Add("Accept", "application/zip, */*");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            });
 
         servicos
             .AddHttpClient<IFonteDeCadastroEmpresarial, ClienteBrasilApi>(http =>

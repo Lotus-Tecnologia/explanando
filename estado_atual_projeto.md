@@ -12,7 +12,7 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
 apontar inconsistências financeiras.
 
-**As etapas 00 a 06 e 08 a 11 estão concluídas. A 07 (observabilidade e deploy) está quase
+**As etapas 00 a 06 e 08 a 12 estão concluídas. A 07 (observabilidade e deploy) está quase
 fechada.**
 
 > **O marco mais recente: o grafo do Estado.** A adaptação ao Brasil do
@@ -22,12 +22,11 @@ fechada.**
 > que prova a comparação. Ver [Etapa 11](docs/registro/etapa-11-grafo-do-estado.md) e o
 > [ADR-0016](docs/decisoes/ADR-0016-grafo-do-estado.md).
 >
-> **O que falta desse lado são as pessoas, e são três lacunas diferentes.** *Quem ocupa cada
-> cargo* é público e **dispensa cadastro** — 778.337 vínculos por mês no Portal da
-> Transparência —, mas trava na ponte SIAFI ↔ SIORG: por nome casam 145 dos 354 órgãos, 58,5%
-> dos servidores. *As nomeações no tempo* vivem no DOU e exigem cadastro no INLABS, que só o
-> Gustavo pode fazer. *As cadeiras vagas* não estão em fonte nenhuma. Ver
-> [Etapa 11 §10](docs/registro/etapa-11-grafo-do-estado.md).
+> **E o grafo já diz quanta gente trabalha em cada órgão.** A
+> [Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md) trouxe 759.351 vínculos, 95,5% deles
+> ligados a um nó — **em contagens, sem um nome no banco**. Falta só *as nomeações ao longo do
+> tempo* (DOU, via INLABS, que só o Gustavo pode cadastrar) e *as cadeiras vagas*, que nenhuma
+> fonte publica.
 
 > **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
 > 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o
@@ -48,9 +47,10 @@ fechada.**
 | **07 Observabilidade e deploy** | 🚧 **falta a API no Cloud Run e o DNS** |
 | 08 Linguagem da interface · 09 Ingestão do Senado · 10 Calibragem e rankings por casa | ✅ |
 | **11 O grafo do Estado** | ✅ local; falta subir para a Neon e agendar |
+| **12 Quem trabalha no Estado** | ✅ local; falta subir para a Neon e agendar |
 
-**Testes:** 791 no backend (475 domínio, 64 aplicação, 195 integração, 10 arquitetura, 57
-ponta a ponta) + **136 no frontend**. CI verde nos quatro jobs.
+**Testes:** 843 no backend (503 domínio, 75 aplicação, 195 integração, 10 arquitetura, 60
+ponta a ponta) + **149 no frontend**. CI verde nos quatro jobs.
 
 ---
 

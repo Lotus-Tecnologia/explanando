@@ -170,4 +170,56 @@ public sealed class EstadoNaApiTests(ApiDeTestes api)
         // O nome congelado: a linha continua legivel depois de a unidade ser renomeada.
         mudancas.ShouldAllBe(mudanca => mudanca.Unidade.Length > 0);
     }
+
+    // ------------------------------------------------------------------
+    //  O quadro de pessoal
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task O_mapa_traz_o_total_de_servidores_e_a_cobertura_da_ponte()
+    {
+        var mapa = await api.CreateClient()
+            .GetFromJsonAsync<MapaDoEstado>("/api/v1/estado", ApiDeTestes.Json);
+
+        mapa!.CompetenciaDoPessoal.ShouldBe("2026-07");
+
+        // 400 ligados + 100 sem par. O total conta os dois: quem le precisa saber o
+        // tamanho do Executivo, nao so' a parte que coube no nosso grafo.
+        mapa.TotalDeServidores.ShouldBe(500);
+        mapa.CoberturaDoPessoal.ShouldNotBeNull().ShouldBe(0.8, 0.001);
+    }
+
+    [Fact]
+    public async Task O_ramo_soma_as_unidades_abaixo_e_o_proprio_nao()
+    {
+        // E' a diferenca que da' sentido a um ministerio: quase ninguem lotado nele mesmo,
+        // e dezenas de milhares no ramo.
+        var mapa = await api.CreateClient()
+            .GetFromJsonAsync<MapaDoEstado>("/api/v1/estado", ApiDeTestes.Json);
+
+        var orgao = mapa!.Nos.Single(no => no.Codigo == ApiDeTestes.UnidadeOrgao);
+        var raiz = mapa.Nos.Single(no => no.Codigo == ApiDeTestes.UnidadeRaiz);
+
+        orgao.Servidores.ShouldBe(400);
+        orgao.EmFuncaoDeConfianca.ShouldBe(40);
+        orgao.ServidoresNoRamo.ShouldBe(400);
+
+        // A raiz nao tem ninguem lotado nela — e isso e' NULO, nao zero.
+        raiz.Servidores.ShouldBeNull();
+        raiz.ServidoresNoRamo.ShouldBe(400);
+    }
+
+    [Fact]
+    public async Task Unidade_sem_ponte_devolve_nulo_e_nunca_zero()
+    {
+        // O erro que este teste impede: a tela escrever "0 servidores" sobre um tribunal
+        // cuja folha simplesmente nao esta' nesta fonte. Zero seria uma afirmacao sobre o
+        // Estado; nulo e' a verdade — nao sabemos.
+        var filha = await api.CreateClient()
+            .GetFromJsonAsync<NoDoEstado>("/api/v1/estado/300", ApiDeTestes.Json);
+
+        filha!.Servidores.ShouldBeNull();
+        filha.ServidoresNoRamo.ShouldBeNull();
+        filha.EmFuncaoDeConfianca.ShouldBeNull();
+    }
 }

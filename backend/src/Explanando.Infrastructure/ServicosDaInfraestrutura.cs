@@ -93,6 +93,9 @@ public static class ServicosDaInfraestrutura
 
         // O lado de leitura do grafo. O cache aqui nao e' otimizacao: montar o mapa custa
         // carregar mais de cem mil arestas, e a estrutura do Estado muda em semanas.
+        servicos.AddScoped<IRepositorioDePessoal, RepositorioDePessoal>();
+        servicos.AddScoped<ServicoDeColetaDePessoal>();
+
         servicos.AddScoped<ConsultasDoEstadoEfCore>();
         servicos.AddScoped<IConsultasDoEstado>(provedor => new ConsultasDoEstadoComCache(
             provedor.GetRequiredService<ConsultasDoEstadoEfCore>(),

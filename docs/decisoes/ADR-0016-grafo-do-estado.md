@@ -94,13 +94,28 @@ foi um erro meu:
 
 | O que | Situação |
 |---|---|
-| **Quem ocupa cada cargo hoje** | **Público e sem cadastro** — o Portal da Transparência publica 778.337 vínculos por mês. Trava na ponte SIAFI ↔ SIORG: por nome, casam 145 dos 354 órgãos (58,5% dos servidores), e casar o resto por aproximação é o palpite que este produto não dá |
+| **Quem ocupa cada cargo hoje** | ✅ **Feito na [Etapa 12](../registro/etapa-12-quadro-de-pessoal.md).** Público e sem cadastro; a ponte SIAFI ↔ SIORG cobre 95,5% dos vínculos |
 | **Nomeações e exonerações no tempo** | DOU, via INLABS, que exige cadastro |
 | **Cadeiras vagas** | Nenhuma das duas fontes publica os cargos **autorizados**, que é o denominador da conta |
 
 A página declara essas ausências, cada uma pelo que é, em vez de deixar o mapa parecer
-completo. E a ingestão de 778 mil servidores nomeados é dado pessoal em escala: a avaliação
-de legítimo interesse pendente passa a valer para ela, **antes** de qualquer código.
+completo.
+
+### 8. O quadro de pessoal entra em contagens, nunca em pessoas
+
+A fonte traz 778.337 vínculos **nominais**, com nome e CPF mascarado. Guardá-los traria
+dado pessoal em escala e uma avaliação de legítimo interesse a fazer, para entregar
+exatamente a mesma tela — porque a tela pergunta "quanta gente", e isso é uma soma.
+
+A agregação acontece **durante a leitura**, e três camadas tornam o contrário impossível: a
+borda expõe três das 43 colunas, o fluxo é `IAsyncEnumerable` e nunca uma lista, e a
+entidade não tem onde guardar uma pessoa — com um teste que quebra o build se alguém
+acrescentar um campo que sugira o contrário. Chegam ao banco ~350 contagens por mês.
+
+**A ponte entre os dois cadastros não adivinha.** Não há chave comum, então o par é por
+nome, com regra explícita e alvo único exigido dos dois lados; o que não casa fica sem par
+e **aparece como sem par**. Nada de distância de edição: um par errado não produziria erro
+visível, produziria o quadro de pessoal de um órgão exibido dentro de outro.
 
 ## Consequências
 

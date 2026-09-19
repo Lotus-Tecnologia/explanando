@@ -4,6 +4,7 @@ using Explanando.Application.Ciclo;
 using Explanando.Application.Estado;
 using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
+using Explanando.Domain.Comum;
 using Explanando.Domain.Estado;
 using Explanando.Domain.Regras;
 using Explanando.Domain.Retencao;
@@ -326,6 +327,85 @@ switch (comando)
             return 0;
         }
 
+    case "coletar-pessoal":
+        {
+            // O quadro de pessoal do Executivo, do Portal da Transparencia. E' dado aberto
+            // e NAO exige cadastro — ao contrario do que a Etapa 11 afirmou.
+            //
+            // A agregacao acontece na leitura: nenhum nome, nenhum CPF e nenhuma linha
+            // nominal chega ao banco. O que se grava sao ~350 contagens por mes.
+            var ano = LerInteiro("--ano");
+            var mes = LerInteiro("--mes");
+
+            if (ano is null || mes is null)
+            {
+                Console.Error.WriteLine(
+                    "Informe --ano e --mes. Nao ha' padrao de proposito: a fonte publica o "
+                    + "arquivo de um mes semanas depois do fechamento dele, e adivinhar a "
+                    + "competencia daria 403 sem dizer por que.");
+                return 2;
+            }
+
+            Competencia competencia;
+
+            try
+            {
+                competencia = Competencia.Criar(ano.Value, mes.Value);
+            }
+            catch (ArgumentOutOfRangeException erro)
+            {
+                Console.Error.WriteLine($"Competencia invalida: {erro.Message}");
+                return 2;
+            }
+
+            Console.WriteLine($"Coletando o quadro de pessoal de {competencia}...");
+            Console.WriteLine(
+                "Sao ~83 MB compactados e ~778 mil vinculos. A contagem acontece durante a");
+            Console.WriteLine("leitura: nada nominal e' guardado.");
+
+            var cronometroDePessoal = System.Diagnostics.Stopwatch.StartNew();
+
+            var pessoal = await servicos.GetRequiredService<ServicoDeColetaDePessoal>()
+                .ColetarAsync(competencia)
+                .ConfigureAwait(false);
+
+            cronometroDePessoal.Stop();
+
+            Console.WriteLine($"""
+
+                === QUADRO DE PESSOAL — {competencia} ===
+                Vinculos lidos        : {pessoal.VinculosLidos}
+                Orgaos encontrados    : {pessoal.OrgaosEncontrados}
+                  ligados ao grafo    : {pessoal.OrgaosLigadosAoGrafo}
+                  por tabela curada   : {pessoal.LigadosPorExcecaoCurada}
+                Agregados descartados : {pessoal.AgregadosDescartados}
+                Vinculos de orgao     : {pessoal.VinculosDeOrgaos}
+                  ligados ao grafo    : {pessoal.VinculosLigadosAoGrafo}
+                Cobertura             : {pessoal.CoberturaDosVinculos:P1}
+                Lotacoes gravadas     : {pessoal.LotacoesGravadas}
+                Tempo                 : {cronometroDePessoal.Elapsed:hh\:mm\:ss}
+                """);
+
+            if (pessoal.SemPar.Count > 0)
+            {
+                Console.WriteLine("--- maiores orgaos sem par no grafo ---");
+                Console.WriteLine(
+                    "    Nao casar e' desfecho legitimo: os governos dos ex-territorios e as");
+                Console.WriteLine(
+                    "    rubricas de totalizacao nao existem no SIORG. Mas um MINISTERIO");
+                Console.WriteLine(
+                    "    nesta lista e' sinal de que a ponte precisa de mais uma entrada.");
+                Console.WriteLine();
+
+                foreach (var (codigo, nome, vinculos) in pessoal.SemPar)
+                {
+                    Console.WriteLine($"  {vinculos,7}  [{codigo,6}] {nome}");
+                }
+            }
+
+            return 0;
+        }
+
     case "varrer":
         {
             var varredura = servicos.GetRequiredService<ServicoDeVarredura>();
@@ -545,6 +625,7 @@ switch (comando)
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
+              dotnet run -- coletar-pessoal --ano 2026 --mes 7     o quadro de pessoal
             """);
         return 2;
 }

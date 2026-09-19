@@ -686,6 +686,9 @@ describe("montarDesenho", () => {
     baseLegal: null,
     unidadesSubordinadas,
     ativa: true,
+    servidores: null,
+    emFuncaoDeConfianca: null,
+    servidoresNoRamo: null,
   });
 
   it("acha a raiz pelo pai ausente, e nao por um codigo fixo", () => {

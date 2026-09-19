@@ -178,6 +178,29 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
         contexto.MudancasEstruturais.Add(MudancaEstrutural.Desaparecimento(
             UnidadeSumida, "Conselho Extinto", agora.AddDays(30)));
 
+        // O quadro de pessoal. So' o ORGAO tem lotacao: a raiz nao tem ninguem lotado
+        // diretamente nela, e e' isso que faz o total do RAMO diferir do proprio.
+        contexto.LotacoesDoOrgao.Add(LotacaoDoOrgao.Criar(new NovaLotacao
+        {
+            Competencia = Competencia.Criar(2026, 7),
+            CodigoSiafi = 20000,
+            NomeNaOrigem = "Presidência da República",
+            CodigoSiorg = UnidadeOrgao,
+            Vinculos = 400,
+            PorFuncao = new Dictionary<string, int> { ["CD"] = 30, ["FG"] = 10 },
+        }));
+
+        // Um orgao que a ponte NAO alcancou: entra na base e conta no total, mas nao
+        // aparece em no' nenhum do grafo.
+        contexto.LotacoesDoOrgao.Add(LotacaoDoOrgao.Criar(new NovaLotacao
+        {
+            Competencia = Competencia.Criar(2026, 7),
+            CodigoSiafi = 40801,
+            NomeNaOrigem = "Governo do Ex-Território Federal do Amapá",
+            CodigoSiorg = null,
+            Vinculos = 100,
+        }));
+
         contexto.MudancasEstruturais.Add(MudancaEstrutural.Alteracao(
             UnidadeOrgao,
             "Presidência da República",

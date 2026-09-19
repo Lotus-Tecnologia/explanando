@@ -1,4 +1,5 @@
 using Explanando.Application.Consultas;
+using Explanando.Domain.Comum;
 using Explanando.Domain.Estado;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,62 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
     /// </summary>
     private static readonly TipoDeUnidade[] TiposDoMapa =
         [TipoDeUnidade.Ente, TipoDeUnidade.Orgao, TipoDeUnidade.Entidade];
+
+    /// <summary>
+    /// O quadro de pessoal da competência mais recente, por nó do grafo.
+    ///
+    /// <para>São ~350 linhas — barato de carregar inteiro, e é o que permite somar os ramos
+    /// em memória junto com a contagem de unidades, sem uma segunda travessia recursiva.</para>
+    /// </summary>
+    private async Task<Pessoal> CarregarPessoalAsync(CancellationToken cancelamento)
+    {
+        var competencia = await contexto.LotacoesDoOrgao
+            .AsNoTracking()
+            .OrderByDescending(lotacao => lotacao.Competencia)
+            .Select(lotacao => (Competencia?)lotacao.Competencia)
+            .FirstOrDefaultAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        if (competencia is null)
+        {
+            return new Pessoal();
+        }
+
+        var lotacoes = await contexto.LotacoesDoOrgao
+            .AsNoTracking()
+            .Where(lotacao => lotacao.Competencia == competencia)
+            .Select(lotacao => new
+            {
+                lotacao.CodigoSiorg,
+                lotacao.Vinculos,
+                lotacao.ComFuncaoDeConfianca,
+            })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var porNo = new Dictionary<int, (int Vinculos, int Funcao)>();
+
+        foreach (var lotacao in lotacoes.Where(l => l.CodigoSiorg is not null))
+        {
+            var no = lotacao.CodigoSiorg!.Value;
+            var antes = porNo.GetValueOrDefault(no);
+
+            // Dois codigos SIAFI podem apontar para o mesmo no': e' o caso de um orgao que
+            // se dividiu no SIAPE mas continua um so' no SIORG. Somar e' o certo.
+            porNo[no] = (antes.Vinculos + lotacao.Vinculos, antes.Funcao + lotacao.ComFuncaoDeConfianca);
+        }
+
+        var total = lotacoes.Sum(l => l.Vinculos);
+        var ligados = lotacoes.Where(l => l.CodigoSiorg is not null).Sum(l => l.Vinculos);
+
+        return new Pessoal
+        {
+            Competencia = competencia.Value.ToString(),
+            Total = total,
+            PorNo = porNo,
+            Cobertura = total == 0 ? null : (double)ligados / total,
+        };
+    }
 
     public async Task<MapaDoEstado> ObterMapaAsync(CancellationToken cancelamento = default)
     {
@@ -82,6 +139,12 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
             .AnyAsync(unidade => unidade.UltimaColeta > unidade.PrimeiraColeta, cancelamento)
             .ConfigureAwait(false);
 
+        var pessoal = await CarregarPessoalAsync(cancelamento).ConfigureAwait(false);
+
+        var pessoalDoRamo = SomarPorRamo(
+            arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)),
+            pessoal.PorNo);
+
         var noMapa = nos.Select(unidade => unidade.Codigo).ToHashSet();
 
         var paisNoMapa = AcharAncestralNoMapa(
@@ -92,7 +155,7 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
         {
             Nos =
             [
-                .. nos.Select(unidade => Projetar(unidade, descendentes) with
+                .. nos.Select(unidade => Projetar(unidade, descendentes, pessoal, pessoalDoRamo) with
                 {
                     CodigoPaiNoMapa = paisNoMapa.GetValueOrDefault(unidade.Codigo),
                 }),
@@ -134,6 +197,9 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
             ],
             UltimaColeta = ultimaColeta,
             TemHistorico = temHistorico,
+            CompetenciaDoPessoal = pessoal.Competencia,
+            TotalDeServidores = pessoal.Competencia is null ? null : pessoal.Total,
+            CoberturaDoPessoal = pessoal.Cobertura,
         };
     }
 
@@ -166,7 +232,13 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
         var descendentes = ContarDescendentes(
             arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)));
 
-        return [.. filhos.Select(unidade => Projetar(unidade, descendentes))];
+        var pessoal = await CarregarPessoalAsync(cancelamento).ConfigureAwait(false);
+
+        var pessoalDoRamo = SomarPorRamo(
+            arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)),
+            pessoal.PorNo);
+
+        return [.. filhos.Select(unidade => Projetar(unidade, descendentes, pessoal, pessoalDoRamo))];
     }
 
     public async Task<NoDoEstado?> ObterUnidadeAsync(
@@ -193,7 +265,13 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
         var descendentes = ContarDescendentes(
             arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)));
 
-        return Projetar(unidade, descendentes);
+        var pessoal = await CarregarPessoalAsync(cancelamento).ConfigureAwait(false);
+
+        var pessoalDoRamo = SomarPorRamo(
+            arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)),
+            pessoal.PorNo);
+
+        return Projetar(unidade, descendentes, pessoal, pessoalDoRamo);
     }
 
     public async Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasAsync(
@@ -226,7 +304,9 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
 
     private static NoDoEstado Projetar(
         UnidadeDoEstado unidade,
-        IReadOnlyDictionary<int, int> descendentes) => new()
+        IReadOnlyDictionary<int, int> descendentes,
+        Pessoal pessoal,
+        Dictionary<int, int> pessoalDoRamo) => new()
         {
             Codigo = unidade.Codigo,
             CodigoPai = unidade.CodigoPai,
@@ -240,7 +320,76 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
             BaseLegal = unidade.Normatizacao is { } norma ? VocabularioDoEstado.De(norma) : null,
             UnidadesSubordinadas = descendentes.GetValueOrDefault(unidade.Codigo),
             Ativa = unidade.Ativa,
+
+            // Nulo quando a ponte nao alcanca esta unidade, e nulo NAO e' zero. Ver a nota
+            // em NoDoEstado.Servidores.
+            Servidores = pessoal.PorNo.TryGetValue(unidade.Codigo, out var proprio)
+                ? proprio.Vinculos
+                : null,
+            EmFuncaoDeConfianca = pessoal.PorNo.TryGetValue(unidade.Codigo, out var funcao)
+                ? funcao.Funcao
+                : null,
+            ServidoresNoRamo = pessoalDoRamo.TryGetValue(unidade.Codigo, out var ramo)
+                ? ramo
+                : null,
         };
+
+    /// <summary>
+    /// Soma o pessoal de cada unidade em todos os seus ancestrais.
+    ///
+    /// <para>Mesma travessia de <see cref="ContarDescendentes"/> — sobe do nó até a raiz —,
+    /// e pelo mesmo motivo: a hierarquia tem menos de dez níveis, e o teto de saltos impede
+    /// que um ciclo no cadastro trave o laço.</para>
+    /// </summary>
+    private static Dictionary<int, int> SomarPorRamo(
+        IEnumerable<(int Codigo, int? CodigoPai)> arestas,
+        IReadOnlyDictionary<int, (int Vinculos, int Funcao)> porNo)
+    {
+        var pais = new Dictionary<int, int?>();
+
+        foreach (var (codigo, pai) in arestas)
+        {
+            pais[codigo] = pai;
+        }
+
+        var soma = new Dictionary<int, int>();
+
+        foreach (var (codigo, contagem) in porNo)
+        {
+            // A propria unidade conta no ramo dela.
+            soma[codigo] = soma.GetValueOrDefault(codigo) + contagem.Vinculos;
+
+            var atual = pais.GetValueOrDefault(codigo);
+            var saltos = 0;
+
+            while (atual is { } pai && saltos++ < 32)
+            {
+                soma[pai] = soma.GetValueOrDefault(pai) + contagem.Vinculos;
+
+                if (!pais.TryGetValue(pai, out var avo))
+                {
+                    break;
+                }
+
+                atual = avo;
+            }
+        }
+
+        return soma;
+    }
+
+    /// <summary>O quadro de pessoal de uma competência, pronto para projetar.</summary>
+    private sealed record Pessoal
+    {
+        public string? Competencia { get; init; }
+
+        public int Total { get; init; }
+
+        public IReadOnlyDictionary<int, (int Vinculos, int Funcao)> PorNo { get; init; } =
+            new Dictionary<int, (int, int)>();
+
+        public double? Cobertura { get; init; }
+    }
 
     /// <summary>
     /// Conta, para cada unidade, quantas pendem dela em qualquer profundidade.

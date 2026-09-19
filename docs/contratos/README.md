@@ -251,3 +251,12 @@ requisição por IP de cada vez**, recusando as demais com status 200.
 | `siorg-erro-concorrencia.json` | `codigoErro 119` com HTTP 200 — a recusa que se repete |
 | `siorg-erro-ente.json` | `codigoErro 104` — a recusa que **não** se repete |
 | `siorg-tabelas-de-referencia.json` | Poder, esfera, natureza jurídica e tipo de unidade |
+
+## Portal da Transparência — o quadro de pessoal
+
+Fonte da **metade das pessoas** do grafo. Contrato em [**pessoal.md**](pessoal.md).
+
+**É dado aberto e não exige cadastro** — o que corrige o que a Etapa 11 afirmou. São
+778.337 vínculos por mês, 83 MB compactados, e **nada disso é congelado como fixture**: o
+arquivo é grande demais, e o que precisa de teste é a ponte entre os dois cadastros do
+Estado, que vive no domínio e tem testes próprios.

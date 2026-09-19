@@ -479,6 +479,82 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.ToTable("despesas", (string)null);
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Estado.ContagemPorFuncao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LotacaoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lotacao_id");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade");
+
+                    b.Property<string>("Sigla")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("sigla");
+
+                    b.HasKey("Id")
+                        .HasName("pk_contagens_por_funcao");
+
+                    b.HasIndex("LotacaoId")
+                        .HasDatabaseName("ix_contagens_por_funcao_lotacao_id");
+
+                    b.ToTable("contagens_por_funcao", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Estado.LotacaoDoOrgao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CodigoSiafi")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_siafi");
+
+                    b.Property<int?>("CodigoSiorg")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_siorg");
+
+                    b.Property<int>("ComFuncaoDeConfianca")
+                        .HasColumnType("integer")
+                        .HasColumnName("com_funcao_de_confianca");
+
+                    b.Property<int>("Competencia")
+                        .HasColumnType("integer")
+                        .HasColumnName("competencia");
+
+                    b.Property<string>("NomeNaOrigem")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome_na_origem");
+
+                    b.Property<int>("Vinculos")
+                        .HasColumnType("integer")
+                        .HasColumnName("vinculos");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lotacoes_do_orgao");
+
+                    b.HasIndex("CodigoSiorg", "Competencia")
+                        .HasDatabaseName("ix_lotacoes_siorg_competencia");
+
+                    b.HasIndex("Competencia", "CodigoSiafi")
+                        .IsUnique()
+                        .HasDatabaseName("ix_lotacoes_competencia_siafi");
+
+                    b.ToTable("lotacoes_do_orgao", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Estado.MudancaEstrutural", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1130,6 +1206,16 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasConstraintName("fk_despesas_fornecedores_fornecedor_id");
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Estado.ContagemPorFuncao", b =>
+                {
+                    b.HasOne("Explanando.Domain.Estado.LotacaoDoOrgao", null)
+                        .WithMany("Funcoes")
+                        .HasForeignKey("LotacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_contagens_por_funcao_lotacoes_do_orgao_lotacao_id");
+                });
+
             modelBuilder.Entity("Explanando.Domain.Fornecedores.Fornecedor", b =>
                 {
                     b.OwnsOne("Explanando.Domain.Fornecedores.EnderecoFornecedor", "Endereco", b1 =>
@@ -1258,6 +1344,11 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_solicitacoes_varredura_usuarios_usuario_id");
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Estado.LotacaoDoOrgao", b =>
+                {
+                    b.Navigation("Funcoes");
                 });
 
             modelBuilder.Entity("Explanando.Domain.Fornecedores.Fornecedor", b =>

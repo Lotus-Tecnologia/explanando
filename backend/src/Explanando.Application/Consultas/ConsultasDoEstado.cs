@@ -50,6 +50,28 @@ public sealed record NoDoEstado
 
     /// <summary>Falso quando a unidade deixou de constar na fonte. Ver ADR-0007.</summary>
     public required bool Ativa { get; init; }
+
+    /// <summary>
+    /// Servidores lotados <b>nesta unidade</b>, ou nulo.
+    ///
+    /// <para><b>Nulo e zero são coisas diferentes, e é o ADR-0009 de novo.</b> Nulo quer
+    /// dizer "não conseguimos ligar esta unidade ao cadastro de pessoal" — a ponte entre os
+    /// dois códigos não alcança tudo. Zero quer dizer "ligamos, e não há ninguém". Exibir
+    /// nulo como zero transformaria uma limitação nossa numa afirmação sobre o Estado.</para>
+    /// </summary>
+    public int? Servidores { get; init; }
+
+    /// <summary>Quantos deles ocupam função de confiança. Nulo pela mesma razão.</summary>
+    public int? EmFuncaoDeConfianca { get; init; }
+
+    /// <summary>
+    /// Servidores em todo o ramo, somando as unidades abaixo.
+    ///
+    /// <para>É o número que dá sentido a um ministério: o Ministério da Educação tem quase
+    /// ninguém lotado nele mesmo e 47.946 unidades abaixo, quase todas universidades com
+    /// quadro próprio. O total do ramo é o que responde "quanta gente trabalha aqui".</para>
+    /// </summary>
+    public int? ServidoresNoRamo { get; init; }
 }
 
 /// <summary>Quantas unidades existem em cada corte.</summary>
@@ -94,6 +116,26 @@ public sealed record MapaDoEstado
 
     /// <summary>Quando a fonte foi consultada pela última vez.</summary>
     public DateTimeOffset? UltimaColeta { get; init; }
+
+    /// <summary>
+    /// O mês do quadro de pessoal, como "2026-07". Nulo quando ainda não houve coleta.
+    ///
+    /// <para>Vem separado da coleta da estrutura porque são fontes e cadências diferentes:
+    /// a estrutura é consultada ao vivo, o pessoal é publicado mensalmente com semanas de
+    /// atraso. Mostrar as duas sob uma data só sugeriria uma sincronia que não existe.</para>
+    /// </summary>
+    public string? CompetenciaDoPessoal { get; init; }
+
+    /// <summary>Total de vínculos no mês, incluindo os que não chegaram ao grafo.</summary>
+    public int? TotalDeServidores { get; init; }
+
+    /// <summary>
+    /// A fração dos vínculos que a ponte ligou a um nó.
+    ///
+    /// <para>Vai para a tela, e não fica só no log: quem lê "o órgão X tem N servidores"
+    /// precisa saber que uma parte do Executivo não aparece em nó nenhum.</para>
+    /// </summary>
+    public double? CoberturaDoPessoal { get; init; }
 
     /// <summary>
     /// Quantas coletas já existem.

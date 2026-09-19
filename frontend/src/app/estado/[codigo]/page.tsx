@@ -165,6 +165,39 @@ export default async function Pagina({ params }: Parametros) {
 
         <div className="bg-surface px-5 py-4">
           <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+            Servidores no ramo
+          </dt>
+          <dd className="numeros mt-1 font-display text-2xl font-bold text-titulo">
+            {/*
+              "Sem dado", e nunca zero. A ponte entre o cadastro de estrutura e o de
+              pessoal nao alcanca tudo, e o cadastro de pessoal e' do Executivo civil —
+              escrever 0 aqui afirmaria que um tribunal nao tem servidor nenhum.
+            */}
+            {/*
+              `== null` frouxo, e nao `=== null`: o campo pode chegar UNDEFINED de uma
+              resposta mais antiga que a API — o cache de fetch do Next guarda a resposta
+              por minutos, e uma implantacao no meio disso serve o contrato velho. Foi
+              exatamente assim que esta pagina quebrou com "toLocaleString of undefined".
+            */}
+            {unidade.servidoresNoRamo == null ? (
+              <span className="text-base font-normal text-texto-suave">Sem dado</span>
+            ) : (
+              formatarNumero(unidade.servidoresNoRamo)
+            )}
+          </dd>
+
+          {unidade.servidores != null ? (
+            <dd className="mt-1 text-xs text-texto-suave">
+              {formatarNumero(unidade.servidores)} lotados nesta unidade
+              {unidade.emFuncaoDeConfianca != null && unidade.emFuncaoDeConfianca > 0
+                ? `, ${formatarNumero(unidade.emFuncaoDeConfianca)} em função de confiança`
+                : ""}
+            </dd>
+          ) : null}
+        </div>
+
+        <div className="bg-surface px-5 py-4">
+          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
             Código no SIORG
           </dt>
           <dd className="numeros mt-1 text-sm text-texto">{unidade.codigo}</dd>

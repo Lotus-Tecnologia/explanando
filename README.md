@@ -17,12 +17,13 @@ quem cada um depende e sob que norma" — 96.658 unidades da administração fed
 
 ## Estado atual
 
-**Etapas 00 a 06 e 08 a 11 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
+**Etapas 00 a 06 e 08 a 12 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
 contratos reais das APIs, domínio, persistência, ingestão das duas casas, motor de regras,
-calibragem, API pública de leitura, interface em Next.js e o grafo do Estado.
+calibragem, API pública de leitura, interface em Next.js, o grafo do Estado e o quadro de
+pessoal.
 
-**791 testes no backend** (475 de domínio, 64 de aplicação, 195 de integração, 57 de ponta a
-ponta e 10 de arquitetura) e **136 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
+**843 testes no backend** (503 de domínio, 75 de aplicação, 195 de integração, 60 de ponta a
+ponta e 10 de arquitetura) e **149 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
 
 ### O que já está no ar
 
@@ -30,6 +31,7 @@ ponta e 10 de arquitetura) e **136 no frontend**, build com 0 avisos. CI verde n
 |---|---|---|
 | **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 25.047 indicadores |
 | **Grafo do Estado** | Postgres local | ✅ 96.658 unidades, 22 MB — **ainda não subiu para a Neon** |
+| **Quadro de pessoal** | Postgres local | ✅ 759.351 vínculos de 2026-07, agregados em 351 linhas |
 | **Frontend** | Cloudflare Workers | ⚠️ publicado, e **degradado de propósito** |
 | **API** | — | ❌ ainda só local |
 | **Domínio** | `explanando.com.br` | comprado; ainda não aponta para nada |
@@ -86,12 +88,20 @@ estrutural é deduzida comparando coletas, e por isso a primeira coleta é **lin
 anuncia nada. Coleta incompleta nunca conclui desaparecimento — é o
 [ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md) num grafo.
 
-> **A metade das pessoas está faltando, e a página diz o que falta.** Cadeiras vagas e
-> ocupantes interinos não saem do SIORG. São três lacunas diferentes: **quem ocupa cada cargo**
-> é público e sem cadastro (778.337 vínculos/mês no Portal da Transparência), mas trava na
-> ponte SIAFI ↔ SIORG — por nome casam 145 dos 354 órgãos; **as nomeações no tempo** vivem no
-> DOU e exigem cadastro no INLABS; e **as cadeiras vagas** não estão em fonte nenhuma, porque
-> ninguém publica os cargos autorizados. Ver [Etapa 11 §10](docs/registro/etapa-11-grafo-do-estado.md).
+**O grafo também diz quanta gente trabalha em cada órgão.** A
+[Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md) trouxe **759.351 vínculos** do Portal
+da Transparência, com **95,5%** deles ligados a um nó do mapa. Os dois cadastros do Estado não
+compartilham chave, e a ponte é por nome com regra explícita: o que não casa com exatidão fica
+sem par, em vez de ser adivinhado.
+
+> **Contagens, nunca pessoas.** A fonte é nominal — 778 mil linhas com nome e CPF mascarado —
+> e a agregação acontece durante a leitura. Ao banco chegam ~350 contagens por mês, e a
+> entidade não tem onde guardar uma pessoa: há um teste que quebra o build se alguém tentar.
+
+> **O que ainda falta, e a página diz cada coisa pelo que é:** *as nomeações ao longo do
+> tempo* vivem no DOU e exigem cadastro no INLABS; *as cadeiras vagas* não estão em fonte
+> nenhuma, porque ninguém publica os cargos autorizados por órgão. E o cadastro de pessoal é
+> do **Executivo civil** — por isso muitos tribunais mostram "sem dado" em vez de zero.
 
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md); e o estado corrente
@@ -124,6 +134,10 @@ vai para o git. A API sobe na 5000 e o worker aceita `coletar`, `varrer`, `conso
 
 ```bash
 cd backend && EXPLANANDO_CONEXAO="$(tr -d '\r\n' < .env.neon)" dotnet run --project src/Explanando.Api
+```
+
+```bash
+cd backend && dotnet run --project src/Explanando.Worker -- coletar-pessoal --ano 2026 --mes 7
 ```
 
 > **A coleta do Estado é sequencial por natureza da fonte.** O SIORG aceita **uma requisição
@@ -209,6 +223,7 @@ Ver [ADR-0005](docs/decisoes/ADR-0005-tdd-e-niveis-de-teste.md).
 - [Integrações e endpoints](docs/especificacao/integracoes.md)
 - [Decisões arquiteturais (ADRs)](docs/decisoes/README.md)
 - [O grafo do Estado — Etapa 11](docs/registro/etapa-11-grafo-do-estado.md)
+- [Quem trabalha no Estado — Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md)
 - [Registro de execução](docs/registro/README.md)
 - [Desdobramento — contas, segredos e a ordem do deploy](docs/desdobramento.md)
 - [Estado atual, para quem está retomando](estado_atual_projeto.md)

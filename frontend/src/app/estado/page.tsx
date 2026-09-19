@@ -69,9 +69,18 @@ export default async function Pagina() {
               {formatarNumero(mapa.totalDeUnidades)} unidades
             </strong>{" "}
             compõem a administração pública federal — de ministérios a conselhos de três
-            pessoas. Aqui estão todas: de quem cada uma depende, e se foi criada por lei ou
-            por uma assinatura interna.
+            pessoas. Aqui estão todas: de quem cada uma depende, quanta gente trabalha nelas,
+            e se foram criadas por lei ou por uma assinatura interna.
           </p>
+
+          {mapa.totalDeServidores != null ? (
+            <p className="mt-3 max-w-2xl text-base text-texto">
+              <strong className="font-semibold text-titulo">
+                {formatarNumero(mapa.totalDeServidores)} servidores
+              </strong>{" "}
+              no cadastro de pessoal de {mapa.competenciaDoPessoal}.
+            </p>
+          ) : null}
 
           {mapa.ultimaColeta ? (
             <p className="mt-3 text-sm text-texto-suave">
@@ -123,6 +132,62 @@ export default async function Pagina() {
           />
         </div>
       </section>
+
+      {/* ---------------------------------------------------------------- */}
+      {/*  Quem trabalha nele                                               */}
+      {/* ---------------------------------------------------------------- */}
+      {mapa.totalDeServidores != null ? (
+        <section className="mx-auto max-w-5xl px-4 py-12">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-titulo">
+            Quem trabalha no Estado
+          </h2>
+
+          <p className="mt-2 max-w-2xl text-sm text-texto-suave">
+            O cadastro de pessoal e a estrutura são <strong>duas fontes diferentes</strong>,
+            publicadas em cadências diferentes, e nenhuma das duas traz o código da outra. A
+            ligação entre elas é feita pelo nome do órgão, com regra explícita — e o que não
+            casa com exatidão fica sem par, em vez de ser adivinhado.
+          </p>
+
+          <dl className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-3">
+            <div className="bg-surface px-5 py-4">
+              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+                Servidores em {mapa.competenciaDoPessoal}
+              </dt>
+              <dd className="numeros mt-1 font-display text-3xl font-bold text-titulo">
+                {formatarNumero(mapa.totalDeServidores)}
+              </dd>
+            </div>
+
+            <div className="bg-surface px-5 py-4">
+              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+                Ligados a um órgão do mapa
+              </dt>
+              <dd className="numeros mt-1 font-display text-3xl font-bold text-titulo">
+                {mapa.coberturaDoPessoal == null
+                  ? "—"
+                  : `${(mapa.coberturaDoPessoal * 100).toFixed(1).replace(".", ",")}%`}
+              </dd>
+              <dd className="mt-1 text-xs text-texto-suave">
+                O resto está em rubricas que o cadastro de estrutura não tem — os governos
+                dos ex-territórios, por exemplo.
+              </dd>
+            </div>
+
+            <div className="bg-surface px-5 py-4">
+              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+                De qual poder
+              </dt>
+              <dd className="mt-1 text-sm text-texto">
+                Só do <strong className="font-semibold text-titulo">Executivo civil</strong>.
+                O Judiciário e o Legislativo mantêm folhas próprias e aparecem aqui apenas
+                em parte — por isso muitos tribunais mostram &ldquo;sem dado&rdquo; em vez de
+                zero.
+              </dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
 
       {/* ---------------------------------------------------------------- */}
       {/*  O que mudou                                                      */}
@@ -181,8 +246,13 @@ export default async function Pagina() {
                       </span>
                     </span>
 
-                    <span className="numeros shrink-0 text-sm text-texto">
+                    <span className="numeros shrink-0 text-right text-sm text-texto">
                       {formatarNumero(orgao.unidadesSubordinadas)}
+                      <span className="block text-xs text-texto-suave">
+                        {orgao.servidoresNoRamo == null
+                          ? "sem dado"
+                          : `${formatarNumero(orgao.servidoresNoRamo)} pessoas`}
+                      </span>
                     </span>
                   </Link>
                 </li>
