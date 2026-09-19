@@ -86,9 +86,12 @@ estrutural é deduzida comparando coletas, e por isso a primeira coleta é **lin
 anuncia nada. Coleta incompleta nunca conclui desaparecimento — é o
 [ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md) num grafo.
 
-> **A metade das pessoas está faltando, e a página diz isso.** Cadeiras vagas e ocupantes
-> interinos não saem do SIORG — não há campo de titular em endpoint nenhum. Esse dado vive no
-> DOU, e o acesso estruturado exige cadastro no INLABS.
+> **A metade das pessoas está faltando, e a página diz o que falta.** Cadeiras vagas e
+> ocupantes interinos não saem do SIORG. São três lacunas diferentes: **quem ocupa cada cargo**
+> é público e sem cadastro (778.337 vínculos/mês no Portal da Transparência), mas trava na
+> ponte SIAFI ↔ SIORG — por nome casam 145 dos 354 órgãos; **as nomeações no tempo** vivem no
+> DOU e exigem cadastro no INLABS; e **as cadeiras vagas** não estão em fonte nenhuma, porque
+> ninguém publica os cargos autorizados. Ver [Etapa 11 §10](docs/registro/etapa-11-grafo-do-estado.md).
 
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md); e o estado corrente

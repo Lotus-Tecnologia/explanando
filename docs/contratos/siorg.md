@@ -17,9 +17,18 @@ Base: `https://estruturaorganizacional.dados.gov.br/doc`
 de normatização que criou cada uma.
 
 **Não dá:** cargos nem pessoas. Nenhum campo de titular, nenhum de ocupante. Os números que
-dão vida ao CivLab — *"6 cadeiras vagas, 86 interinos"* — não saem daqui. Eles vivem no
-**DOU**, e o acesso estruturado a ele é o [INLABS](https://inlabs.in.gov.br/), que exige
-cadastro.
+dão vida ao CivLab — *"6 cadeiras vagas, 86 interinos"* — não saem daqui.
+
+> **E não saem todos do mesmo lugar.** Medido em 2026-09-19: **quem ocupa cada cargo** é
+> público e dispensa cadastro — o Portal da Transparência publica 778.337 vínculos por mês
+> em `dadosabertos-download.cgu.gov.br`, com cargo, função DAS/FCPE, situação e data de
+> nomeação. O que trava a junção é que **o SIAPE identifica o órgão pelo código SIAFI e o
+> SIORG pelo `codigoUnidade`**: casando por nome, batem 145 dos 354 órgãos, cobrindo 58,5%
+> dos servidores.
+>
+> **As nomeações ao longo do tempo** é que vivem no DOU, cujo acesso estruturado é o
+> [INLABS](https://inlabs.in.gov.br/) e exige cadastro. E **as cadeiras vagas** não estão em
+> fonte nenhuma: ninguém publica os cargos autorizados por órgão.
 
 > **Não há endpoint de histórico, e isto foi medido.** A unidade traz `operacao`,
 > `codigoUnidadePaiAnterior` e `dataFinalVersaoConsulta` no esquema, mas nas 122 unidades da

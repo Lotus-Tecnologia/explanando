@@ -201,12 +201,28 @@ export default async function Pagina() {
           </h2>
 
           <p className="mt-2 text-sm text-texto">
-            <strong className="font-semibold">As pessoas.</strong> Cadeiras vagas, ocupantes
-            interinos, quanto tempo um cargo ficou sem titular — nada disso está aqui, porque
-            o SIORG não publica cargo nem ocupante: não há campo, em nenhum endpoint. Esse
-            dado vive no Diário Oficial da União, e o acesso estruturado a ele depende de um
-            cadastro que ainda não fizemos.
+            <strong className="font-semibold">As pessoas.</strong> Quem ocupa cada cargo,
+            quantas cadeiras estão vagas, há quanto tempo. O SIORG não publica isso — não há
+            campo de titular em endpoint nenhum —, e são três ausências diferentes:
           </p>
+
+          <ul className="mt-3 space-y-2 text-sm text-texto">
+            <li>
+              <strong className="font-semibold text-titulo">Quem ocupa cada cargo hoje</strong>{" "}
+              é dado público: o Portal da Transparência publica 778.337 vínculos por mês. O que
+              falta é a ponte entre os códigos de órgão das duas fontes, que não são os mesmos.
+            </li>
+            <li>
+              <strong className="font-semibold text-titulo">As nomeações ao longo do tempo</strong>{" "}
+              estão no Diário Oficial, e o acesso estruturado a ele depende de um cadastro que
+              ainda não fizemos.
+            </li>
+            <li>
+              <strong className="font-semibold text-titulo">As cadeiras vagas</strong> não estão
+              em fonte nenhuma: ninguém publica quantos cargos cada órgão está autorizado a ter,
+              que é o número sem o qual não existe conta de vaga.
+            </li>
+          </ul>
 
           <p className="mt-3 text-sm text-texto-suave">
             Preferimos dizer isto a deixar o mapa parecer completo. É a mesma regra que vale

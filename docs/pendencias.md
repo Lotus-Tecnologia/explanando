@@ -71,7 +71,9 @@ A [Etapa 11](registro/etapa-11-grafo-do-estado.md) fechou a metade das **estrutu
 
 | Pendência | Quem destrava |
 |---|---|
-| **As pessoas** — cadeiras vagas, interinos, tempo sem titular | **Gustavo.** O SIORG não publica titular; o dado vive no DOU, e o [INLABS](https://inlabs.in.gov.br/) exige cadastro com nome, e-mail, telefone e UF. Eu não crio conta nem informo credencial |
+| **Quem ocupa cada cargo** | **Eu, mas com uma decisão sua antes.** Ao contrário do que eu disse durante a etapa, o dado é público e **não exige cadastro**: o Portal da Transparência publica 778.337 vínculos por mês (83 MB zipados, 444 MB abertos) com cargo, função DAS/FCPE, situação e data de nomeação. O que trava é a **ponte SIAFI ↔ SIORG** — casando por nome, só 145 dos 354 órgãos batem, cobrindo 58,5% dos servidores —, o armazenamento, e a avaliação de legítimo interesse da §3, que passa a valer para dado pessoal de 778 mil pessoas |
+| **Nomeações e exonerações no tempo** | **Gustavo.** Esta parte sim vive no DOU, e o [INLABS](https://inlabs.in.gov.br/) exige cadastro com nome, e-mail, telefone e UF. Eu não crio conta nem informo credencial |
+| **Cadeiras vagas** | Ninguém ainda: exige a tabela de cargos **autorizados** (estrutura regimental), que nem o SIORG nem o Portal da Transparência publicam |
 | Subir as 96.658 unidades para a Neon | Decisão sua. São 22 MB contra os 255 MB que as despesas já ocupam — cabe nos 512 MB do plano gratuito, mas a margem encolhe |
 | Agendar `coletar-estado` | Depende do deploy (§1). Cabe no mesmo Cloud Run Job do `ciclo-mensal`; a varredura leva ~9 min e é sequencial por natureza da fonte |
 | Ligar o grafo às despesas | O Senado tem 5 unidades no SIORG e 118 senadores na nossa base. São cadastros diferentes; a ponte é pelo órgão, não por pessoa, e ainda não existe |
@@ -89,6 +91,8 @@ A ordem que eu proporia, agora que o grafo fechou a metade das estruturas:
 
 1. **A página de perfil** — é a de maior valor parado, e não depende de ninguém.
 2. **A decisão do `REG_TX_001`** — é curta e destrava a publicação do Senado com consciência limpa.
-3. **O cadastro no INLABS** — é o único passo que destrava a metade das pessoas do grafo, e é
-   de cinco minutos.
-4. **O deploy** — assim que houver uma sessão com o Gustavo disponível para os dois `login`.
+3. **A ponte SIAFI ↔ SIORG** — destrava "quem ocupa cada cargo" sem depender de cadastro
+   nenhum, e é o maior salto de valor disponível hoje. Precisa de uma decisão sua sobre
+   dado pessoal antes de começar.
+4. **O cadastro no INLABS** — destrava a linha do tempo de nomeações, e é de cinco minutos.
+5. **O deploy** — assim que houver uma sessão com o Gustavo disponível para os dois `login`.

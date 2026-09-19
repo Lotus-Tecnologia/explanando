@@ -193,14 +193,56 @@ As fixtures congeladas foram escolhidas pelas armadilhas, não pelo caminho feli
 poder e sem esfera, as duas grafias do mesmo código, o órgão de outra esfera, a recusa que
 se repete e a recusa que não se repete.
 
-## 10. O que falta, e não é por escolha
+## 10. As pessoas — e uma correção minha, medida no fim da etapa
 
-**As pessoas.** A referência mostra cadeiras vagas e ocupantes interinos. O SIORG **não
-publica cargo nem titular** — não há campo, em nenhum endpoint. Esse dado vive no Diário
-Oficial, e o acesso estruturado a ele é o [INLABS](https://inlabs.in.gov.br/), que exige
-cadastro com nome, e-mail, telefone e UF. **É um cadastro que só o Gustavo pode fazer.**
+Eu disse, durante a etapa inteira, que a metade das pessoas estava **bloqueada num cadastro
+do INLABS que só o Gustavo pode fazer**. **Isso está errado, ou pelo menos incompleto**, e a
+medição que desmente veio depois de o resto já estar pronto.
 
-A página declara essa ausência em vez de deixar o mapa parecer completo.
+O Portal da Transparência publica, **mensalmente e sem cadastro nenhum**, o cadastro
+completo dos servidores federais:
+
+```
+https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/servidores/202607_Servidores_SIAPE.zip
+```
+
+**83 MB compactados; 444 MB e 778.337 vínculos no CSV de cadastro.** Ele traz
+`DESCRICAO_CARGO`, `SIGLA_FUNCAO` e `NIVEL_FUNCAO` (o DAS/FCPE), `SITUACAO_VINCULO`,
+`COD_ORG_EXERCICIO`, `DATA_NOMEACAO_CARGOFUNCAO` e o CPF **já mascarado na origem**
+(`***.056.281-**`) — a mesma forma que o domínio deste projeto já sabe tratar.
+
+**Mas ele não é encaixe direto no grafo, e isto também foi medido.** As duas fontes usam
+espaços de código diferentes: o SIAPE identifica o órgão pelo código SIAFI (`25201` para o
+Banco Central), e o SIORG pelo `codigoUnidade`. Casando pelo **nome**:
+
+| | |
+|---|---|
+| Órgãos de exercício no SIAPE | 354 |
+| Órgãos e entidades no SIORG | 330 |
+| Nome idêntico nos dois | **145** |
+| Servidores cobertos por esse casamento | **58,5%** |
+
+Os 41,5% que sobram não são erro de dado: são variantes reais — *"Universidade Federal
+Fluminense - RJ"* contra *"Universidade Federal Fluminense"*, *"MIN GESTAO E INOV EM SERV
+PUBLICOS"* abreviado, e entidades que simplesmente não existem no SIORG, como
+*"Estados / Municípios / Empresas"* e os governos dos ex-territórios. **Casar isso por
+aproximação é exatamente o tipo de palpite que este produto não dá.** A ponte precisa ser
+uma tabela SIAFI ↔ SIORG, e ela é o primeiro trabalho da próxima etapa.
+
+Então a lista honesta do que falta é esta, e são três coisas diferentes:
+
+| O que | Onde está | O que trava |
+|---|---|---|
+| **Quem ocupa cada cargo hoje** | Portal da Transparência, público e sem cadastro | A ponte SIAFI ↔ SIORG (58,5% por nome) e uma decisão de armazenamento: 444 MB/mês |
+| **Nomeações e exonerações no tempo** | DOU, via [INLABS](https://inlabs.in.gov.br/) | Cadastro que só o Gustavo pode fazer |
+| **Cadeiras vagas** | Em lugar nenhum dos dois | Exige a tabela de cargos **autorizados** (estrutura regimental), que nenhuma das duas fontes publica |
+
+E há uma decisão que não é técnica: são **778 mil servidores nomeados**. É dado pessoal em
+escala, e a avaliação de legítimo interesse que já está em
+[`pendencias.md`](../pendencias.md) §3 passa a valer para ele também — provavelmente antes
+de qualquer linha de código.
+
+A página `/estado` declara essas ausências em vez de deixar o mapa parecer completo.
 
 **Agendar a coleta.** A varredura é sequencial por natureza da fonte e leva ~9 minutos.
 Cabe no mesmo Cloud Run Job do `ciclo-mensal`, mas o agendamento depende do deploy, que está

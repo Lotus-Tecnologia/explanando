@@ -84,14 +84,23 @@ O tamanho de cada fatia é o número de unidades que pendem dela. Sem isso, um m
 conselho de três pessoas ocupariam o mesmo espaço, e o mapa informaria sobre a nossa lista
 em vez de sobre o Estado.
 
-### 7. A metade das pessoas está faltando, e a página diz isso
+### 7. A metade das pessoas está faltando, e a página diz **o que** falta
 
-A referência mostra cadeiras vagas e ocupantes interinos. O SIORG **não publica cargo nem
-titular** — não há campo, em nenhum endpoint. Esse dado vive no Diário Oficial, cujo acesso
-estruturado exige um cadastro que ainda não foi feito.
+A referência mostra cadeiras vagas e ocupantes interinos. O SIORG não publica cargo nem
+titular — não há campo, em nenhum endpoint.
 
-A página declara a ausência em vez de deixar o mapa parecer completo. Mesma regra do resto
-do site.
+Medido no fim da etapa, o que falta são **três coisas distintas**, e tratá-las como uma só
+foi um erro meu:
+
+| O que | Situação |
+|---|---|
+| **Quem ocupa cada cargo hoje** | **Público e sem cadastro** — o Portal da Transparência publica 778.337 vínculos por mês. Trava na ponte SIAFI ↔ SIORG: por nome, casam 145 dos 354 órgãos (58,5% dos servidores), e casar o resto por aproximação é o palpite que este produto não dá |
+| **Nomeações e exonerações no tempo** | DOU, via INLABS, que exige cadastro |
+| **Cadeiras vagas** | Nenhuma das duas fontes publica os cargos **autorizados**, que é o denominador da conta |
+
+A página declara essas ausências, cada uma pelo que é, em vez de deixar o mapa parecer
+completo. E a ingestão de 778 mil servidores nomeados é dado pessoal em escala: a avaliação
+de legítimo interesse pendente passa a valer para ela, **antes** de qualquer código.
 
 ## Consequências
 
