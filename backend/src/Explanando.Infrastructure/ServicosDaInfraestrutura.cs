@@ -101,6 +101,13 @@ public static class ServicosDaInfraestrutura
             provedor.GetRequiredService<ConsultasDoEstadoEfCore>(),
             provedor.GetRequiredService<HybridCache>()));
 
+        // O mapa de fornecedores compartilhados — a vista de pessoas do mesmo contexto.
+        // Cache obrigatorio: montar o mapa varre a tabela de despesas inteira.
+        servicos.AddScoped<ConsultasDaRedeEfCore>();
+        servicos.AddScoped<IConsultasDaRede>(provedor => new ConsultasDaRedeComCache(
+            provedor.GetRequiredService<ConsultasDaRedeEfCore>(),
+            provedor.GetRequiredService<HybridCache>()));
+
         // A passada mensal do ADR-0010 §4. Nao tem tabela propria: a agenda le a data da
         // varredura mais antiga em scores_risco, que a propria varredura grava.
         servicos.AddScoped<IRepositorioDoCiclo, RepositorioDoCiclo>();
