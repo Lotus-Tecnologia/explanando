@@ -436,6 +436,9 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
             Sigla = unidade.Sigla,
             Tipo = VocabularioDoEstado.De(unidade.Tipo),
             Poder = unidade.Poder is { } poder ? VocabularioDoEstado.De(poder) : null,
+            ChaveDoTipo = VocabularioDoEstado.ChaveDe(unidade.Tipo),
+            ChaveDoPoder = unidade.Poder is { } chave ? VocabularioDoEstado.ChaveDe(chave) : null,
+            Anel = VocabularioDoEstado.AnelDe(unidade.Tipo),
             Natureza = unidade.NaturezaJuridica is { } natureza
                 ? VocabularioDoEstado.De(natureza)
                 : null,

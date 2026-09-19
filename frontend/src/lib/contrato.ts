@@ -246,6 +246,20 @@ export interface NoDoEstado {
   sigla: string | null;
   tipo: string;
   poder: string | null;
+
+  /**
+   * As chaves estaveis, para quem DECIDE em vez de exibir.
+   *
+   * O grafo escolhe a forma do no' pelo tipo e o setor pelo poder. Se essas escolhas
+   * casassem com o texto de tela, bastaria alguem melhorar a redacao para o desenho mudar
+   * sozinho — sem erro e sem teste vermelho.
+   */
+  chaveDoTipo: string;
+  chaveDoPoder: string | null;
+
+  /** Em que anel do grafo a unidade fica: 0 ente, 1 direta, 2 indireta, 3 colegiado. */
+  anel: number;
+
   natureza: string | null;
 
   /**

@@ -30,6 +30,24 @@ public sealed record NoDoEstado
     /// <summary>Por extenso, no vocabulário do leitor — nunca o número do enum.</summary>
     public required string Tipo { get; init; }
     public string? Poder { get; init; }
+
+    /// <summary>
+    /// As chaves estáveis, para quem <b>decide</b> em vez de exibir.
+    ///
+    /// <para>O grafo escolhe a forma do nó pelo tipo e o setor pelo poder. Se essas
+    /// escolhas casassem com o texto de tela, bastaria alguém melhorar a redação para o
+    /// desenho mudar sozinho — sem erro e sem teste vermelho.</para>
+    /// </summary>
+    public required string ChaveDoTipo { get; init; }
+    public string? ChaveDoPoder { get; init; }
+
+    /// <summary>
+    /// Em que anel do grafo a unidade fica: 0 ente, 1 direta, 2 indireta, 3 colegiado.
+    ///
+    /// <para>É o raio como <b>natureza jurídica</b>, não como profundidade na árvore. Ver
+    /// <c>VocabularioDoEstado.AnelDe</c>.</para>
+    /// </summary>
+    public required int Anel { get; init; }
     public string? Natureza { get; init; }
 
     /// <summary>

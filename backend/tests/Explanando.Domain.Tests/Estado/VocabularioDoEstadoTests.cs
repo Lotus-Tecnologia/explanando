@@ -77,4 +77,84 @@ public sealed class VocabularioDoEstadoTests
                 $"'{rotulo}' parece nome de identificador, nao texto para leitura");
         }
     }
+
+    // ------------------------------------------------------------------
+    //  As chaves estaveis, que o desenho consome
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Toda_chave_de_tipo_e_unica_e_estavel()
+    {
+        // Duas chaves iguais fariam dois tipos virarem a mesma forma no grafo.
+        var chaves = Enum.GetValues<TipoDeUnidade>().Select(VocabularioDoEstado.ChaveDe).ToList();
+
+        chaves.Distinct().Count().ShouldBe(chaves.Count);
+        chaves.ShouldNotContain("desconhecido");
+    }
+
+    [Fact]
+    public void Toda_chave_de_poder_e_unica_e_estavel()
+    {
+        var chaves = Enum.GetValues<Poder>().Select(VocabularioDoEstado.ChaveDe).ToList();
+
+        chaves.Distinct().Count().ShouldBe(chaves.Count);
+        chaves.ShouldNotContain("desconhecido");
+    }
+
+    [Fact]
+    public void A_chave_nao_e_o_rotulo_de_tela()
+    {
+        // E' o ponto inteiro de existirem as duas. Se a chave FOSSE o rotulo, melhorar a
+        // redacao mudaria o desenho — sem erro e sem teste vermelho.
+        foreach (var tipo in Enum.GetValues<TipoDeUnidade>())
+        {
+            VocabularioDoEstado.ChaveDe(tipo).ShouldNotBe(VocabularioDoEstado.De(tipo));
+        }
+    }
+
+    [Fact]
+    public void A_chave_nao_tem_acento_nem_maiuscula()
+    {
+        // Ela vai para atributo de CSS e para chave de dicionario no navegador.
+        foreach (var tipo in Enum.GetValues<TipoDeUnidade>())
+        {
+            var chave = VocabularioDoEstado.ChaveDe(tipo);
+
+            chave.ShouldBe(chave.ToLowerInvariant());
+            chave.ShouldAllBe(c => char.IsAsciiLetterLower(c) || c == '-');
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  O anel: o raio como natureza juridica
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void O_anel_separa_direta_de_indireta()
+    {
+        // A distincao nao e' de tamanho, e' de natureza: orgao e' braco do proprio ente,
+        // sem personalidade juridica; entidade tem personalidade e patrimonio proprios.
+        // E' o equivalente brasileiro do "nivel de autoridade" da referencia.
+        VocabularioDoEstado.AnelDe(TipoDeUnidade.Ente)
+            .ShouldBeLessThan(VocabularioDoEstado.AnelDe(TipoDeUnidade.Orgao));
+
+        VocabularioDoEstado.AnelDe(TipoDeUnidade.Orgao)
+            .ShouldBeLessThan(VocabularioDoEstado.AnelDe(TipoDeUnidade.Entidade));
+
+        VocabularioDoEstado.AnelDe(TipoDeUnidade.Entidade)
+            .ShouldBeLessThan(VocabularioDoEstado.AnelDe(TipoDeUnidade.UnidadeColegiada));
+    }
+
+    [Fact]
+    public void Todo_anel_tem_rotulo_proprio()
+    {
+        var rotulos = Enum.GetValues<TipoDeUnidade>()
+            .Select(VocabularioDoEstado.AnelDe)
+            .Distinct()
+            .Select(VocabularioDoEstado.RotuloDoAnel)
+            .ToList();
+
+        rotulos.Distinct().Count().ShouldBe(rotulos.Count);
+        rotulos.ShouldAllBe(rotulo => rotulo.Length > 0);
+    }
 }
