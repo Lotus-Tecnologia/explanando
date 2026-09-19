@@ -306,6 +306,13 @@ export interface MudancaDoEstado {
   codigoUnidade: number;
   unidade: string;
   descricao: string;
+
+  /** Chave estavel do tipo: `criada`, `alterada`, `desapareceu`, `voltou`. */
+  chave: string;
+
+  /** O selo curto do cartao. */
+  selo: string;
+
   de: string | null;
   para: string | null;
   detectadaEm: string;

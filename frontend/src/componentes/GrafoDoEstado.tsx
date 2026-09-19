@@ -13,6 +13,7 @@ import {
 } from "@/lib/grafoRadial";
 import { corDoPoder } from "@/lib/grafo";
 import { formatarNumero } from "@/lib/formato";
+import { BuscaNoGrafo } from "./BuscaNoGrafo";
 import { PainelDaUnidade } from "./PainelDaUnidade";
 
 /**
@@ -66,6 +67,13 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
 
   return (
     <div>
+      <div className="mb-4">
+        <BuscaNoGrafo
+          nos={grafo.nos.map((p) => p.no)}
+          aoEscolher={(codigo) => setSelecionado(codigo)}
+        />
+      </div>
+
       <figure className="m-0">
         <svg
           viewBox={`${-lado / 2} ${-lado / 2} ${lado} ${lado}`}

@@ -100,6 +100,37 @@ public sealed class MudancaEstrutural : Entidade
         _ => DescreverCampo(),
     };
 
+    /// <summary>
+    /// A chave estável do tipo, para o desenho decidir o selo.
+    ///
+    /// <para>Mesma razão de <c>VocabularioDoEstado.ChaveDe</c>: a cor e o formato do selo
+    /// não podem casar com o texto de tela, senão melhorar a redação muda a aparência sem
+    /// ninguém pedir.</para>
+    /// </summary>
+    public string Chave() => Tipo switch
+    {
+        TipoDeMudanca.Criada => "criada",
+        TipoDeMudanca.Alterada => "alterada",
+        TipoDeMudanca.Desaparecida => "desapareceu",
+        TipoDeMudanca.Reaparecida => "voltou",
+        _ => "outra",
+    };
+
+    /// <summary>
+    /// O selo curto que vai no cartão.
+    ///
+    /// <para>Curto de propósito: ele fica ao lado do nome do órgão, e um selo mais longo
+    /// que o nome inverte a hierarquia da leitura.</para>
+    /// </summary>
+    public string Selo() => Tipo switch
+    {
+        TipoDeMudanca.Criada => "Passou a constar",
+        TipoDeMudanca.Alterada => "Alterada",
+        TipoDeMudanca.Desaparecida => "Deixou de constar",
+        TipoDeMudanca.Reaparecida => "Voltou a constar",
+        _ => "Mudou",
+    };
+
     private string DescreverCampo() => Campo switch
     {
         "Nome" => "mudou de nome",

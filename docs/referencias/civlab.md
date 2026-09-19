@@ -149,15 +149,17 @@ Retratos vêm do **Wikimedia Commons**, servidos pelo otimizador de imagem do Ne
 
 ## 8. O que disso cabe em nós — e o que não cabe
 
-| Recurso do CivLab | Temos dado? | Observação |
+| Recurso do CivLab | Situação | Observação |
 |---|---|---|
-| Setor por poder | ✅ | Já desenhamos assim |
-| **Anel por nível de autoridade** | ⚠️ | `TipoDeUnidade` (ente/órgão/entidade/UA/colegiada) é uma proxy honesta e serve |
-| **Forma por tipo de entidade** | ✅ | Temos 5 tipos; o SIORG não distingue comissão de conselho |
+| Setor por poder | ✅ **feito** | Com piso de 30° por poder, declarado na tela |
+| **Anel por nível de autoridade** | ✅ **feito** | Virou **natureza jurídica** — ente, administração direta, administração indireta. Melhor que a referência: lá é editorial, aqui é constitucional |
+| **Forma por tipo de entidade** | ✅ **feito** | Círculo, quadrado, hexágono, losango |
 | **Estilo de traço por tipo de relação** | ❌ | **Só temos subordinação.** Nomeação, confirmação e supervisão não existem no SIORG |
-| Hover com rótulo | ✅ | Só trabalho de interface |
-| Clicar → girar e isolar arestas | ✅ | Só trabalho de interface |
-| Painel lateral | ✅ | Com o que temos: tipo, poder, natureza, base legal, subordinadas, servidores |
+| Hover com rótulo | ✅ **feito** | |
+| Clicar → girar e isolar arestas | ✅ **feito** | |
+| Painel lateral | ✅ **feito** | Tipo, poder, natureza, base legal, subordinadas, servidores, a quem responde e quem responde a ela |
+| Busca com sobreposição | ✅ **feito** | No cliente, sobre os 336 nós; insensível a acento, atalho `/`, navegação por teclado |
+| **Cartão OUT/IN com o antigo riscado** | ✅ **feito** | Serve à estrutura: renomeação, mudança de sigla, mudança de pai |
 | **Descrição em prosa** | ❌ | O SIORG não publica descrição. Escrever à mão para 96 mil unidades é inviável; para os ~330 órgãos, é possível |
 | Link para a fonte legal / site oficial | ❌ | O SIORG não traz nenhum dos dois |
 | **Ocupante com retrato** | ❌ | Precisa do DOU (INLABS, seu cadastro) ou de outra fonte |

@@ -108,6 +108,12 @@ public sealed record MudancaDoEstado
     /// <summary>A frase pronta para leitura. Ver <see cref="MudancaEstrutural.Descrever"/>.</summary>
     public required string Descricao { get; init; }
 
+    /// <summary>A chave estável do tipo: <c>criada</c>, <c>alterada</c>, <c>desapareceu</c>…</summary>
+    public required string Chave { get; init; }
+
+    /// <summary>O selo curto do cartão.</summary>
+    public required string Selo { get; init; }
+
     public string? De { get; init; }
     public string? Para { get; init; }
     public required DateTimeOffset DetectadaEm { get; init; }

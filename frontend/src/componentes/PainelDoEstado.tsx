@@ -106,35 +106,89 @@ export function LinhaDoTempoDoEstado({
   }
 
   return (
-    <ol className="space-y-px overflow-hidden rounded-cartao border border-borda-suave">
+    <ol className="space-y-3">
       {mudancas.map((mudanca, indice) => (
-        <li
-          key={`${mudanca.codigoUnidade}-${mudanca.detectadaEm}-${indice}`}
-          className="bg-surface px-5 py-4"
-        >
-          <p className="text-sm text-texto">
-            <strong className="font-semibold text-titulo">{mudanca.unidade}</strong>{" "}
-            {mudanca.descricao}
-            {mudanca.de && mudanca.para ? (
-              <>
-                : de <span className="text-texto-suave">{mudanca.de}</span> para{" "}
-                <span className="text-texto-suave">{mudanca.para}</span>
-              </>
-            ) : null}
-          </p>
-          <p className="mt-1 text-xs text-texto-suave">
-            {/*
-              "Detectada em", e não "aconteceu em". A fonte não data a mudança — nós a
-              deduzimos comparando duas coletas, então o que sabemos é quando VIMOS, e
-              escrever outra coisa seria precisão inventada.
-            */}
-            Detectada em{" "}
-            <time dateTime={mudanca.detectadaEm}>
-              {new Date(mudanca.detectadaEm).toLocaleDateString("pt-BR")}
-            </time>
-          </p>
+        <li key={`${mudanca.codigoUnidade}-${mudanca.detectadaEm}-${indice}`}>
+          <CartaoDeMudanca mudanca={mudanca} />
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * Um cartão de mudança, no formato **saiu / entrou**.
+ *
+ * É a melhor ideia de apresentação da referência (`docs/referencias/civlab.md`): o valor
+ * antigo aparece **riscado** e o novo abaixo dele, e a transição se lê sem uma frase. O
+ * risco marca a saída sem ambiguidade — "de X para Y" numa linha corrida obriga o leitor
+ * a decidir qual é qual.
+ *
+ * Aqui ela serve à estrutura, e não a pessoas: o que sai e entra é o nome de um órgão, a
+ * sigla, ou a unidade a que ele responde.
+ */
+function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
+  const saiu = mudanca.de;
+  const entrou = mudanca.para;
+
+  return (
+    <article className="rounded-cartao border border-borda-suave bg-surface p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span
+          className="rounded-selo px-2 py-0.5 text-xs font-bold tracking-wide uppercase"
+          style={{
+            background: "var(--color-realce)",
+            color: "var(--color-titulo)",
+          }}
+        >
+          {mudanca.selo}
+        </span>
+
+        <time
+          dateTime={mudanca.detectadaEm}
+          className="numeros text-xs text-texto-suave"
+          /*
+            "Detectada em", e não "aconteceu em". A fonte não data a mudança — nós a
+            deduzimos comparando duas coletas, então o que sabemos é quando VIMOS.
+          */
+          title={`Detectada em ${new Date(mudanca.detectadaEm).toLocaleDateString("pt-BR")}`}
+        >
+          detectada em {new Date(mudanca.detectadaEm).toLocaleDateString("pt-BR")}
+        </time>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-titulo">{mudanca.unidade}</p>
+      <p className="text-sm text-texto-suave">{mudanca.descricao}</p>
+
+      {saiu !== null || entrou !== null ? (
+        <dl className="mt-3 overflow-hidden rounded-campo border border-borda-suave">
+          <div className="flex gap-3 bg-fundo px-3 py-2">
+            <dt className="w-12 shrink-0 text-xs font-bold tracking-wider text-texto-suave uppercase">
+              Saiu
+            </dt>
+            <dd className="min-w-0 flex-1 text-sm">
+              {saiu === null ? (
+                <span className="text-texto-suave italic">Não havia registro anterior</span>
+              ) : (
+                <span className="text-texto-suave line-through">{saiu}</span>
+              )}
+            </dd>
+          </div>
+
+          <div className="flex gap-3 border-t border-borda-suave bg-fundo px-3 py-2">
+            <dt className="w-12 shrink-0 text-xs font-bold tracking-wider text-texto-suave uppercase">
+              Entrou
+            </dt>
+            <dd className="min-w-0 flex-1 text-sm">
+              {entrou === null ? (
+                <span className="text-texto-suave italic">Nada no lugar</span>
+              ) : (
+                <span className="font-medium text-texto">{entrou}</span>
+              )}
+            </dd>
+          </div>
+        </dl>
+      ) : null}
+    </article>
   );
 }

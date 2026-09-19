@@ -99,4 +99,59 @@ public sealed class MudancaEstruturalTests
                 $"o campo {campo} está caindo no texto genérico");
         }
     }
+
+    // ------------------------------------------------------------------
+    //  O selo do cartao
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Cada_tipo_tem_chave_e_selo_proprios()
+    {
+        // Duas chaves iguais fariam dois tipos de mudanca virarem o mesmo selo; dois selos
+        // iguais fariam "criada" e "desapareceu" parecerem a mesma noticia.
+        var mudancas = new[]
+        {
+            MudancaEstrutural.Criacao(26, "X", Agora),
+            MudancaEstrutural.Desaparecimento(26, "X", Agora),
+            MudancaEstrutural.Reaparecimento(26, "X", Agora),
+            MudancaEstrutural.Alteracao(26, "X", new MudancaDeCampo("Nome", "a", "b"), Agora),
+        };
+
+        mudancas.Select(m => m.Chave()).Distinct().Count().ShouldBe(4);
+        mudancas.Select(m => m.Selo()).Distinct().Count().ShouldBe(4);
+
+        foreach (var mudanca in mudancas)
+        {
+            mudanca.Chave().ShouldNotBe("outra");
+            mudanca.Selo().ShouldNotBe("Mudou");
+        }
+    }
+
+    [Fact]
+    public void A_chave_nao_e_o_selo()
+    {
+        // E' o ponto de existirem as duas: a chave decide a cor, o selo e' lido.
+        var mudanca = MudancaEstrutural.Criacao(26, "X", Agora);
+
+        mudanca.Chave().ShouldNotBe(mudanca.Selo());
+        mudanca.Chave().ShouldBe(mudanca.Chave().ToLowerInvariant());
+    }
+
+    [Fact]
+    public void O_selo_e_curto_o_bastante_para_caber_ao_lado_do_nome()
+    {
+        // Selo mais longo que o nome do orgao inverte a hierarquia da leitura.
+        foreach (var tipo in Enum.GetValues<TipoDeMudanca>())
+        {
+            var mudanca = tipo switch
+            {
+                TipoDeMudanca.Criada => MudancaEstrutural.Criacao(26, "X", Agora),
+                TipoDeMudanca.Desaparecida => MudancaEstrutural.Desaparecimento(26, "X", Agora),
+                TipoDeMudanca.Reaparecida => MudancaEstrutural.Reaparecimento(26, "X", Agora),
+                _ => MudancaEstrutural.Alteracao(26, "X", new MudancaDeCampo("Nome", "a", "b"), Agora),
+            };
+
+            mudanca.Selo().Length.ShouldBeLessThanOrEqualTo(20);
+        }
+    }
 }

@@ -295,6 +295,8 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
                 // A frase vem do dominio, e nao de um switch aqui: e' a mesma regra do
                 // CatalogoDeRegras — vocabulario duplicado em cada consumidor diverge.
                 Descricao = mudanca.Descrever(),
+                Chave = mudanca.Chave(),
+                Selo = mudanca.Selo(),
                 De = mudanca.De,
                 Para = mudanca.Para,
                 DetectadaEm = mudanca.DetectadaEm,

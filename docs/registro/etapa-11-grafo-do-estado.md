@@ -193,6 +193,27 @@ As fixtures congeladas foram escolhidas pelas armadilhas, não pelo caminho feli
 poder e sem esfera, as duas grafias do mesmo código, o órgão de outra esfera, a recusa que
 se repete e a recusa que não se repete.
 
+## 9-A. O desenho foi refeito depois de explorar a referência
+
+Em 2026-09-19, depois de percorrer o [CivLab](../referencias/civlab.md) controle a
+controle, o *sunburst* desta etapa foi substituído por um **grafo de nós e arestas**.
+
+A mudança que mais importa não é estética: **o raio deixou de ser profundidade na árvore e
+passou a ser natureza jurídica** — ente federativo, administração direta, administração
+indireta. Uma autarquia ligada direto a um poder tem a mesma profundidade de um ministério
+e não tem a mesma natureza; o desenho anterior afirmava que sim. É o equivalente brasileiro
+do eixo de autoridade da referência, e é melhor que ele: lá a classificação é editorial,
+aqui é constitucional.
+
+O resto veio junto: forma por tipo de entidade, hover com rótulo, clique que gira a roda e
+isola as ligações, painel com o resumo, busca por nome ou sigla insensível a acento, e o
+cartão de mudança no formato **saiu/entrou** com o valor antigo riscado. Cada nó continua
+sendo um `<a href>` de verdade — sem JavaScript, clicar abre a página da unidade.
+
+**O que não foi copiado, e por quê:** a referência tem nove tipos de aresta — nomeia,
+confirma, supervisiona, assessora. O SIORG nos dá **um**: subordinação. Desenhar nove e
+preencher todos com subordinação deixaria o desenho parecido e seria inventar relação.
+
 ## 10. As pessoas — e uma correção minha, medida no fim da etapa
 
 Eu disse, durante a etapa inteira, que a metade das pessoas estava **bloqueada num cadastro
