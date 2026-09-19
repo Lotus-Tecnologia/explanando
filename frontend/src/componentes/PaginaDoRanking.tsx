@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ranquearTudo } from "@/lib/api";
 import { formatarNumero } from "@/lib/formato";
 import { ORDENACOES, caminhoDoRanking, type Ordenacao } from "@/lib/ordenacoes";
-import { CASAS, type Casa } from "@/lib/casas";
+import type { Casa } from "@/lib/casas";
 import { TabelaDoRanking } from "./TabelaDoRanking";
 import { CartoesDeNumero } from "./CartoesDeNumero";
 
@@ -25,9 +25,23 @@ export async function PaginaDoRanking({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="font-display text-3xl font-bold tracking-tight text-titulo">
+      {/*
+        A casa é o TÍTULO, e "gastos da cota parlamentar" virou o contexto acima dele.
+
+        Antes a frase aparecia duas vezes: no título e no nome da casa logo abaixo. E o
+        cabeçalho do site já diz em que casa se está, com a aba marcada.
+
+        O nome da casa continua no `h1` — e isso não é a repetição que foi removida. São
+        631 páginas disputando o índice do buscador, que é o canal de aquisição principal
+        (ADR-0001); dois rankings com `h1` idêntico competiriam entre si. Aba de navegação
+        e título de página são papéis diferentes.
+      */}
+      <p className="text-xs font-bold tracking-widest text-acento uppercase">
         Gastos da cota parlamentar
-        <span className="block text-texto-suave">{casa.nomeOficial}</span>
+      </p>
+
+      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-titulo">
+        {casa.nomeOficial}
       </h1>
 
       <p className="mt-2 max-w-3xl text-sm">
@@ -38,37 +52,7 @@ export async function PaginaDoRanking({
         publica.
       </p>
 
-      {/*
-        As duas casas ficam sempre visíveis, uma ao lado da outra, e nunca no mesmo ranking:
-        a CEAP e a CEAPS têm regras e valores próprios por UF, e os números não se comparam
-        entre elas. Poder trocar de casa sem voltar à home é conveniência; misturá-las seria
-        erro.
-      */}
-      <nav aria-label="Casa legislativa" className="mt-5">
-        <ul className="flex flex-wrap gap-2">
-          {CASAS.map((opcao) => {
-            const atual = opcao.chave === casa.chave;
-
-            return (
-              <li key={opcao.chave}>
-                <Link
-                  href={caminhoDoRanking(opcao, ordenacao)}
-                  aria-current={atual ? "page" : undefined}
-                  className={
-                    atual
-                      ? "inline-block border-b-2 border-titulo px-1 pb-1 text-sm font-bold text-titulo"
-                      : "inline-block border-b-2 border-transparent px-1 pb-1 text-sm font-semibold text-texto-suave hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-                  }
-                >
-                  {opcao.nomeOficial}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <nav aria-label="Ordenação do ranking" className="mt-6">
+      <nav aria-label="Ordenação do ranking" className="mt-5">
         <ul className="flex flex-wrap gap-2">
           {ORDENACOES.map((opcao) => {
             const ativa = opcao.chave === ordenacao.chave;

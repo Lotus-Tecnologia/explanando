@@ -337,6 +337,19 @@ const TRES = [
 ];
 
 describe("TabelaDoRanking", () => {
+  /**
+   * O texto das células de nome, na ordem em que estão na tela.
+   *
+   * A célula traz iniciais, nome, partido e UF juntos — então os testes verificam com
+   * `toContain`, e não com igualdade: extrair o nome exato daqui seria um parser frágil
+   * que quebra quando a célula ganhar um campo.
+   */
+  const colunaDeNomes = () =>
+    screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((linha) => within(linha).getAllByRole("cell")[1].textContent ?? "");
+
   /** Mais gente do que cabe numa página, para a paginação ter o que fazer. */
   const MUITOS: ItemDoRanking[] = Array.from({ length: 60 }, (_, i) =>
     doRanking({
@@ -403,6 +416,75 @@ describe("TabelaDoRanking", () => {
     await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 0");
 
     expect(screen.getByText("PARLAMENTAR 00")).toBeInTheDocument();
+  });
+
+  // ------------------------------------------------------------------
+  //  Ordenacao por coluna
+  // ------------------------------------------------------------------
+
+  it("clicar num cabecalho reordena, e clicar de novo inverte", async () => {
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
+
+    const porNome = screen.getByRole("button", { name: /parlamentar/i });
+
+    await usuario.click(porNome);
+    expect(colunaDeNomes()[0]).toContain("ANA PAULA");
+
+    await usuario.click(porNome);
+    expect(colunaDeNomes()[0]).toContain("MARIA DA SILVA");
+  });
+
+  it("anuncia a ordenacao para leitor de tela", async () => {
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
+
+    await usuario.click(screen.getByRole("button", { name: /parlamentar/i }));
+
+    const coluna = screen.getByRole("columnheader", { name: /parlamentar/i });
+    expect(coluna).toHaveAttribute("aria-sort", "ascending");
+  });
+
+  it("DENSIDADE NAO MEDIDA vai para o fim nos DOIS sentidos", async () => {
+    // A regra que o ADR-0009 protege. Abaixo do piso amostral a densidade nao foi medida, e
+    // vem nula. Se o nulo participasse da comparacao, o sentido decrescente o jogaria para o
+    // TOPO — e a tela publicaria como "mais arriscado" exatamente quem o motor se recusou a
+    // medir, com nome e foto.
+    const usuario = userEvent.setup();
+
+    const comNulo: ItemDoRanking[] = [
+      doRanking({ id: "a", nomeParlamentar: "COM DENSIDADE BAIXA", indiceDeRisco: 1 }),
+      doRanking({
+        id: "b",
+        nomeParlamentar: "SEM AMOSTRA",
+        indiceDeRisco: null,
+        indiceDeAltas: null,
+        amostraSuficiente: false,
+      }),
+      doRanking({ id: "c", nomeParlamentar: "COM DENSIDADE ALTA", indiceDeRisco: 9 }),
+    ];
+
+    render(<TabelaDoRanking itens={comNulo} rotulo="Volume gasto" />);
+
+    const porDensidade = screen.getByRole("button", { name: /densidade/i });
+
+    await usuario.click(porDensidade);
+    expect(colunaDeNomes().at(-1)).toContain("SEM AMOSTRA");
+
+    await usuario.click(porDensidade);
+    expect(colunaDeNomes().at(-1)).toContain("SEM AMOSTRA");
+  });
+
+  it("reordenar NAO renumera a posicao", async () => {
+    // A coluna # e' a colocacao no ranking canonico, nao o indice da linha na tela. E' assim
+    // que se ve que o 3o em volume e' o 87o em densidade.
+    const usuario = userEvent.setup();
+    render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
+
+    await usuario.click(screen.getByRole("button", { name: /parlamentar/i }));
+
+    const linha = screen.getByText("ANA PAULA").closest("tr")!;
+    expect(within(linha).getAllByRole("cell")[0]).toHaveTextContent("3");
   });
 
   it("a posicao sobrevive a virada de pagina", async () => {
