@@ -22,9 +22,12 @@ fechada.**
 > que prova a comparação. Ver [Etapa 11](docs/registro/etapa-11-grafo-do-estado.md) e o
 > [ADR-0016](docs/decisoes/ADR-0016-grafo-do-estado.md).
 >
-> **O que falta desse lado são as pessoas**: cadeiras vagas e ocupantes interinos não saem do
-> SIORG, vivem no DOU, e o acesso estruturado exige cadastro no INLABS — que só o Gustavo pode
-> fazer.
+> **O que falta desse lado são as pessoas, e são três lacunas diferentes.** *Quem ocupa cada
+> cargo* é público e **dispensa cadastro** — 778.337 vínculos por mês no Portal da
+> Transparência —, mas trava na ponte SIAFI ↔ SIORG: por nome casam 145 dos 354 órgãos, 58,5%
+> dos servidores. *As nomeações no tempo* vivem no DOU e exigem cadastro no INLABS, que só o
+> Gustavo pode fazer. *As cadeiras vagas* não estão em fonte nenhuma. Ver
+> [Etapa 11 §10](docs/registro/etapa-11-grafo-do-estado.md).
 
 > **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
 > 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o
