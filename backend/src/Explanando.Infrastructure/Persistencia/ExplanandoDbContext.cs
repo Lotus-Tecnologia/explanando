@@ -2,6 +2,7 @@ using Explanando.Domain.Auditoria;
 using Explanando.Domain.Contestacoes;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
+using Explanando.Domain.Estado;
 using Explanando.Domain.Fornecedores;
 using Explanando.Domain.Ingestao;
 using Explanando.Domain.Parlamentares;
@@ -54,6 +55,15 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     public DbSet<ConsolidadoMensal> ConsolidadosMensais => Set<ConsolidadoMensal>();
 
     public DbSet<CoberturaDoParlamentar> CoberturasDeRegra => Set<CoberturaDoParlamentar>();
+
+    /// <summary>
+    /// O grafo do Estado. Contexto novo, tabelas proprias: nao ha chave estrangeira entre
+    /// unidade e parlamentar, porque a ligacao entre o Senado como orgao e os 118 senadores
+    /// e' semantica, nao referencial — sao dois cadastros federais que nao se conhecem.
+    /// </summary>
+    public DbSet<UnidadeDoEstado> UnidadesDoEstado => Set<UnidadeDoEstado>();
+
+    public DbSet<MudancaEstrutural> MudancasEstruturais => Set<MudancaEstrutural>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

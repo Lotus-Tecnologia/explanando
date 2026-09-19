@@ -1,6 +1,9 @@
 import { CASAS, type Casa } from "./casas";
 import type {
   DespesaDetalhada,
+  MapaDoEstado,
+  MudancaDoEstado,
+  NoDoEstado,
   ItemDeDespesa,
   ItemDoRanking,
   OrdenacaoDoRanking,
@@ -229,4 +232,72 @@ export async function listarDespesas(
 /** Uma despesa e o parlamentar dela. É o endereço que um link compartilhado abre. */
 export function obterDespesa(id: string): Promise<DespesaDetalhada | null> {
   return buscar<DespesaDetalhada>(`/api/v1/despesas/${id}`);
+}
+
+// ---------------------------------------------------------------------------
+//  O grafo do Estado
+// ---------------------------------------------------------------------------
+
+/**
+ * O mapa da estrutura do Estado, no nível de entes, órgãos e entidades.
+ *
+ * Devolve `null` quando a fonte não responde, pela mesma razão de `ranquearTudo`: uma
+ * indisponibilidade da API não pode derrubar o build inteiro, e a página sabe dizer que o
+ * dado não veio.
+ */
+export async function obterMapaDoEstado(): Promise<MapaDoEstado | null> {
+  try {
+    return await buscar<MapaDoEstado>("/api/v1/estado");
+  } catch (erro) {
+    console.warn(
+      `[explanando] Mapa do Estado indisponível: ` +
+        `${erro instanceof Error ? erro.message : erro}`,
+    );
+
+    return null;
+  }
+}
+
+export async function listarMudancasDoEstado(
+  quantidade = 30,
+): Promise<MudancaDoEstado[] | null> {
+  try {
+    return await buscar<MudancaDoEstado[]>(`/api/v1/estado/mudancas?quantidade=${quantidade}`);
+  } catch (erro) {
+    console.warn(
+      `[explanando] Mudanças do Estado indisponíveis: ` +
+        `${erro instanceof Error ? erro.message : erro}`,
+    );
+
+    return null;
+  }
+}
+
+/** Os filhos diretos de uma unidade. Um nível por vez — ver a nota do endpoint. */
+export async function obterUnidadesDoEstado(codigo: number): Promise<NoDoEstado[] | null> {
+  try {
+    return await buscar<NoDoEstado[]>(`/api/v1/estado/${codigo}/unidades`);
+  } catch {
+    return null;
+  }
+}
+
+export function obterUnidadeDoEstado(codigo: number): Promise<NoDoEstado | null> {
+  return buscar<NoDoEstado>(`/api/v1/estado/${codigo}`);
+}
+
+/**
+ * Os códigos das unidades que o mapa mostra, para o Next gerar as páginas estáticas.
+ *
+ * Mesmo raciocínio de `coletarIdsParaPreRender`: é a CDN, não o banco, que absorve o pico
+ * (ADR-0001), e a CDN só serve o que já existe como arquivo. São ~336 páginas — os entes,
+ * órgãos e entidades —, e não as 96 mil unidades: essas continuam sob demanda, porque
+ * ninguém compartilha o link de uma coordenação de terceiro nível.
+ *
+ * Lista vazia quando a API não responde: o build precisa passar em CI sem backend no ar.
+ */
+export async function coletarCodigosDoEstado(): Promise<number[]> {
+  const mapa = await obterMapaDoEstado();
+
+  return mapa?.nos.map((no) => no.codigo) ?? [];
 }

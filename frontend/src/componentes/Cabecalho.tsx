@@ -42,25 +42,25 @@ export function Cabecalho() {
           Explanando
         </Link>
 
-        <nav aria-label="Casas legislativas" className="flex items-center gap-1">
-          {CASAS.map((casa) => {
-            const ativa = casa.chave === casaAtual?.chave;
+        <nav aria-label="Seções" className="flex items-center gap-1">
+          {CASAS.map((casa) => (
+            <Aba
+              key={casa.chave}
+              href={casa.caminho}
+              rotulo={casa.rotulo}
+              ativa={casa.chave === casaAtual?.chave}
+            />
+          ))}
 
-            return (
-              <Link
-                key={casa.chave}
-                href={casa.caminho}
-                aria-current={ativa ? "page" : undefined}
-                className={
-                  ativa
-                    ? "rounded-selo bg-realce px-3 py-1.5 text-sm font-semibold text-titulo"
-                    : "rounded-selo px-3 py-1.5 text-sm font-semibold text-texto-suave hover:bg-surface hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-                }
-              >
-                {casa.rotulo}
-              </Link>
-            );
-          })}
+          {/*
+            O Estado NÃO é uma terceira casa, e o separador diz isso antes de qualquer
+            palavra: Câmara e Senado respondem "quanto se gastou"; o mapa responde "que
+            órgãos existem". Pô-lo na mesma fileira sem marca faria parecer que há três
+            casas legislativas.
+          */}
+          <span aria-hidden="true" className="mx-1 h-5 w-px bg-borda-suave" />
+
+          <Aba href="/estado" rotulo="Estado" ativa={caminho.startsWith("/estado")} />
         </nav>
 
         <div className="ms-auto">
@@ -74,6 +74,23 @@ export function Cabecalho() {
       */}
       {casaAtual ? <SubmenuDaCasa caminho={caminho} chaveDaCasa={casaAtual.chave} /> : null}
     </header>
+  );
+}
+
+/** Uma aba do nível de cima. Existe para as três não divergirem de estilo com o tempo. */
+function Aba({ href, rotulo, ativa }: { href: string; rotulo: string; ativa: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={ativa ? "page" : undefined}
+      className={
+        ativa
+          ? "rounded-selo bg-realce px-3 py-1.5 text-sm font-semibold text-titulo"
+          : "rounded-selo px-3 py-1.5 text-sm font-semibold text-texto-suave hover:bg-surface hover:text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+      }
+    >
+      {rotulo}
+    </Link>
   );
 }
 

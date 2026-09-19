@@ -64,6 +64,7 @@ app.MapGet("/saude", () => Results.Ok(new { situacao = "ok" }))
     .WithSummary("Sonda de disponibilidade.");
 
 app.MapEndpointsPublicos();
+app.MapEndpointsDoEstado();
 
 await app.RunAsync().ConfigureAwait(false);
 

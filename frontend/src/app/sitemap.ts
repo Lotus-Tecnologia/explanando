@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { coletarIdsParaPreRender } from "@/lib/api";
+import { coletarCodigosDoEstado, coletarIdsParaPreRender } from "@/lib/api";
 import { rotasDoSitemap } from "@/lib/site";
 
 /**
@@ -12,7 +12,10 @@ import { rotasDoSitemap } from "@/lib/site";
 export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const ids = await coletarIdsParaPreRender();
+  const [ids, unidades] = await Promise.all([
+    coletarIdsParaPreRender(),
+    coletarCodigosDoEstado(),
+  ]);
 
-  return rotasDoSitemap(ids, new Date());
+  return rotasDoSitemap(ids, new Date(), unidades);
 }

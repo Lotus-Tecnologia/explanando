@@ -1,6 +1,6 @@
 # Estado atual do projeto — handoff
 
-**Gerado em:** 2026-09-17 · **Último commit:** `53c6e0f` · **Branch:** `main` (sincronizada)
+**Gerado em:** 2026-09-19 · **Branch:** `main`
 
 Este documento existe para que outra sessão retome sem reler o histórico. O que está aqui foi
 **verificado contra o banco e o código**, não escrito de memória.
@@ -12,8 +12,19 @@ Este documento existe para que outra sessão retome sem reler o histórico. O qu
 O **Explanando** audita gastos da cota parlamentar (CEAP/CEAPS) cruzando dados públicos para
 apontar inconsistências financeiras.
 
-**As etapas 00 a 06 e 08 a 10 estão concluídas. A 07 (observabilidade e deploy) está quase
+**As etapas 00 a 06 e 08 a 11 estão concluídas. A 07 (observabilidade e deploy) está quase
 fechada.**
+
+> **O marco mais recente: o grafo do Estado.** A adaptação ao Brasil do
+> [CivLab](https://graph.civlab.org/us) — **96.658 unidades** da administração pública federal,
+> com hierarquia, base legal e rastreador de mudanças estruturais. Roda hoje **contra o Postgres
+> local**, em 22 MB. Duas coletas independentes da fonte ao vivo produziram zero diferenças, o
+> que prova a comparação. Ver [Etapa 11](docs/registro/etapa-11-grafo-do-estado.md) e o
+> [ADR-0016](docs/decisoes/ADR-0016-grafo-do-estado.md).
+>
+> **O que falta desse lado são as pessoas**: cadeiras vagas e ocupantes interinos não saem do
+> SIORG, vivem no DOU, e o acesso estruturado exige cadastro no INLABS — que só o Gustavo pode
+> fazer.
 
 > **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
 > 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o
@@ -33,9 +44,10 @@ fechada.**
 | 05 API pública de leitura · 06 Frontend Next.js | ✅ |
 | **07 Observabilidade e deploy** | 🚧 **falta a API no Cloud Run e o DNS** |
 | 08 Linguagem da interface · 09 Ingestão do Senado · 10 Calibragem e rankings por casa | ✅ |
+| **11 O grafo do Estado** | ✅ local; falta subir para a Neon e agendar |
 
-**Testes:** 735 no backend (445 domínio, 54 aplicação, 179 integração, 10 arquitetura, 47
-ponta a ponta) + **116 no frontend**. CI verde nos quatro jobs.
+**Testes:** 791 no backend (475 domínio, 64 aplicação, 195 integração, 10 arquitetura, 57
+ponta a ponta) + **136 no frontend**. CI verde nos quatro jobs.
 
 ---
 
@@ -341,6 +353,12 @@ Cinco combinados que valem manter:
 5. **Comentário explica o *porquê*, não o *o quê*.** O código é denso em justificativa
    histórica: por que a glosa é nula, por que o vermelho é só dos 3,3%, por que o `last`
    ausente é suspeito. Isso é intencional e deve continuar.
+
+### O que está pausado
+
+Em 18/09/2026 o foco passou para o **grafo do Estado** (adaptação do CivLab ao Brasil). O
+que ficou esperando — o deploy, a página de perfil, as decisões de curadoria e os itens
+pequenos — está em [docs/pendencias.md](docs/pendencias.md), com o porquê de cada um.
 
 ### Para desdobrar
 

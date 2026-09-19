@@ -5,6 +5,10 @@ a partir de dados de transparência pública. Um motor de regras determinística
 cota parlamentar com dados cadastrais de fornecedores e sinaliza **inconsistências financeiras**
 para leitura do cidadão.
 
+Desde a Etapa 11 o produto responde a **duas perguntas**, não uma: além de "quanto se gastou", o
+[**mapa do Estado**](docs/registro/etapa-11-grafo-do-estado.md) responde "que órgãos existem, de
+quem cada um depende e sob que norma" — 96.658 unidades da administração federal.
+
 > **Postura do produto:** o sistema nunca acusa ninguém de crime. Ele reporta achados sistêmicos
 > de um motor de regras e deixa a conclusão para o leitor ou para a autoridade competente.
 > Ver [ADR-0004](docs/decisoes/ADR-0004-nomenclatura-tecnica.md).
@@ -13,18 +17,19 @@ para leitura do cidadão.
 
 ## Estado atual
 
-**Etapas 00 a 06 e 08 a 10 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
+**Etapas 00 a 06 e 08 a 11 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
 contratos reais das APIs, domínio, persistência, ingestão das duas casas, motor de regras,
-calibragem, API pública de leitura e interface em Next.js.
+calibragem, API pública de leitura, interface em Next.js e o grafo do Estado.
 
-**735 testes no backend** (445 de domínio, 54 de aplicação, 179 de integração, 47 de ponta a
-ponta e 10 de arquitetura) e **116 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
+**791 testes no backend** (475 de domínio, 64 de aplicação, 195 de integração, 57 de ponta a
+ponta e 10 de arquitetura) e **136 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
 
 ### O que já está no ar
 
 | | Onde | Situação |
 |---|---|---|
 | **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 25.047 indicadores |
+| **Grafo do Estado** | Postgres local | ✅ 96.658 unidades, 22 MB — **ainda não subiu para a Neon** |
 | **Frontend** | Cloudflare Workers | ⚠️ publicado, e **degradado de propósito** |
 | **API** | — | ❌ ainda só local |
 | **Domínio** | `explanando.com.br` | comprado; ainda não aponta para nada |
@@ -69,6 +74,22 @@ abaixo de quem tem zero.
 > para as rubricas da CEAPS: o Senado saiu de 19,8% para **5,080%**, contra 2,957% da Câmara,
 > e em gravidade alta ficou **abaixo** dela.
 
+### O mapa do Estado
+
+Outra pergunta, outro contexto ([ADR-0016](docs/decisoes/ADR-0016-grafo-do-estado.md)): **não há
+parlamentar, não há cota e não há indicador de risco**. A fonte é o
+[SIORG](docs/contratos/siorg.md), e a base tem **96.658 unidades** — 99,0% no Executivo, 97,6%
+unidades administrativas e **95,4% criadas por ato interno, não por lei ou decreto**.
+
+O SIORG **não publica histórico**: os campos existem no esquema e chegam vazios. A mudança
+estrutural é deduzida comparando coletas, e por isso a primeira coleta é **linha de base** e não
+anuncia nada. Coleta incompleta nunca conclui desaparecimento — é o
+[ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md) num grafo.
+
+> **A metade das pessoas está faltando, e a página diz isso.** Cadeiras vagas e ocupantes
+> interinos não saem do SIORG — não há campo de titular em endpoint nenhum. Esse dado vive no
+> DOU, e o acesso estruturado exige cadastro no INLABS.
+
 Os contratos reais das APIs estão em [`docs/contratos/`](docs/contratos/README.md); o andamento
 detalhado de cada etapa, em [`docs/registro/`](docs/registro/README.md); e o estado corrente
 para quem está retomando, em [`estado_atual_projeto.md`](estado_atual_projeto.md).
@@ -96,10 +117,18 @@ cd frontend && npm ci && npm test
 
 **Contra a base de produção na Neon.** A string de conexão fica em `backend/.env.neon`, que não
 vai para o git. A API sobe na 5000 e o worker aceita `coletar`, `varrer`, `consolidar` e
-`ciclo-mensal` — mais `coletar-senado`, que traz a CEAPS.
+`ciclo-mensal` — mais `coletar-senado`, que traz a CEAPS, e `coletar-estado`, que traz o grafo.
 
 ```bash
 cd backend && EXPLANANDO_CONEXAO="$(tr -d '\r\n' < .env.neon)" dotnet run --project src/Explanando.Api
+```
+
+> **A coleta do Estado é sequencial por natureza da fonte.** O SIORG aceita **uma requisição
+> por IP de cada vez** e recusa as demais com `HTTP 200` e `codigoErro 119`. São ~9 minutos para
+> as 330 subárvores, e não adianta paralelizar em camada nenhuma.
+
+```bash
+cd backend && dotnet run --project src/Explanando.Worker -- coletar-estado
 ```
 
 > **A API não aplica migrations, de propósito** — API de leitura não mexe em esquema. Quem cria
@@ -176,6 +205,8 @@ Ver [ADR-0005](docs/decisoes/ADR-0005-tdd-e-niveis-de-teste.md).
 - [Motor de regras determinísticas](docs/especificacao/Explanando_Motor_Regras_V1.md)
 - [Integrações e endpoints](docs/especificacao/integracoes.md)
 - [Decisões arquiteturais (ADRs)](docs/decisoes/README.md)
+- [O grafo do Estado — Etapa 11](docs/registro/etapa-11-grafo-do-estado.md)
 - [Registro de execução](docs/registro/README.md)
 - [Desdobramento — contas, segredos e a ordem do deploy](docs/desdobramento.md)
 - [Estado atual, para quem está retomando](estado_atual_projeto.md)
+- [Pendências — o que está pausado e por quê](docs/pendencias.md)

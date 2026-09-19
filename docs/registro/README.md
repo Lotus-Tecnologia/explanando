@@ -41,6 +41,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 08 | A linguagem da interface | ✅ Concluída | [etapa-08-linguagem-da-interface.md](etapa-08-linguagem-da-interface.md) |
 | 09 | A ingestão do Senado | ✅ Concluída | [etapa-09-ingestao-do-senado.md](etapa-09-ingestao-do-senado.md) |
 | 10 | Calibragem do Senado e rankings por casa | ✅ Concluída | [etapa-10-calibragem-e-rankings-por-casa.md](etapa-10-calibragem-e-rankings-por-casa.md) |
+| 11 | O grafo do Estado — 96.658 unidades do SIORG | ✅ Concluída | [etapa-11-grafo-do-estado.md](etapa-11-grafo-do-estado.md) |
 
 ## Incidentes
 

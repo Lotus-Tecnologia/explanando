@@ -218,3 +218,76 @@ export interface DespesaDetalhada {
   despesa: ItemDeDespesa;
   parlamentar: ParlamentarDaDespesa;
 }
+
+// ---------------------------------------------------------------------------
+//  O grafo do Estado
+//
+//  Contexto novo: aqui não há parlamentar, cota nem indicador. A pergunta é "que órgãos
+//  existem, de quem cada um depende, sob que norma — e o que mudou".
+// ---------------------------------------------------------------------------
+
+/** Um nó do grafo. Os rótulos já vêm por extenso da API, nunca como código de enum. */
+export interface NoDoEstado {
+  codigo: number;
+
+  /** Quem manda na unidade na estrutura real. */
+  codigoPai: number | null;
+
+  /**
+   * O ancestral mais próximo que **também está no mapa**.
+   *
+   * Só vem no mapa. Existe porque oito órgãos penduram de uma unidade administrativa — os
+   * comandos militares ficam entre o Ministério da Defesa e os órgãos abaixo deles —, e a
+   * unidade administrativa não entra no desenho. Sem este campo, esses oito virariam
+   * raízes soltas e sumiriam.
+   */
+  codigoPaiNoMapa?: number | null;
+  nome: string;
+  sigla: string | null;
+  tipo: string;
+  poder: string | null;
+  natureza: string | null;
+
+  /**
+   * "Criada por lei ou decreto" contra "Criada por ato interno".
+   *
+   * Não é metadado: é a diferença entre um órgão que precisa do Congresso para desaparecer
+   * e um que some com uma assinatura. `null` quando a fonte não informa.
+   */
+  baseLegal: string | null;
+
+  /** Quantas unidades pendem deste nó, em qualquer profundidade. Dá escala ao desenho. */
+  unidadesSubordinadas: number;
+  ativa: boolean;
+}
+
+export interface ContagemDoEstado {
+  rotulo: string;
+  unidades: number;
+}
+
+export interface MudancaDoEstado {
+  codigoUnidade: number;
+  unidade: string;
+  descricao: string;
+  de: string | null;
+  para: string | null;
+  detectadaEm: string;
+}
+
+export interface MapaDoEstado {
+  nos: NoDoEstado[];
+  totalDeUnidades: number;
+  porPoder: ContagemDoEstado[];
+  porTipo: ContagemDoEstado[];
+  porBaseLegal: ContagemDoEstado[];
+  ultimaColeta: string | null;
+
+  /**
+   * Se já houve uma segunda coleta.
+   *
+   * Sem isto, "nenhuma mudança" seria lido como "nada mudou" quando significa "ainda não
+   * comparamos" — os dois zeros diferentes que o ADR-0009 proíbe confundir.
+   */
+  temHistorico: boolean;
+}

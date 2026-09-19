@@ -1,7 +1,9 @@
 using Explanando.Application.Ingestao;
 using Explanando.Infrastructure.Integracoes.BrasilApi;
 using Explanando.Infrastructure.Integracoes.Camara;
+using Explanando.Application.Estado;
 using Explanando.Infrastructure.Integracoes.Senado;
+using Explanando.Infrastructure.Integracoes.Siorg;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Explanando.Infrastructure.Integracoes;
@@ -108,6 +110,34 @@ public static class ServicosDeIntegracao
                 opcoes.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
                 opcoes.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
             });
+
+        // ---------------------------------------------------------------
+        //  SIORG — a estrutura organizacional do Estado
+        //
+        //  Sem retry do Polly aqui, e isso e' deliberado. A recusa que importa nesta fonte
+        //  chega como HTTP 200 com `codigoErro` no corpo — o Polly nao a enxerga. Quem
+        //  repete e' o proprio cliente, que le o envelope e sabe distinguir "estou ocupado"
+        //  (119, insiste) de "essa unidade nao tem arvore" (104, nao insiste).
+        //
+        //  O disjuntor tambem ficaria errado: com uma requisicao por vez e 335 chamadas
+        //  sequenciais, ele abriria no primeiro ministerio lento e derrubaria a coleta
+        //  inteira.
+        // ---------------------------------------------------------------
+        servicos
+            .AddHttpClient<ClienteSiorg>(http =>
+            {
+                http.BaseAddress = new Uri("https://estruturaorganizacional.dados.gov.br/doc/");
+
+                // A maior subarvore medida sao centenas de unidades num payload so'; o
+                // timeout generoso e' barato porque as chamadas sao serializadas de
+                // qualquer forma.
+                http.Timeout = TimeSpan.FromSeconds(120);
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            });
+
+        servicos.AddScoped<IFonteDaEstruturaDoEstado>(provedor =>
+            provedor.GetRequiredService<ClienteSiorg>());
 
         servicos
             .AddHttpClient<IFonteDeCadastroEmpresarial, ClienteBrasilApi>(http =>

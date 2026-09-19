@@ -1,0 +1,103 @@
+{
+ "poder": {
+  "poder": [
+   {
+    "codigoPoder": 3,
+    "descricaoPoder": "Judiciário",
+    "ativo": "SIM"
+   },
+   {
+    "codigoPoder": 1,
+    "descricaoPoder": "Executivo",
+    "ativo": "SIM"
+   },
+   {
+    "codigoPoder": 2,
+    "descricaoPoder": "Legislativo",
+    "ativo": "SIM"
+   },
+   {
+    "codigoPoder": 4,
+    "descricaoPoder": "Funções Essenciais à Justiça",
+    "ativo": "SIM"
+   }
+  ]
+ },
+ "esfera": {
+  "esfera": [
+   {
+    "codigoEsfera": 1,
+    "descricaoEsfera": "Federal",
+    "ativo": "SIM"
+   },
+   {
+    "codigoEsfera": 2,
+    "descricaoEsfera": "Estadual/Distrital",
+    "ativo": "SIM"
+   },
+   {
+    "codigoEsfera": 3,
+    "descricaoEsfera": "Municipal",
+    "ativo": "SIM"
+   }
+  ]
+ },
+ "natureza-juridica": {
+  "naturezaJuridica": [
+   {
+    "codigoNaturezaJuridica": 1,
+    "descricaoNaturezaJuridica": "Empresa Pública",
+    "ativo": "SIM"
+   },
+   {
+    "codigoNaturezaJuridica": 2,
+    "descricaoNaturezaJuridica": "Fundação Pública",
+    "ativo": "SIM"
+   },
+   {
+    "codigoNaturezaJuridica": 3,
+    "descricaoNaturezaJuridica": "Administração Direta",
+    "ativo": "SIM"
+   },
+   {
+    "codigoNaturezaJuridica": 4,
+    "descricaoNaturezaJuridica": "Autarquia",
+    "ativo": "SIM"
+   },
+   {
+    "codigoNaturezaJuridica": 6,
+    "descricaoNaturezaJuridica": "Sociedade de Economia Mista",
+    "ativo": "SIM"
+   },
+   {
+    "codigoNaturezaJuridica": 7,
+    "descricaoNaturezaJuridica": "Órgão Público Autônomo Federal",
+    "ativo": "SIM"
+   }
+  ]
+ },
+ "tipo-unidade": {
+  "tipoUnidade": [
+   {
+    "codigoTipoUnidade": "ET",
+    "descricaoTipoUnidade": "Ente"
+   },
+   {
+    "codigoTipoUnidade": "EN",
+    "descricaoTipoUnidade": "Entidade"
+   },
+   {
+    "codigoTipoUnidade": "UA",
+    "descricaoTipoUnidade": "Unidade Administrativa"
+   },
+   {
+    "codigoTipoUnidade": "UC",
+    "descricaoTipoUnidade": "Unidade Colegiada"
+   },
+   {
+    "codigoTipoUnidade": "OR",
+    "descricaoTipoUnidade": "Órgão"
+   }
+  ]
+ }
+}

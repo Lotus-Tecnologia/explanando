@@ -234,3 +234,20 @@ um posto de **Goiânia/GO** — candidato direto a `REG_GEO_002`.
 
 Reexecutar as chamadas listadas na tabela do topo e sobrescrever os arquivos. Se algum teste de
 integração quebrar depois disso, **o contrato mudou** — investigar antes de ajustar o teste.
+
+## SIORG — a estrutura organizacional do Estado
+
+Fonte do **grafo do Estado** (a adaptação ao Brasil do CivLab). O contrato medido está em
+[**siorg.md**](siorg.md), e as armadilhas dele são de uma família nova: **`HTTP 200` não
+quer dizer sucesso** — a recusa vem no corpo, em `codigoErro` —, e o serviço aceita **uma
+requisição por IP de cada vez**, recusando as demais com status 200.
+
+| Arquivo | O que congela |
+|---|---|
+| `siorg-orgaos-amostra.json` | Seis órgãos escolhidos pelas armadilhas: um por poder, o GDF (esfera estadual) e uma entidade |
+| `siorg-estrutura-presidencia.json` | A subárvore, com a grafia **numérica** dos códigos |
+| `siorg-unidade-presidencia.json` | A mesma unidade, com a grafia **por extenso** |
+| `siorg-unidade-raiz.json` | A República Federativa do Brasil: sem poder, sem esfera, sigla em branco |
+| `siorg-erro-concorrencia.json` | `codigoErro 119` com HTTP 200 — a recusa que se repete |
+| `siorg-erro-ente.json` | `codigoErro 104` — a recusa que **não** se repete |
+| `siorg-tabelas-de-referencia.json` | Poder, esfera, natureza jurídica e tipo de unidade |

@@ -479,6 +479,137 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.ToTable("despesas", (string)null);
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Estado.MudancaEstrutural", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Campo")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("campo");
+
+                    b.Property<int>("CodigoUnidade")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_unidade");
+
+                    b.Property<string>("De")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("de");
+
+                    b.Property<DateTimeOffset>("DetectadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("detectada_em");
+
+                    b.Property<string>("NomeNaEpoca")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("nome_na_epoca");
+
+                    b.Property<string>("Para")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("para");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer")
+                        .HasColumnName("tipo");
+
+                    b.HasKey("Id")
+                        .HasName("pk_mudancas_estruturais");
+
+                    b.HasIndex("CodigoUnidade")
+                        .HasDatabaseName("ix_mudancas_estruturais_unidade");
+
+                    b.HasIndex("DetectadaEm")
+                        .IsDescending()
+                        .HasDatabaseName("ix_mudancas_estruturais_detectada_em");
+
+                    b.ToTable("mudancas_estruturais", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Estado.UnidadeDoEstado", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativa");
+
+                    b.Property<int>("Codigo")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo");
+
+                    b.Property<int?>("CodigoOrgao")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_orgao");
+
+                    b.Property<int?>("CodigoPai")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_pai");
+
+                    b.Property<int?>("Esfera")
+                        .HasColumnType("integer")
+                        .HasColumnName("esfera");
+
+                    b.Property<int?>("NaturezaJuridica")
+                        .HasColumnType("integer")
+                        .HasColumnName("natureza_juridica");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("nome");
+
+                    b.Property<int?>("Normatizacao")
+                        .HasColumnType("integer")
+                        .HasColumnName("normatizacao");
+
+                    b.Property<int?>("Poder")
+                        .HasColumnType("integer")
+                        .HasColumnName("poder");
+
+                    b.Property<DateTimeOffset>("PrimeiraColeta")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("primeira_coleta");
+
+                    b.Property<string>("Sigla")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("sigla");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer")
+                        .HasColumnName("tipo");
+
+                    b.Property<DateTimeOffset>("UltimaColeta")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ultima_coleta");
+
+                    b.HasKey("Id")
+                        .HasName("pk_unidades_do_estado");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_unidades_do_estado_codigo");
+
+                    b.HasIndex("CodigoPai")
+                        .HasDatabaseName("ix_unidades_do_estado_pai");
+
+                    b.HasIndex("Poder", "Ativa")
+                        .HasDatabaseName("ix_unidades_do_estado_poder_ativa");
+
+                    b.ToTable("unidades_do_estado", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Fornecedores.Fornecedor", b =>
                 {
                     b.Property<Guid>("Id")

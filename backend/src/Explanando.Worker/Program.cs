@@ -1,12 +1,15 @@
 using System.Globalization;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Ciclo;
+using Explanando.Application.Estado;
 using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
+using Explanando.Domain.Estado;
 using Explanando.Domain.Regras;
 using Explanando.Domain.Retencao;
 using Explanando.Infrastructure;
 using Explanando.Infrastructure.Integracoes.Senado;
+using Explanando.Infrastructure.Integracoes.Siorg;
 using Explanando.Infrastructure.Persistencia;
 using Explanando.Domain.Parlamentares;
 using Explanando.Worker;
@@ -237,6 +240,92 @@ switch (comando)
             return saida.Falhas.Count > 0 ? 1 : 0;
         }
 
+    case "coletar-estado":
+        {
+            // O grafo do Estado — a adaptacao do CivLab ao Brasil. Nao tem legislatura nem
+            // parlamentar: percorre o SIORG, monta os nos e as arestas, e deduz o que mudou
+            // comparando com a coleta anterior, porque a fonte nao publica historico.
+            var fonteDoEstado = servicos.GetRequiredService<ClienteSiorg>();
+
+            var coletaDoEstado = new ServicoDeColetaDoEstado(
+                fonteDoEstado,
+                servicos.GetRequiredService<IRepositorioDoEstado>(),
+                servicos.GetRequiredService<IRelogio>());
+
+            // --todas-as-esferas abre o grafo para o Distrito Federal e os orgaos estaduais
+            // que o SIORG tambem publica. Fica fora por padrao: sao cinco nos de outro ente,
+            // e absorve-los sem escolha explicita confunde o mapa.
+            var todasAsEsferas = Array.IndexOf(args, "--todas-as-esferas") >= 0;
+
+            var escopoDeEsferas = todasAsEsferas
+                ? new HashSet<EsferaDeGoverno>
+                {
+                    EsferaDeGoverno.Federal,
+                    EsferaDeGoverno.EstadualOuDistrital,
+                    EsferaDeGoverno.Municipal,
+                }
+                : null;
+
+            Console.WriteLine(todasAsEsferas
+                ? "Coletando a estrutura do Estado em TODAS as esferas..."
+                : "Coletando a estrutura do Estado (esfera federal)...");
+            Console.WriteLine(
+                "A fonte aceita UMA requisicao por IP de cada vez, entao a varredura e'");
+            Console.WriteLine("sequencial por natureza. Sao ~335 subarvores.");
+
+            var cronometroDoEstado = System.Diagnostics.Stopwatch.StartNew();
+
+            var estado = await coletaDoEstado.ColetarAsync(escopoDeEsferas).ConfigureAwait(false);
+
+            cronometroDoEstado.Stop();
+
+            Console.WriteLine($"""
+
+                === ESTRUTURA DO ESTADO ===
+                Orgaos visitados      : {estado.OrgaosVisitados}
+                Orgaos com falha      : {estado.OrgaosComFalha}
+                Orgaos fora do escopo : {estado.OrgaosForaDoEscopo}
+                Unidades vistas       : {estado.UnidadesVistas}
+                  novas               : {estado.UnidadesNovas}
+                  atualizadas         : {estado.UnidadesAtualizadas}
+                  desaparecidas       : {estado.UnidadesDesaparecidas}
+                  reaparecidas        : {estado.UnidadesReaparecidas}
+                  recusadas           : {estado.UnidadesRecusadas}
+                Ancestrais sem ficha  : {estado.AncestraisNaoResolvidos}
+                Mudancas registradas  : {estado.Mudancas}
+                Repeticoes por recusa : {fonteDoEstado.RepeticoesPorRecusa}
+                Tempo                 : {cronometroDoEstado.Elapsed:hh\:mm\:ss}
+                """);
+
+            if (estado.EhLinhaDeBase)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "Esta foi a LINHA DE BASE: o banco estava vazio, entao nenhuma mudanca");
+                Console.WriteLine(
+                    "foi anunciada. A primeira noticia so' pode existir na proxima coleta.");
+            }
+
+            foreach (var falha in estado.Falhas.Take(10))
+            {
+                Console.WriteLine($"  [FALHA]  {falha}");
+            }
+
+            if (!estado.Completa)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "*** COLETA INCOMPLETA: nenhum orgao foi marcado como desaparecido. ***");
+                Console.WriteLine(
+                    "    Subarvore que falha some da resposta igual a orgao extinto — e");
+                Console.WriteLine(
+                    "    publicar extincao por causa de um timeout seria manchete falsa.");
+                return 2;
+            }
+
+            return 0;
+        }
+
     case "varrer":
         {
             var varredura = servicos.GetRequiredService<ServicoDeVarredura>();
@@ -455,6 +544,7 @@ switch (comando)
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
+              dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
             """);
         return 2;
 }

@@ -55,6 +55,10 @@ const ROTAS_FIXAS = [
   { caminho: "/senado/indice", prioridade: 0.8 },
   { caminho: "/senado/gravidade", prioridade: 0.8 },
 
+  // O mapa do Estado. Prioridade alta porque e' conteudo proprio e unico — nao existe
+  // outra pagina em portugues que desenhe a estrutura organizacional federal inteira.
+  { caminho: "/estado", prioridade: 0.9 },
+
   // A política é página pública e precisa ser encontrável — inclusive por quem quer exercer
   // um direito e não sabe por onde começar.
   { caminho: "/privacidade", prioridade: 0.3 },
@@ -78,7 +82,11 @@ export interface RotaDoSitemap {
  * buscador que desindexe o site inteiro, e indexação é o motor de crescimento do produto
  * (ADR-0001).
  */
-export function rotasDoSitemap(ids: readonly string[], agora: Date): RotaDoSitemap[] {
+export function rotasDoSitemap(
+  ids: readonly string[],
+  agora: Date,
+  unidadesDoEstado: readonly number[] = [],
+): RotaDoSitemap[] {
   const rotas: RotaDoSitemap[] = ROTAS_FIXAS.map((rota) => ({
     url: `${URL_BASE}${rota.caminho}`,
     lastModified: agora,
@@ -92,6 +100,18 @@ export function rotasDoSitemap(ids: readonly string[], agora: Date): RotaDoSitem
       lastModified: agora,
       changeFrequency: "monthly",
       priority: 0.6,
+    });
+  }
+
+  // As páginas de órgão. Prioridade um pouco abaixo da do parlamentar porque a busca que
+  // traz gente ao site é por nome de político, não por sigla de ministério — mas elas são
+  // conteúdo próprio e único, e ficar fora do índice é o mesmo que não existir.
+  for (const codigo of new Set(unidadesDoEstado)) {
+    rotas.push({
+      url: `${URL_BASE}/estado/${codigo}`,
+      lastModified: agora,
+      changeFrequency: "monthly",
+      priority: 0.5,
     });
   }
 

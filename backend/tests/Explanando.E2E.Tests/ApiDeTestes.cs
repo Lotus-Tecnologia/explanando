@@ -3,6 +3,7 @@ using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
+using Explanando.Domain.Estado;
 using Explanando.Domain.Fornecedores;
 using Explanando.Domain.Parlamentares;
 using Explanando.Domain.Regras;
@@ -104,6 +105,86 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
         await _container.DisposeAsync();
     }
 
+    /// <summary>O codigo da unidade-raiz semeada, para os testes navegarem a partir dela.</summary>
+    public const int UnidadeRaiz = 200000;
+
+    /// <summary>Um orgao com filhos.</summary>
+    public const int UnidadeOrgao = 26;
+
+    /// <summary>Uma unidade que deixou de constar na fonte.</summary>
+    public const int UnidadeSumida = 999;
+
+    private static void SemearOEstado(ExplanandoDbContext contexto)
+    {
+        var agora = new DateTimeOffset(2026, 9, 19, 3, 0, 0, TimeSpan.Zero);
+
+        var raiz = UnidadeDoEstado.Criar(
+            new NovaUnidadeDoEstado
+            {
+                Codigo = UnidadeRaiz,
+                Nome = "República Federativa do Brasil",
+                Tipo = TipoDeUnidade.Ente,
+            },
+            agora);
+
+        var orgao = UnidadeDoEstado.Criar(
+            new NovaUnidadeDoEstado
+            {
+                Codigo = UnidadeOrgao,
+                CodigoPai = UnidadeRaiz,
+                CodigoOrgao = UnidadeOrgao,
+                Nome = "Presidência da República",
+                Sigla = "PR",
+                Poder = Poder.Executivo,
+                Esfera = EsferaDeGoverno.Federal,
+                Tipo = TipoDeUnidade.Orgao,
+                NaturezaJuridica = NaturezaJuridica.AdministracaoDireta,
+                Normatizacao = NivelDeNormatizacao.LeiOuDecreto,
+            },
+            agora);
+
+        var filha = UnidadeDoEstado.Criar(
+            new NovaUnidadeDoEstado
+            {
+                Codigo = 300,
+                CodigoPai = UnidadeOrgao,
+                CodigoOrgao = UnidadeOrgao,
+                Nome = "Secretaria-Geral",
+                Sigla = "SG",
+                Poder = Poder.Executivo,
+                Esfera = EsferaDeGoverno.Federal,
+                Tipo = TipoDeUnidade.UnidadeAdministrativa,
+                Normatizacao = NivelDeNormatizacao.AtoInterno,
+            },
+            agora);
+
+        var sumida = UnidadeDoEstado.Criar(
+            new NovaUnidadeDoEstado
+            {
+                Codigo = UnidadeSumida,
+                CodigoPai = UnidadeOrgao,
+                Nome = "Conselho Extinto",
+                Poder = Poder.Executivo,
+                Esfera = EsferaDeGoverno.Federal,
+                Tipo = TipoDeUnidade.UnidadeColegiada,
+                Normatizacao = NivelDeNormatizacao.AtoInterno,
+            },
+            agora);
+
+        sumida.MarcarDesaparecida(agora.AddDays(30));
+
+        contexto.UnidadesDoEstado.AddRange(raiz, orgao, filha, sumida);
+
+        contexto.MudancasEstruturais.Add(MudancaEstrutural.Desaparecimento(
+            UnidadeSumida, "Conselho Extinto", agora.AddDays(30)));
+
+        contexto.MudancasEstruturais.Add(MudancaEstrutural.Alteracao(
+            UnidadeOrgao,
+            "Presidência da República",
+            new MudancaDeCampo("Nome", "Presidência", "Presidência da República"),
+            agora.AddDays(30)));
+    }
+
     private async Task SemearAsync(ExplanandoDbContext contexto, IServiceProvider servicos)
     {
         var fornecedor = Fornecedor.Criar(new NovoFornecedor
@@ -126,6 +207,11 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
 
         // A carteira e' o que permite reconstruir o link do comprovante.
         ranqueado.RegistrarNumeroDeCarteira(1472);
+
+        // O grafo do Estado. Pequeno, mas com a forma que importa: uma raiz sem poder e sem
+        // esfera — como a Republica Federativa do Brasil chega da fonte —, um orgao com
+        // filhos, e uma unidade que ja' sumiu de uma coleta completa.
+        SemearOEstado(contexto);
 
         contexto.Parlamentares.AddRange(ranqueado, semAmostra, senador);
         contexto.Fornecedores.Add(fornecedor);

@@ -9,7 +9,13 @@ import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { CASAS } from "./casas";
 import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "./ordenacoes";
 import { lerFiltros, montarConsulta } from "./filtros";
-import type { ItemDoRanking, Pagina, PerfilDoParlamentar } from "./contrato";
+import { caminhoDeArco, corDoPoder, montarDesenho } from "./grafo";
+import type {
+  ItemDoRanking,
+  NoDoEstado,
+  Pagina,
+  PerfilDoParlamentar,
+} from "./contrato";
 
 /**
  * O que se prova aqui sustenta duas premissas que o produto assumiu por escrito.
@@ -658,5 +664,155 @@ describe("ehIndexavel", () => {
 
     vi.stubEnv("NEXT_PUBLIC_INDEXAVEL", "false");
     expect(ehIndexavel()).toBe(false);
+  });
+});
+
+// ── O grafo do Estado ────────────────────────────────────────────────────────────────────
+
+describe("montarDesenho", () => {
+  const no = (
+    codigo: number,
+    codigoPai: number | null,
+    unidadesSubordinadas = 0,
+    poder: string | null = "Executivo",
+  ): NoDoEstado => ({
+    codigo,
+    codigoPai,
+    nome: `Unidade ${codigo}`,
+    sigla: `U${codigo}`,
+    tipo: "Órgão",
+    poder,
+    natureza: null,
+    baseLegal: null,
+    unidadesSubordinadas,
+    ativa: true,
+  });
+
+  it("acha a raiz pelo pai ausente, e nao por um codigo fixo", () => {
+    // Amarrar o desenho ao codigo 200000 quebraria em silencio no dia em que a coleta
+    // rodasse com outro escopo — a tela ficaria vazia sem nenhum erro.
+    const desenho = montarDesenho([no(7, null, 2), no(8, 7), no(9, 7)]);
+
+    expect(desenho.centro?.codigo).toBe(7);
+    expect(desenho.fatias.map((f) => f.codigo).sort()).toEqual([8, 9]);
+  });
+
+  it("os filhos preenchem exatamente a volta do pai, sem sobra nem falta", () => {
+    const desenho = montarDesenho([no(1, null, 3), no(2, 1), no(3, 1), no(4, 1)]);
+    const primeiroNivel = desenho.fatias.filter((f) => f.nivel === 1);
+
+    expect(primeiroNivel[0].inicio).toBeCloseTo(0, 6);
+    expect(primeiroNivel.at(-1)!.fim).toBeCloseTo(Math.PI * 2, 6);
+
+    for (let i = 1; i < primeiroNivel.length; i++) {
+      expect(primeiroNivel[i].inicio).toBeCloseTo(primeiroNivel[i - 1].fim, 6);
+    }
+  });
+
+  it("a largura acompanha o peso do ramo, nao a contagem de irmaos", () => {
+    // Sem isto, um ministerio com mil unidades e um conselho de tres pessoas ocupariam o
+    // mesmo espaco, e o mapa informaria sobre a nossa lista em vez de sobre o Estado.
+    const desenho = montarDesenho([no(1, null, 10), no(2, 1, 8), no(3, 1, 0)]);
+
+    const grande = desenho.fatias.find((f) => f.codigo === 2)!;
+    const pequena = desenho.fatias.find((f) => f.codigo === 3)!;
+
+    expect(grande.fim - grande.inicio).toBeGreaterThan(pequena.fim - pequena.inicio);
+  });
+
+  it("uma folha nao tem largura zero", () => {
+    // O `+1` do peso: um orgao sem subordinadas existe tanto quanto um com mil, e largura
+    // zero o apagaria do desenho.
+    const desenho = montarDesenho([no(1, null, 2), no(2, 1, 50), no(3, 1, 0)]);
+    const folha = desenho.fatias.find((f) => f.codigo === 3)!;
+
+    expect(folha.fim - folha.inicio).toBeGreaterThan(0);
+  });
+
+  it("um ciclo no cadastro nao trava o desenho", () => {
+    // Dado de fonte externa. A raiz some, e o que sobra e' um par apontando um para o
+    // outro — precisa terminar, mesmo que nao desenhe nada.
+    const desenho = montarDesenho([no(1, 2), no(2, 1)]);
+
+    expect(desenho.fatias.length).toBeLessThanOrEqual(2);
+  });
+
+  it("nao desenha nada quando nao ha nos", () => {
+    expect(montarDesenho([])).toEqual({ fatias: [], centro: null, niveis: 0 });
+  });
+});
+
+describe("caminhoDeArco", () => {
+  it("a volta inteira vira dois semicirculos em vez de um arco degenerado", () => {
+    // Com inicio e fim no mesmo ponto, o comando `A` do SVG nao desenha nada — e o anel
+    // do no' unico e' justamente o caso de volta inteira.
+    const volta = caminhoDeArco(10, 20, 0, Math.PI * 2);
+
+    expect(volta.match(/A /g)?.length).toBe(4);
+  });
+
+  it("comeca ao meio-dia e cresce no sentido horario", () => {
+    // Angulo zero no topo e' como se le um relogio. Se a conversao saisse errada, o
+    // desenho inteiro apareceria girado 90 graus sem nenhum erro aparecer.
+    const arco = caminhoDeArco(0, 100, 0, Math.PI / 2);
+
+    expect(arco.startsWith("M 0.00 -100.00")).toBe(true);
+  });
+});
+
+describe("corDoPoder", () => {
+  it("cada poder tem token proprio, e o desconhecido nao vira Executivo", () => {
+    // A raiz e os entes chegam sem poder porque a fonte nao os classifica. Pinta-los de
+    // Executivo inventaria uma classificacao que o Estado nao fez sobre si mesmo.
+    const cores = [
+      "Executivo",
+      "Legislativo",
+      "Judiciário",
+      "Funções essenciais à Justiça",
+      null,
+    ].map(corDoPoder);
+
+    expect(new Set(cores).size).toBe(5);
+  });
+
+  it("nenhuma cor de poder e' o vermelho de gravidade alta", () => {
+    // ADR-0013: o vermelho fica estritamente com os 3,3% de gravidade alta. Um poder
+    // pintado de vermelho faria o leitor ler "risco" onde nao ha' juizo nenhum.
+    for (const poder of ["Executivo", "Legislativo", "Judiciário", null]) {
+      expect(corDoPoder(poder)).not.toContain("alta");
+    }
+  });
+});
+
+describe("o mapa do Estado no sitemap", () => {
+  it("esta la — a rota que nao esta no sitemap nao existe para o buscador", () => {
+    const enderecos = rotasDoSitemap([], new Date()).map((r) => r.url);
+
+    expect(enderecos).toContain(`${URL_BASE}/estado`);
+  });
+});
+
+describe("as unidades do Estado no sitemap", () => {
+  it("cada orgao ganha endereco proprio", () => {
+    const enderecos = rotasDoSitemap([], new Date(), [26, 244]).map((r) => r.url);
+
+    expect(enderecos).toContain(`${URL_BASE}/estado/26`);
+    expect(enderecos).toContain(`${URL_BASE}/estado/244`);
+  });
+
+  it("nao repete unidade", () => {
+    const rotas = rotasDoSitemap([], new Date(), [26, 26, 244]);
+    const enderecos = rotas.map((r) => r.url);
+
+    expect(new Set(enderecos).size).toBe(enderecos.length);
+  });
+
+  it("sem unidades, o sitemap continua completo", () => {
+    // O grafo pode nao ter subido ainda para a base de producao. As rotas fixas e os
+    // perfis nao podem sumir por causa disso.
+    const enderecos = rotasDoSitemap(["a1"], new Date()).map((r) => r.url);
+
+    expect(enderecos).toContain(`${URL_BASE}/estado`);
+    expect(enderecos).toContain(`${URL_BASE}/parlamentares/a1`);
   });
 });

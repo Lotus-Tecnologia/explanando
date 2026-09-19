@@ -61,6 +61,36 @@
   --shadow-cartao: 0 1px 2px rgb(15 23 42 / 0.05), 0 12px 32px -20px rgb(15 23 42 / 0.28);
   --shadow-flutuante: 0 2px 4px rgb(15 23 42 / 0.06), 0 18px 40px -24px rgb(15 23 42 / 0.4);
 
+
+  /*
+    Os quatro poderes do grafo do Estado, mais o nao classificado.
+
+    **Sao preenchimentos de area, nao texto**, entao o piso e' 3:1 (WCAG 1.4.11). Todos
+    foram calculados contra o fundo de cada tema e todos passam com folga:
+
+      Executivo   #1D4ED8 sobre #FFFFFF   6,70      #60A5FA sobre #0F172A   7,02
+      Legislativo #7E22CE sobre #FFFFFF   6,98      #C084FC sobre #0F172A   6,76
+      Judiciario  #0F766E sobre #FFFFFF   5,47      #2DD4BF sobre #0F172A   9,59
+      Essenciais  #BE185D sobre #FFFFFF   6,04      #F472B6 sobre #0F172A   6,74
+      Indefinido  #64748B sobre #FFFFFF   4,76      #94A3B8 sobre #0F172A   6,96
+
+    **Nenhum deles e' o vermelho de gravidade alta**, e isso e' regra do ADR-0013, nao
+    coincidencia: #991B1B e' tijolo escuro sobre #FEE2E2, sempre num selo pequeno com forma
+    e rotulo. O das Funcoes Essenciais e' magenta (#BE185D), matiz distinta, em area grande,
+    noutra pagina e com legenda propria.
+
+    **A cor nunca carrega o significado sozinha**: cada fatia tem `<title>`, a legenda
+    nomeia os poderes e a lista abaixo do desenho repete o poder por extenso em texto.
+
+    O nao classificado tem cor propria porque a raiz e os entes chegam sem poder — pinta-los
+    de Executivo inventaria uma classificacao que o Estado nao fez sobre si mesmo.
+  */
+  --color-poder-executivo: #1d4ed8;
+  --color-poder-legislativo: #7e22ce;
+  --color-poder-judiciario: #0f766e;
+  --color-poder-essenciais: #be185d;
+  --color-poder-indefinido: #64748b;
+
   --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
 
   /*
@@ -132,6 +162,12 @@
     --color-alta-texto: #fca5a5;
     --color-abstencao-fundo: #1e293b;
     --color-abstencao-texto: #adbcd0;
+
+    --color-poder-executivo: #60a5fa;
+    --color-poder-legislativo: #c084fc;
+    --color-poder-judiciario: #2dd4bf;
+    --color-poder-essenciais: #f472b6;
+    --color-poder-indefinido: #94a3b8;
   }
 }
 
@@ -162,6 +198,12 @@
   --color-alta-texto: #fca5a5;
   --color-abstencao-fundo: #1e293b;
   --color-abstencao-texto: #adbcd0;
+
+  --color-poder-executivo: #60a5fa;
+  --color-poder-legislativo: #c084fc;
+  --color-poder-judiciario: #2dd4bf;
+  --color-poder-essenciais: #f472b6;
+  --color-poder-indefinido: #94a3b8;
 }
 
 /*

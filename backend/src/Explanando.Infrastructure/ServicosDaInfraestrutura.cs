@@ -1,6 +1,7 @@
 using Explanando.Application.Ciclo;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Consultas;
+using Explanando.Application.Estado;
 using Explanando.Application.Ingestao;
 using Explanando.Application.Retencao;
 using Explanando.Domain.Regras;
@@ -83,6 +84,19 @@ public static class ServicosDaInfraestrutura
         servicos.AddScoped<ServicoDeVarredura>();
         servicos.AddScoped<ServicoDeVarreduraDeRede>();
         servicos.AddScoped<ServicoDeRetencao>();
+
+        // O grafo do Estado. A fonte e' registrada pelo TIPO CONCRETO e ligada a porta
+        // logo em seguida: nao ha' uma segunda implementacao disputando o registro como
+        // acontece entre Camara e Senado, mas o cliente precisa do HttpClient da fabrica.
+        servicos.AddScoped<IRepositorioDoEstado, RepositorioDoEstado>();
+        servicos.AddScoped<ServicoDeColetaDoEstado>();
+
+        // O lado de leitura do grafo. O cache aqui nao e' otimizacao: montar o mapa custa
+        // carregar mais de cem mil arestas, e a estrutura do Estado muda em semanas.
+        servicos.AddScoped<ConsultasDoEstadoEfCore>();
+        servicos.AddScoped<IConsultasDoEstado>(provedor => new ConsultasDoEstadoComCache(
+            provedor.GetRequiredService<ConsultasDoEstadoEfCore>(),
+            provedor.GetRequiredService<HybridCache>()));
 
         // A passada mensal do ADR-0010 §4. Nao tem tabela propria: a agenda le a data da
         // varredura mais antiga em scores_risco, que a propria varredura grava.
