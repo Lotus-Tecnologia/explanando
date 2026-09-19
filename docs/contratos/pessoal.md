@@ -44,6 +44,16 @@ Medido em `202607`: **83 MB compactados**, quatro CSVs dentro.
 > Por isso o comando do worker exige `--ano` e `--mes` e não tem padrão — adivinhar a
 > competência daria 403 sem dizer por quê.
 
+> **E `405` quer dizer outra coisa: a origem está recusando por volume.** Medido numa carga
+> de 19 meses — os dez primeiros baixaram normalmente, e do décimo primeiro em diante tudo
+> voltou `405`, **inclusive um mês que tinha baixado minutos antes**. Depois disso, até o
+> `HEAD` que respondia `200` passou a responder `405`: o bloqueio é do IP, não do arquivo.
+>
+> São 83 MB por competência, e ~1 GB puxados em poucos minutos. A carga inicial precisa ser
+> feita **em lotes pequenos, com folga entre eles** — o worker já espera cinco segundos
+> entre meses, e isso não bastou. Confundir `405` com `403` mandaria alguém procurar um
+> arquivo que existe.
+
 ## 3. As colunas que atravessam — e as que param na borda
 
 O `Cadastro.csv` tem **43 colunas**, entre elas `NOME` e `CPF` (mascarado na origem, como
@@ -139,3 +149,8 @@ não a qualidade da ponte.
 
 4. **Nulo e zero.** Órgão sem par na ponte tem `null`, nunca `0`. É o ADR-0009 noutra
    tabela: `0` afirma que não há ninguém; `null` diz que não sabemos.
+
+5. **A série tem buracos, e o gráfico precisa mostrá-los.** O bloqueio por volume deixa
+   meses sem coletar. Um gráfico que ligue dois pontos distantes com linha cheia afirma uma
+   evolução mensal que não foi medida — o desenho quebra a linha e marca o vão com
+   pontilhado.

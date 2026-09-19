@@ -4,6 +4,7 @@ import type {
   MapaDoEstado,
   MudancaDoEstado,
   NoDoEstado,
+  PontoDaSerie,
   ItemDeDespesa,
   ItemDoRanking,
   OrdenacaoDoRanking,
@@ -284,6 +285,23 @@ export async function obterUnidadesDoEstado(codigo: number): Promise<NoDoEstado[
 
 export function obterUnidadeDoEstado(codigo: number): Promise<NoDoEstado | null> {
   return buscar<NoDoEstado>(`/api/v1/estado/${codigo}`);
+}
+
+/**
+ * A serie mensal do quadro de pessoal — do Estado inteiro, ou do ramo de uma unidade.
+ *
+ * Lista vazia quando a fonte nao responde: um grafico ausente e' melhor que uma pagina
+ * ausente, e o componente sabe nao se desenhar sem pontos suficientes.
+ */
+export async function obterSerieDePessoal(codigo?: number): Promise<PontoDaSerie[]> {
+  try {
+    const caminho =
+      codigo === undefined ? "/api/v1/estado/pessoal" : `/api/v1/estado/${codigo}/pessoal`;
+
+    return (await buscar<PontoDaSerie[]>(caminho)) ?? [];
+  } catch {
+    return [];
+  }
 }
 
 /**

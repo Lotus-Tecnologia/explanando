@@ -358,22 +358,88 @@ switch (comando)
                 return 2;
             }
 
-            Console.WriteLine($"Coletando o quadro de pessoal de {competencia}...");
+            // --meses N recolhe tambem os N-1 meses ANTERIORES. E' ferramenta de carga
+            // inicial: a serie historica so' existe se alguem for buscar o passado, e a
+            // origem guarda arquivo ate' 2024-12. O agendamento mensal usa o padrao, 1.
+            var meses = Math.Clamp(LerInteiro("--meses") ?? 1, 1, 60);
+
+            var aColetar = new List<Competencia>();
+
+            for (var recuo = meses - 1; recuo >= 0; recuo--)
+            {
+                var alvo = new DateOnly(competencia.Ano, competencia.Mes, 1).AddMonths(-recuo);
+
+                aColetar.Add(Competencia.Criar(alvo.Year, alvo.Month));
+            }
+
+            Console.WriteLine(meses == 1
+                ? $"Coletando o quadro de pessoal de {competencia}..."
+                : $"Coletando {meses} competencias, de {aColetar[0]} a {competencia}...");
             Console.WriteLine(
-                "Sao ~83 MB compactados e ~778 mil vinculos. A contagem acontece durante a");
-            Console.WriteLine("leitura: nada nominal e' guardado.");
+                "Sao ~83 MB compactados e ~778 mil vinculos por mes. A contagem acontece");
+            Console.WriteLine("durante a leitura: nada nominal e' guardado.");
 
             var cronometroDePessoal = System.Diagnostics.Stopwatch.StartNew();
+            var servicoDePessoal = servicos.GetRequiredService<ServicoDeColetaDePessoal>();
 
-            var pessoal = await servicos.GetRequiredService<ServicoDeColetaDePessoal>()
-                .ColetarAsync(competencia)
-                .ConfigureAwait(false);
+            ResultadoDaColetaDePessoal? pessoal = null;
+            var mesesComFalha = new List<string>();
+
+            // Cortesia entre meses, e nao paranoia: medido, uma carga de 19 competencias
+            // seguidas fez a origem comecar a responder 405 a partir da decima primeira,
+            // inclusive para um mes que tinha baixado minutos antes. Sao 83 MB por mes, e
+            // cinco segundos de pausa custam menos que uma carga pela metade.
+            var pausaEntreMeses = TimeSpan.FromSeconds(5);
+            var primeiro = true;
+
+            foreach (var mesAlvo in aColetar)
+            {
+                if (!primeiro)
+                {
+                    await Task.Delay(pausaEntreMeses).ConfigureAwait(false);
+                }
+
+                primeiro = false;
+
+                try
+                {
+                    pessoal = await servicoDePessoal.ColetarAsync(mesAlvo).ConfigureAwait(false);
+
+                    if (meses > 1)
+                    {
+                        Console.WriteLine(
+                            $"  {mesAlvo}  {pessoal.VinculosLidos,8} vinculos  "
+                            + $"{pessoal.CoberturaDosVinculos,7:P1} ligados");
+                    }
+                }
+                catch (InvalidOperationException erro)
+                {
+                    // Uma competencia que a origem ainda nao publicou responde 403. Numa
+                    // carga de vinte meses, derrubar tudo por causa do mes mais recente
+                    // desperdicaria os dezenove que ja' entraram.
+                    mesesComFalha.Add($"{mesAlvo}: {erro.Message}");
+                    Console.WriteLine($"  {mesAlvo}  [FALHOU] {erro.Message}");
+                }
+            }
 
             cronometroDePessoal.Stop();
 
+            if (pessoal is null)
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("*** Nenhuma competencia foi coletada. ***");
+
+                foreach (var falha in mesesComFalha)
+                {
+                    Console.Error.WriteLine($"    {falha}");
+                }
+
+                return 1;
+            }
+
             Console.WriteLine($"""
 
-                === QUADRO DE PESSOAL — {competencia} ===
+                === QUADRO DE PESSOAL — {pessoal.Competencia} ===
                 Vinculos lidos        : {pessoal.VinculosLidos}
                 Orgaos encontrados    : {pessoal.OrgaosEncontrados}
                   ligados ao grafo    : {pessoal.OrgaosLigadosAoGrafo}
@@ -401,6 +467,18 @@ switch (comando)
                 {
                     Console.WriteLine($"  {vinculos,7}  [{codigo,6}] {nome}");
                 }
+            }
+
+            if (mesesComFalha.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    $"*** {mesesComFalha.Count} de {aColetar.Count} competencias falharam. ***");
+                Console.WriteLine(
+                    "    O que entrou esta' salvo. Competencia ainda nao publicada responde");
+                Console.WriteLine("    403, e e' o caso esperado para o mes mais recente.");
+
+                return 3;
             }
 
             return 0;
@@ -625,7 +703,9 @@ switch (comando)
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
-              dotnet run -- coletar-pessoal --ano 2026 --mes 7     o quadro de pessoal
+              dotnet run -- coletar-pessoal --ano 2026 --mes 7 [--meses N]
+                                                          o quadro de pessoal; --meses N
+                                                          recolhe tambem os anteriores
             """);
         return 2;
 }

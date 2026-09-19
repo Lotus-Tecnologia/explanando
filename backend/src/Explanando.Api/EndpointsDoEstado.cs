@@ -40,6 +40,20 @@ public static class EndpointsDoEstado
                 + "significar 'ainda não comparamos' — `temHistorico`, no mapa, diz qual "
                 + "dos dois casos é.");
 
+        grupo.MapGet("/pessoal", ObterSerieAsync)
+            .WithName("ObterSerieDePessoalDoEstado")
+            .WithSummary("A série mensal do quadro de pessoal do Estado inteiro.")
+            .WithDescription(
+                "Da competência mais antiga para a mais nova. Soma TODOS os vínculos, "
+                + "inclusive os de órgãos que a ponte entre os dois cadastros não alcança: "
+                + "a pergunta 'o Executivo cresceu?' é sobre o Executivo, não sobre a parte "
+                + "dele que coube no nosso grafo. O cadastro é o do Executivo civil — o "
+                + "Judiciário e o Legislativo mantêm folhas próprias.");
+
+        grupo.MapGet("/{codigo:int}/pessoal", ObterSerieDaUnidadeAsync)
+            .WithName("ObterSerieDePessoalDaUnidade")
+            .WithSummary("A série mensal do ramo de uma unidade.");
+
         grupo.MapGet("/{codigo:int}", ObterUnidadeAsync)
             .WithName("ObterUnidadeDoEstado")
             .WithSummary("Uma unidade da estrutura.");
@@ -59,6 +73,17 @@ public static class EndpointsDoEstado
         IConsultasDoEstado consultas,
         CancellationToken cancelamento) =>
         Results.Ok(await consultas.ObterMapaAsync(cancelamento).ConfigureAwait(false));
+
+    private static async Task<IResult> ObterSerieAsync(
+        IConsultasDoEstado consultas,
+        CancellationToken cancelamento) =>
+        Results.Ok(await consultas.ObterSerieDePessoalAsync(null, cancelamento).ConfigureAwait(false));
+
+    private static async Task<IResult> ObterSerieDaUnidadeAsync(
+        IConsultasDoEstado consultas,
+        int codigo,
+        CancellationToken cancelamento) =>
+        Results.Ok(await consultas.ObterSerieDePessoalAsync(codigo, cancelamento).ConfigureAwait(false));
 
     private static async Task<IResult> ObterUnidadeAsync(
         IConsultasDoEstado consultas,

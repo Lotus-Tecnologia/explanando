@@ -147,6 +147,17 @@ public sealed record MapaDoEstado
     public required bool TemHistorico { get; init; }
 }
 
+/// <summary>Um mês da série de pessoal.</summary>
+public sealed record PontoDaSerie
+{
+    /// <summary>Como "2026-07".</summary>
+    public required string Competencia { get; init; }
+
+    public required int Vinculos { get; init; }
+
+    public required int ComFuncaoDeConfianca { get; init; }
+}
+
 /// <summary>Leituras do grafo do Estado.</summary>
 public interface IConsultasDoEstado
 {
@@ -163,5 +174,18 @@ public interface IConsultasDoEstado
     /// <summary>As mudanças mais recentes, da mais nova para a mais velha.</summary>
     Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasAsync(
         int quantidade,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
+    /// A série mensal do quadro de pessoal, da competência mais antiga para a mais nova.
+    ///
+    /// <para>Com <paramref name="codigoUnidade"/> nulo, é o Estado inteiro — <b>inclusive
+    /// os órgãos que a ponte não alcança</b>, porque a pergunta "o Executivo cresceu?" é
+    /// sobre o Executivo, não sobre a parte dele que coube no nosso grafo.</para>
+    ///
+    /// <para>Com um código, é o ramo daquela unidade: ela e tudo que pende dela.</para>
+    /// </summary>
+    Task<IReadOnlyList<PontoDaSerie>> ObterSerieDePessoalAsync(
+        int? codigoUnidade = null,
         CancellationToken cancelamento = default);
 }

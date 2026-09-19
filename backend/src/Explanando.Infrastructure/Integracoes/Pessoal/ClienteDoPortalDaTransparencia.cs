@@ -117,12 +117,27 @@ public sealed class ClienteDoPortalDaTransparencia(HttpClient http) : IFonteDePe
 
         if (!resposta.IsSuccessStatusCode)
         {
-            // 403 e' o que a origem responde para competencia que ainda nao existe — o
-            // arquivo de um mes so' aparece semanas depois do fim dele.
+            // Dois motivos diferentes, e confundi-los manda alguem procurar no lugar
+            // errado. Ambos foram medidos:
+            //
+            //   403  a competencia nao existe ainda. O arquivo de um mes so' aparece
+            //        semanas depois do fechamento — o de julho/2026 saiu em 3 de setembro.
+            //   405  a origem esta' recusando. Aconteceu numa carga de 19 meses: os dez
+            //        primeiros baixaram normalmente e os nove seguintes voltaram 405,
+            //        INCLUSIVE um mes que tinha baixado minutos antes. Nao e' ausencia de
+            //        arquivo; e' protecao contra volume.
+            var motivo = (int)resposta.StatusCode switch
+            {
+                403 => "essa competência ainda não foi publicada — o arquivo de um mês só "
+                    + "sai semanas depois do fechamento",
+                405 or 429 => "a origem está recusando por volume. Espere e tente de novo, "
+                    + "com menos meses de cada vez",
+                _ => "resposta inesperada da origem",
+            };
+
             throw new InvalidOperationException(
-                $"O Portal da Transparência respondeu {(int)resposta.StatusCode} para {url}. "
-                + "Competência inexistente responde 403; o arquivo de um mês só é publicado "
-                + "semanas depois do fechamento.");
+                $"O Portal da Transparência respondeu {(int)resposta.StatusCode} para {url}: "
+                + $"{motivo}.");
         }
 
         await using var origem = await resposta.Content.ReadAsStreamAsync(cancelamento)

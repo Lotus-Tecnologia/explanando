@@ -184,15 +184,43 @@ servidores do ramo, os próprios e os em função de confiança.
 | Domínio | 28 | 503 |
 | Aplicação | 11 | 75 |
 | Ponta a ponta | 3 | 60 |
-| Frontend | — | 149 |
+| Frontend | 8 | 157 |
 
 843 no backend, tudo verde, build com 0 avisos.
 
-## 10. O que ainda falta
+## 10. A série histórica, e o limite que a origem impôs
+
+O arquivo mensal existe no servidor **até 2024-12**, o que torna a série histórica um
+trabalho de baixar, não de esperar. O worker ganhou `--meses N`, que recolhe também os
+N-1 meses anteriores; o agendamento mensal continua usando o padrão, 1.
+
+A carga real pegou **10 competências seguidas de 2025** e parou: da décima primeira em
+diante a origem passou a responder **405**, e depois disso até o `HEAD` que respondia 200
+começou a recusar. O bloqueio é do IP, não do arquivo — foram ~1 GB puxados em poucos
+minutos. Parei de insistir.
+
+O resultado é uma série de **11 pontos com um vão de nove meses**:
+
+| | 2025-01 | 2025-10 | 2026-07 |
+|---|---|---|---|
+| Vínculos | 725.394 | 753.822 | **759.351** |
+| Em função de confiança | 130.673 | 132.626 | **138.329** |
+
+> **O vão obrigou uma decisão de desenho.** Uma linha cheia de 2025-10 a 2026-07 afirmaria
+> nove meses de evolução mensal que ninguém mediu. O gráfico **quebra a linha** nos trechos
+> contíguos, liga o vão com pontilhado fraco, posiciona o eixo **por data e não por índice**
+> — sem isso o salto de nove meses teria a largura de um mês — e a legenda diz
+> "pontilhado = meses não coletados". Há teste para cada uma dessas quatro coisas.
+
+O gráfico é SVG no servidor, como o resto da página: **zero JavaScript**. A camada de
+leitura por ponto é o `<title>` nativo do SVG, e nenhum valor depende dela — a série inteira
+está numa tabela, atrás de um `<details>` que também é nativo.
+
+## 11. O que ainda falta
 
 | O que | Situação |
 |---|---|
 | **Nomeações e exonerações no tempo** | DOU, via [INLABS](https://inlabs.in.gov.br/). Exige cadastro que só o Gustavo pode fazer — e é a única coisa do CivLab que ainda está nesse estado |
 | **Cadeiras vagas** | Nenhuma fonte publica os cargos **autorizados** por órgão, que é o denominador sem o qual não existe conta de vaga |
-| **Série histórica** | A coleta é por competência e a tabela já suporta várias. Falta rodar os meses anteriores e desenhar a evolução |
+| **Fechar o vão da série** | 2025-11 a 2026-06 ficaram de fora pelo bloqueio por volume. Rodar `--meses 2` ou 3 de cada vez, com horas de intervalo |
 | **Revisão da ponte** | As 20 exceções são curadoria minha. Merecem os olhos do Gustavo, como a tabela CNAE da Etapa 10 |

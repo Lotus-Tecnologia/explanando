@@ -73,7 +73,7 @@ A [Etapa 11](registro/etapa-11-grafo-do-estado.md) fechou a metade das **estrutu
 |---|---|
 | ~~**Quem ocupa cada cargo**~~ | ✅ **Feito na [Etapa 12](registro/etapa-12-quadro-de-pessoal.md).** A ponte SIAFI ↔ SIORG cobre 95,5% dos vínculos, e a ingestão agrega na leitura — nenhum nome no banco, então a avaliação de legítimo interesse **não** passou a valer para isto |
 | **Revisar a ponte SIAFI ↔ SIORG** | As 20 exceções curadas são escolha minha, verificadas uma a uma contra a base. Merecem seus olhos, como a tabela CNAE da Etapa 10 |
-| **Série histórica do pessoal** | A tabela já guarda por competência e a coleta leva 7 segundos. Falta rodar os meses anteriores e desenhar a evolução |
+| **Fechar o vão da série de pessoal** | Tem 11 competências: 2025-01 a 2025-10 e 2026-07. Faltam 2025-11 a 2026-06, que caíram no bloqueio por volume da origem. Rodar `coletar-pessoal --meses 2` de cada vez, com horas de intervalo |
 | **Nomeações e exonerações no tempo** | **Gustavo.** Esta parte sim vive no DOU, e o [INLABS](https://inlabs.in.gov.br/) exige cadastro com nome, e-mail, telefone e UF. Eu não crio conta nem informo credencial |
 | **Cadeiras vagas** | Ninguém ainda: exige a tabela de cargos **autorizados** (estrutura regimental), que nem o SIORG nem o Portal da Transparência publicam |
 | Subir as 96.658 unidades para a Neon | Decisão sua. São 22 MB contra os 255 MB que as despesas já ocupam — cabe nos 512 MB do plano gratuito, mas a margem encolhe |

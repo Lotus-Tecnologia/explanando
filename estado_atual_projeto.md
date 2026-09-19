@@ -50,7 +50,7 @@ fechada.**
 | **12 Quem trabalha no Estado** | ✅ local; falta subir para a Neon e agendar |
 
 **Testes:** 843 no backend (503 domínio, 75 aplicação, 195 integração, 10 arquitetura, 60
-ponta a ponta) + **149 no frontend**. CI verde nos quatro jobs.
+ponta a ponta) + **157 no frontend**. CI verde nos quatro jobs.
 
 ---
 

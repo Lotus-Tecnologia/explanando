@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SerieDePessoal } from "@/componentes/SerieDePessoal";
 import {
   coletarCodigosDoEstado,
+  obterSerieDePessoal,
   obterUnidadeDoEstado,
   obterUnidadesDoEstado,
 } from "@/lib/api";
@@ -62,9 +64,10 @@ export default async function Pagina({ params }: Parametros) {
     notFound();
   }
 
-  const [unidade, filhas] = await Promise.all([
+  const [unidade, filhas, serie] = await Promise.all([
     obterUnidadeDoEstado(numero),
     obterUnidadesDoEstado(numero),
+    obterSerieDePessoal(numero),
   ]);
 
   if (!unidade) {
@@ -165,7 +168,7 @@ export default async function Pagina({ params }: Parametros) {
           <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
             Unidades subordinadas
           </dt>
-          <dd className="numeros mt-1 font-display text-2xl font-bold text-titulo">
+          <dd className="mt-1 font-display text-2xl font-bold text-titulo">
             {formatarNumero(unidade.unidadesSubordinadas)}
           </dd>
         </div>
@@ -174,7 +177,7 @@ export default async function Pagina({ params }: Parametros) {
           <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
             Servidores no ramo
           </dt>
-          <dd className="numeros mt-1 font-display text-2xl font-bold text-titulo">
+          <dd className="mt-1 font-display text-2xl font-bold text-titulo">
             {/*
               "Sem dado", e nunca zero. A ponte entre o cadastro de estrutura e o de
               pessoal nao alcanca tudo, e o cadastro de pessoal e' do Executivo civil —
@@ -225,6 +228,19 @@ export default async function Pagina({ params }: Parametros) {
           <dd className="numeros mt-1 text-sm text-texto">{unidade.codigo}</dd>
         </div>
       </dl>
+
+      {serie.length > 1 ? (
+        <section className="mt-10 rounded-cartao border border-borda-suave bg-surface p-5">
+          <SerieDePessoal
+            serie={serie}
+            titulo="Quadro de pessoal, mês a mês"
+            explicacao={
+              `Soma de ${unidade.nome} e de tudo que pende dela, em cada folha mensal ` +
+              "publicada."
+            }
+          />
+        </section>
+      ) : null}
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-bold tracking-tight text-titulo">

@@ -302,6 +302,128 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
         ];
     }
 
+    public async Task<IReadOnlyList<PontoDaSerie>> ObterSerieDePessoalAsync(
+        int? codigoUnidade = null,
+        CancellationToken cancelamento = default)
+    {
+        if (codigoUnidade is null)
+        {
+            // O Estado inteiro: soma tudo, inclusive o que a ponte nao alcanca. A pergunta
+            // "o Executivo cresceu?" e' sobre o Executivo, nao sobre a parte dele que
+            // coube no nosso grafo.
+            var total = await contexto.LotacoesDoOrgao
+                .AsNoTracking()
+                .GroupBy(lotacao => lotacao.Competencia)
+                .Select(grupo => new
+                {
+                    Competencia = grupo.Key,
+                    Vinculos = grupo.Sum(l => l.Vinculos),
+                    ComFuncao = grupo.Sum(l => l.ComFuncaoDeConfianca),
+                })
+                .ToListAsync(cancelamento)
+                .ConfigureAwait(false);
+
+            return
+            [
+                .. total
+                    .OrderBy(ponto => ponto.Competencia)
+                    .Select(ponto => new PontoDaSerie
+                    {
+                        Competencia = ponto.Competencia.ToString(),
+                        Vinculos = ponto.Vinculos,
+                        ComFuncaoDeConfianca = ponto.ComFuncao,
+                    }),
+            ];
+        }
+
+        // O ramo de uma unidade: preciso saber quem esta' abaixo dela antes de somar.
+        var arestas = await contexto.UnidadesDoEstado
+            .AsNoTracking()
+            .Where(unidade => unidade.Ativa)
+            .Select(unidade => new { unidade.Codigo, unidade.CodigoPai })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var noRamo = DescendentesDe(
+            codigoUnidade.Value,
+            arestas.Select(aresta => (aresta.Codigo, aresta.CodigoPai)));
+
+        var lotacoes = await contexto.LotacoesDoOrgao
+            .AsNoTracking()
+            .Where(lotacao => lotacao.CodigoSiorg != null)
+            .Select(lotacao => new
+            {
+                lotacao.Competencia,
+                Siorg = lotacao.CodigoSiorg!.Value,
+                lotacao.Vinculos,
+                lotacao.ComFuncaoDeConfianca,
+            })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        return
+        [
+            .. lotacoes
+                .Where(lotacao => noRamo.Contains(lotacao.Siorg))
+                .GroupBy(lotacao => lotacao.Competencia)
+                .OrderBy(grupo => grupo.Key)
+                .Select(grupo => new PontoDaSerie
+                {
+                    Competencia = grupo.Key.ToString(),
+                    Vinculos = grupo.Sum(l => l.Vinculos),
+                    ComFuncaoDeConfianca = grupo.Sum(l => l.ComFuncaoDeConfianca),
+                }),
+        ];
+    }
+
+    /// <summary>
+    /// O conjunto formado por uma unidade e tudo que pende dela.
+    ///
+    /// <para>Desce em largura a partir do nó, com teto de profundidade pela mesma razão das
+    /// outras travessias: o dado é de cadastro externo, e um ciclo travaria o laço.</para>
+    /// </summary>
+    private static HashSet<int> DescendentesDe(
+        int raiz,
+        IEnumerable<(int Codigo, int? CodigoPai)> arestas)
+    {
+        var filhos = new Dictionary<int, List<int>>();
+
+        foreach (var (codigo, pai) in arestas)
+        {
+            if (pai is not { } valor)
+            {
+                continue;
+            }
+
+            if (!filhos.TryGetValue(valor, out var lista))
+            {
+                lista = [];
+                filhos[valor] = lista;
+            }
+
+            lista.Add(codigo);
+        }
+
+        var ramo = new HashSet<int> { raiz };
+        var fila = new Queue<int>([raiz]);
+        var visitados = 0;
+
+        while (fila.Count > 0 && visitados++ < 200_000)
+        {
+            if (!filhos.TryGetValue(fila.Dequeue(), out var lista))
+            {
+                continue;
+            }
+
+            foreach (var filho in lista.Where(ramo.Add))
+            {
+                fila.Enqueue(filho);
+            }
+        }
+
+        return ramo;
+    }
+
     private static NoDoEstado Projetar(
         UnidadeDoEstado unidade,
         IReadOnlyDictionary<int, int> descendentes,

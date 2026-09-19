@@ -280,6 +280,14 @@ export interface ContagemDoEstado {
   unidades: number;
 }
 
+/** Um mes da serie de pessoal. */
+export interface PontoDaSerie {
+  /** Como "2026-07". */
+  competencia: string;
+  vinculos: number;
+  comFuncaoDeConfianca: number;
+}
+
 export interface MudancaDoEstado {
   codigoUnidade: number;
   unidade: string;

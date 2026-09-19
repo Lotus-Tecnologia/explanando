@@ -23,7 +23,7 @@ calibragem, API pública de leitura, interface em Next.js, o grafo do Estado e o
 pessoal.
 
 **843 testes no backend** (503 de domínio, 75 de aplicação, 195 de integração, 60 de ponta a
-ponta e 10 de arquitetura) e **149 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
+ponta e 10 de arquitetura) e **157 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
 
 ### O que já está no ar
 
@@ -31,7 +31,7 @@ ponta e 10 de arquitetura) e **149 no frontend**, build com 0 avisos. CI verde n
 |---|---|---|
 | **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 25.047 indicadores |
 | **Grafo do Estado** | Postgres local | ✅ 96.658 unidades, 22 MB — **ainda não subiu para a Neon** |
-| **Quadro de pessoal** | Postgres local | ✅ 759.351 vínculos de 2026-07, agregados em 351 linhas |
+| **Quadro de pessoal** | Postgres local | ✅ 11 competências, de 2025-01 a 2026-07 — agregadas, sem um nome |
 | **Frontend** | Cloudflare Workers | ⚠️ publicado, e **degradado de propósito** |
 | **API** | — | ❌ ainda só local |
 | **Domínio** | `explanando.com.br` | comprado; ainda não aponta para nada |

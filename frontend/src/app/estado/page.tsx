@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GrafoDoEstado, LegendaDePoderes } from "@/componentes/GrafoDoEstado";
 import { DistribuicaoDoEstado, LinhaDoTempoDoEstado } from "@/componentes/PainelDoEstado";
-import { listarMudancasDoEstado, obterMapaDoEstado } from "@/lib/api";
+import { SerieDePessoal } from "@/componentes/SerieDePessoal";
+import { listarMudancasDoEstado, obterMapaDoEstado, obterSerieDePessoal } from "@/lib/api";
 import { formatarNumero } from "@/lib/formato";
 import { corDaEscala, corDoPoder } from "@/lib/grafo";
 
@@ -31,9 +32,10 @@ export const metadata: Metadata = {
  * cadastro. Omitir a ausência faria o mapa parecer completo quando é meio mapa.
  */
 export default async function Pagina() {
-  const [mapa, mudancas] = await Promise.all([
+  const [mapa, mudancas, serie] = await Promise.all([
     obterMapaDoEstado(),
     listarMudancasDoEstado(30),
+    obterSerieDePessoal(),
   ]);
 
   if (!mapa) {
@@ -186,6 +188,14 @@ export default async function Pagina() {
               </dd>
             </div>
           </dl>
+
+          <div className="mt-8 rounded-cartao border border-borda-suave bg-surface p-5 shadow-cartao">
+            <SerieDePessoal
+              serie={serie}
+              titulo="O Executivo federal, mês a mês"
+              explicacao="Cada ponto é uma folha mensal publicada. Passe o ponteiro para ver o mês."
+            />
+          </div>
         </section>
       ) : null}
 
