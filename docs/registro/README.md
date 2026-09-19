@@ -43,6 +43,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 10 | Calibragem do Senado e rankings por casa | ✅ Concluída | [etapa-10-calibragem-e-rankings-por-casa.md](etapa-10-calibragem-e-rankings-por-casa.md) |
 | 11 | O grafo do Estado — 96.658 unidades do SIORG | ✅ Concluída | [etapa-11-grafo-do-estado.md](etapa-11-grafo-do-estado.md) |
 | 12 | Quem trabalha no Estado — 759.351 vínculos, sem um nome no banco | ✅ Concluída | [etapa-12-quadro-de-pessoal.md](etapa-12-quadro-de-pessoal.md) |
+| 13 | Quem contrata com quem — 224 parlamentares em 49 ilhas de fornecedor em comum | ✅ Concluída | [etapa-13-mapa-de-fornecedores.md](etapa-13-mapa-de-fornecedores.md) |
 
 ## Incidentes
 

@@ -24,6 +24,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0014](ADR-0014-lacuna-camada-2-e-base-legal.md) | A lacuna como informação, o dossiê como produto, e a base legal corrigida | 2026-08-22 | Aceita |
 | [0015](ADR-0015-frontend-no-cloudflare.md) | O frontend roda no Cloudflare Workers, não na Vercel | 2026-08-22 | Aceita |
 | [0016](ADR-0016-grafo-do-estado.md) | O grafo do Estado é outro contexto, não outro ranking | 2026-09-19 | Aceita |
+| [0017](ADR-0017-mapa-de-fornecedores.md) | O mapa de pessoas usa a aresta que temos, não a que a referência usa | 2026-09-19 | Aceita |
 
 ## Questões abertas
 

@@ -27,6 +27,12 @@ fechada.**
 > ligados a um nó — **em contagens, sem um nome no banco**. Falta só *as nomeações ao longo do
 > tempo* (DOU, via INLABS, que só o Gustavo pode cadastrar) e *as cadeiras vagas*, que nenhuma
 > fonte publica.
+>
+> **A vista de pessoas também existe agora**, em `/rede`: 224 parlamentares em 49 ilhas,
+> ligados por fornecedores que atendem de dois a cinco gabinetes e somam R$ 50 mil ou mais.
+> É a resposta ao *Power map* da referência, com a aresta trocada — notícias não temos,
+> fornecedor em comum temos. Ver [Etapa 13](docs/registro/etapa-13-mapa-de-fornecedores.md) e
+> o [ADR-0017](docs/decisoes/ADR-0017-mapa-de-fornecedores.md).
 
 > **O marco desta sessão: as duas casas estão na base.** 631 parlamentares — 513 deputados e
 > 118 senadores —, 791.515 despesas e 36.527 flags. O que falta é a API subir no Cloud Run e o

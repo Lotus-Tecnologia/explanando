@@ -98,6 +98,31 @@ sem par, em vez de ser adivinhado.
 > e a agregação acontece durante a leitura. Ao banco chegam ~350 contagens por mês, e a
 > entidade não tem onde guardar uma pessoa: há um teste que quebra o build se alguém tentar.
 
+### Quem contrata com quem
+
+Ao lado do mapa de instituições existe um **mapa de pessoas**, em `/rede`: os parlamentares
+que dividem fornecedores entre si. A
+[Etapa 13](docs/registro/etapa-13-mapa-de-fornecedores.md) explica por que ele mostra tão
+pouco de propósito.
+
+Dos 41.105 fornecedores da base, 15.272 atendem mais de um parlamentar — e os mais
+compartilhados são a **TAM (500 gabinetes)**, a **CASCOL Combustíveis (417)** e a
+**Telefônica (258)**. Desenhar essas ligações juntaria quase o Congresso inteiro por um fato
+que é geografia de Brasília, e não arranjo. Entram apenas os fornecedores que atendem **de
+dois a cinco** parlamentares e somam **R$ 50 mil ou mais**: 621 empresas, R$ 140,1 milhões.
+
+E mesmo assim não basta. Com um fornecedor em comum bastando, **454 dos 463 parlamentares
+caem num componente conexo único** — basta uma corrente para ligar todo mundo. O desenho
+exige **dois** fornecedores em comum, e o que sobra são **49 ilhas de 2 a 14 pessoas**.
+
+> **O que isso mostrou:** 91% dos pares são do mesmo estado e só 19% do mesmo partido. A
+> proximidade é do mercado local, não da política — e é por isso que a regra de concentração
+> partidária (`REG_NET_004`), que exige exclusividade literal, produziu 19 marcações em 712
+> mil despesas. Ver o [ADR-0017](docs/decisoes/ADR-0017-mapa-de-fornecedores.md).
+
+**Dividir fornecedor não é indício de irregularidade**, e a página diz isso antes do desenho
+— com a frase que vem da própria API, e não do código de tela.
+
 > **O que ainda falta, e a página diz cada coisa pelo que é:** *as nomeações ao longo do
 > tempo* vivem no DOU e exigem cadastro no INLABS; *as cadeiras vagas* não estão em fonte
 > nenhuma, porque ninguém publica os cargos autorizados por órgão. E o cadastro de pessoal é
@@ -224,6 +249,7 @@ Ver [ADR-0005](docs/decisoes/ADR-0005-tdd-e-niveis-de-teste.md).
 - [Decisões arquiteturais (ADRs)](docs/decisoes/README.md)
 - [O grafo do Estado — Etapa 11](docs/registro/etapa-11-grafo-do-estado.md)
 - [Quem trabalha no Estado — Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md)
+- [Quem contrata com quem — Etapa 13](docs/registro/etapa-13-mapa-de-fornecedores.md)
 - [Registro de execução](docs/registro/README.md)
 - [Desdobramento — contas, segredos e a ordem do deploy](docs/desdobramento.md)
 - [Estado atual, para quem está retomando](estado_atual_projeto.md)

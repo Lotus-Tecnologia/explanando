@@ -126,6 +126,13 @@ Retratos circulares com anel colorido pelo partido, **tamanho proporcional ao n�
 artigos**, nome, cargo, contagem ("228 articles") e "In the news 9h ago" em vermelho para
 os recentes. Dispostos em camadas verticais, ligados por linhas finas.
 
+> **O que fizemos com isso.** A aresta deles é "citados nos mesmos artigos", que mede a
+> imprensa; não temos fonte de notícias, e comprar uma não resolveria o problema de fundo.
+> A **ideia** — uma vista de pessoas, com retrato, ao lado da vista de instituições — é boa,
+> e sobrevive com outra aresta: **fornecedor em comum**, que é um fato da nossa base, com
+> CNPJ e nota fiscal. Virou `/rede`, e o [ADR-0017](../decisoes/ADR-0017-mapa-de-fornecedores.md)
+> traz a medição que define o corte.
+
 ## 7. Como é construído
 
 Medido na aba de rede: **Next.js na Vercel, páginas estáticas com `_next/data/*.json`
@@ -171,7 +178,7 @@ Retratos vêm do **Wikimedia Commons**, servidos pelo otimizador de imagem do Ne
 | **Cartão OUT/IN riscado** | ⚠️ | Serve tal e qual para renomeação e mudança de pai; o de pessoas depende do DOU |
 | Overview por tipo e por poder | ✅ | Já calculamos os dois |
 | Busca | ✅ | Trivial sobre os 336 nós |
-| Power map | ❌ | Precisa de notícias e de pessoas |
+| **Power map** | ✅ **feito, com outra aresta** | Ver [ADR-0017](../decisoes/ADR-0017-mapa-de-fornecedores.md). Notícias não temos; fornecedor em comum temos. Virou `/rede` |
 | Tema claro/escuro | ✅ | Já temos |
 | Troca de governo | — | Não se aplica: um país só |
 
