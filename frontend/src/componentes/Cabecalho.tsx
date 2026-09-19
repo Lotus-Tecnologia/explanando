@@ -61,6 +61,13 @@ export function Cabecalho() {
           <span aria-hidden="true" className="mx-1 h-5 w-px bg-borda-suave" />
 
           <Aba href="/estado" rotulo="Estado" ativa={caminho.startsWith("/estado")} />
+
+          {/*
+            A rede fica ao lado do Estado, depois do mesmo separador: as duas respondem à
+            mesma pergunta por ângulos opostos — o Estado mostra as instituições, a rede
+            mostra as pessoas. Nenhuma das duas fala de cota nem de gasto por parlamentar.
+          */}
+          <Aba href="/rede" rotulo="Rede" ativa={caminho.startsWith("/rede")} />
         </nav>
 
         <div className="ms-auto">

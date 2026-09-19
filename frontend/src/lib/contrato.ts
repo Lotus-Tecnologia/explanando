@@ -343,3 +343,90 @@ export interface MapaDoEstado {
    */
   temHistorico: boolean;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  O mapa de fornecedores compartilhados — a vista de PESSOAS do mapa do      */
+/*  Estado. Ver docs/referencias/civlab.md §6 e o ADR-0017.                    */
+/* -------------------------------------------------------------------------- */
+
+export interface ParlamentarNaRede {
+  id: string;
+  nome: string;
+  partido: string;
+  uf: string;
+
+  /** Por extenso: `Deputado` ou `Senador`. */
+  casa: string;
+
+  /** A chave estavel, para o desenho escolher a forma do no'. */
+  chaveDaCasa: string;
+
+  fotoUrl: string | null;
+
+  /** Quantos fornecedores deste mapa ele divide com alguem. */
+  ligacoes: number;
+
+  /** Quantas OUTRAS pessoas esses fornecedores lhe trazem. Nao e' o mesmo que `ligacoes`. */
+  vizinhos: number;
+
+  /**
+   * O que passa pelos fornecedores em comum — **nao** o gasto dele.
+   *
+   * O nome do campo diz isso porque o numero, sozinho, seria lido como a cota inteira.
+   */
+  valorNoMapa: number;
+}
+
+export interface LigacaoDaRede {
+  documento: string;
+  fornecedor: string;
+
+  /** Sempre de 2 a 5 ids. */
+  parlamentares: string[];
+
+  valor: number;
+  notas: number;
+
+  /** O CNAE cru. Nao temos tabela de descricao, e inventar a leitura do codigo seria pior. */
+  cnaePrincipal: string | null;
+
+  municipio: string | null;
+  uf: string | null;
+  abertaEm: string | null;
+}
+
+export interface ParDaRede {
+  de: string;
+  para: string;
+
+  /** Quantos fornecedores os dois dividem. Sempre >= 2. */
+  fornecedores: number;
+
+  valor: number;
+
+  /** A variavel que explica o desenho: 91% dos pares densos sao do mesmo estado. */
+  mesmaUf: boolean;
+
+  mesmoPartido: boolean;
+}
+
+export interface MapaDaRede {
+  parlamentares: ParlamentarNaRede[];
+  ligacoes: LigacaoDaRede[];
+
+  /** Os pares densos — a aresta do desenho. */
+  pares: ParDaRede[];
+
+  /** Quantos pares dividem UM fornecedor so', e por isso ficam de fora. */
+  paresComUmFornecedorSo: number;
+
+  fornecedoresNaBase: number;
+  fornecedoresCompartilhados: number;
+  maiorFornecedorCompartilhado: string | null;
+  parlamentaresAtendidosPeloMaior: number;
+
+  /** As tres frases que o desenho nao pode ser lido sem. Vem da API, nao da tela. */
+  ressalva: string;
+  porQueEsteCorte: string;
+  oQueADensidadeMostra: string;
+}

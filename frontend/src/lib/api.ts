@@ -1,6 +1,7 @@
 import { CASAS, type Casa } from "./casas";
 import type {
   DespesaDetalhada,
+  MapaDaRede,
   MapaDoEstado,
   MudancaDoEstado,
   NoDoEstado,
@@ -246,6 +247,20 @@ export function obterDespesa(id: string): Promise<DespesaDetalhada | null> {
  * indisponibilidade da API não pode derrubar o build inteiro, e a página sabe dizer que o
  * dado não veio.
  */
+/**
+ * O mapa de fornecedores compartilhados.
+ *
+ * Nulo quando a API não responde — e a página **precisa** distinguir isso de um mapa
+ * vazio, que significaria "ninguém divide fornecedor", uma afirmação bem diferente.
+ */
+export async function obterMapaDaRede(): Promise<MapaDaRede | null> {
+  try {
+    return await buscar<MapaDaRede>("/api/v1/rede");
+  } catch {
+    return null;
+  }
+}
+
 export async function obterMapaDoEstado(): Promise<MapaDoEstado | null> {
   try {
     return await buscar<MapaDoEstado>("/api/v1/estado");
