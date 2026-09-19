@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { ranquearTudo } from "@/lib/api";
 import { formatarNumero } from "@/lib/formato";
-import { ORDENACOES, caminhoDoRanking, type Ordenacao } from "@/lib/ordenacoes";
+import type { Ordenacao } from "@/lib/ordenacoes";
 import type { Casa } from "@/lib/casas";
 import { TabelaDoRanking } from "./TabelaDoRanking";
-import { CartoesDeNumero } from "./CartoesDeNumero";
+import { PainelDaCasa } from "./PainelDaCasa";
 
 /**
  * O corpo das três páginas de ranking.
@@ -52,31 +51,13 @@ export async function PaginaDoRanking({
         publica.
       </p>
 
-      <nav aria-label="Ordenação do ranking" className="mt-5">
-        <ul className="flex flex-wrap gap-2">
-          {ORDENACOES.map((opcao) => {
-            const ativa = opcao.chave === ordenacao.chave;
-
-            return (
-              <li key={opcao.chave}>
-                <Link
-                  href={caminhoDoRanking(casa, opcao)}
-                  aria-current={ativa ? "page" : undefined}
-                  className={
-                    ativa
-                      ? "inline-block bg-titulo px-3 py-1.5 text-sm font-semibold text-white"
-                      : "inline-block border border-borda-suave px-3 py-1.5 text-sm font-semibold text-titulo hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-                  }
-                >
-                  {opcao.rotulo}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="mt-2 max-w-3xl text-xs text-texto-suave">{ordenacao.explicacao}</p>
-      </nav>
+      {/*
+        A fileira de pílulas das três ordenações virou submenu no cabeçalho. A explicação de
+        cada uma, porém, FICA aqui: ela existe para impedir a leitura errada — "densidade"
+        que exclui gente sem dizer por quê faz o leitor concluir que essas pessoas não têm
+        indicador nenhum. Num submenu, cabe o rótulo e não a ressalva.
+      */}
+      <p className="mt-4 max-w-3xl text-sm text-texto-suave">{ordenacao.explicacao}</p>
 
       {/*
         Fonte fora do ar não vira tabela vazia. Uma lista sem linhas seria lida como "nenhum
@@ -96,7 +77,7 @@ export async function PaginaDoRanking({
             antes de encarar 513 linhas. Depois da checagem de nulo, porque cartão com
             "R$ 0,00" afirmaria que ninguém gastou quando a fonte só não respondeu.
           */}
-          <CartoesDeNumero casa={casa} itens={itens} />
+          <PainelDaCasa casa={casa} itens={itens} />
 
           <TabelaDoRanking itens={itens} rotulo={ordenacao.rotulo} />
 
