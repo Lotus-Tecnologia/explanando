@@ -148,6 +148,15 @@ ponta para isso.
 A página `/estado` diz isso em texto, ao lado do número: de qual poder é o cadastro, qual a
 cobertura da ponte, e por que o resto aparece vazio.
 
+> **E há um caso pior que o vazio: o número parcial.** A primeira versão da tela mostrava
+> "Senado Federal — 72 servidores". O número está certo e **lê-se como mentira**: o Senado
+> tem folha própria, e esses 72 são apenas quem, dentro dele, aparece no cadastro do
+> Executivo. Ao lado do nome da casa, isso afirma que ela tem 72 funcionários.
+>
+> Foi pego olhando a tela, não por um teste — e a correção não foi esconder o número, que é
+> dado medido, mas rotulá-lo: toda unidade fora do Executivo ganha **"Contagem parcial"** com
+> a explicação ao lado.
+
 ## 8. O que foi construído
 
 **Domínio** — `PonteSiape` (normalização, baldes, exceções curadas) e `LotacaoDoOrgao` com

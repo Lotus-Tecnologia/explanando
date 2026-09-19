@@ -76,6 +76,13 @@ export default async function Pagina({ params }: Parametros) {
   const pai =
     unidade.codigoPai === null ? null : await obterUnidadeDoEstado(unidade.codigoPai);
 
+  /*
+    Um numero de servidores fora do Executivo e' sempre parcial: o cadastro do SIAPE e' a
+    folha do Executivo civil. Nulo nao precisa de ressalva — "sem dado" ja' diz tudo.
+  */
+  const contagemParcial =
+    unidade.servidores != null && unidade.poder !== null && unidade.poder !== "Executivo";
+
   const fichas = [
     { termo: "Tipo", valor: unidade.tipo },
     { termo: "Poder", valor: unidade.poder },
@@ -192,6 +199,21 @@ export default async function Pagina({ params }: Parametros) {
               {unidade.emFuncaoDeConfianca != null && unidade.emFuncaoDeConfianca > 0
                 ? `, ${formatarNumero(unidade.emFuncaoDeConfianca)} em função de confiança`
                 : ""}
+            </dd>
+          ) : null}
+
+          {/*
+            A ressalva NAO e' rodape opcional: sem ela, "Senado Federal — 72 servidores" e'
+            um numero correto que se le como mentira. O Senado tem folha propria e esses 72
+            sao quem, dentro dele, esta' no cadastro do Executivo. Publicar o numero cru ao
+            lado do nome da casa afirmaria que ela tem 72 funcionarios.
+          */}
+          {contagemParcial ? (
+            <dd className="mt-2 text-xs text-texto">
+              <strong className="font-semibold text-titulo">Contagem parcial.</strong> O
+              cadastro que usamos é o do Executivo civil, e o{" "}
+              {unidade.poder} mantém folha própria — este número conta apenas quem aparece
+              naquele cadastro, não o quadro da casa.
             </dd>
           ) : null}
         </div>
