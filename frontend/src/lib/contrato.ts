@@ -260,6 +260,14 @@ export interface NoDoEstado {
   /** Em que anel do grafo a unidade fica: 0 ente, 1 direta, 2 indireta, 3 colegiado. */
   anel: number;
 
+  /**
+   * O nome do anel, por extenso — "Administração direta", "Administração indireta"…
+   *
+   * Vem do dominio, e nao de uma tabela repetida aqui. E' o que permite ROTULAR o eixo
+   * radial dentro do desenho, em vez de deixa-lo so' no texto embaixo dele.
+   */
+  rotuloDoAnel: string;
+
   natureza: string | null;
 
   /**

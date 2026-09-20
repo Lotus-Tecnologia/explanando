@@ -21,6 +21,7 @@ const no = (
   chaveDoTipo: "orgao",
   chaveDoPoder: "executivo",
   anel: 1,
+  rotuloDoAnel: "Administração direta",
   natureza: null,
   baseLegal: null,
   unidadesSubordinadas,

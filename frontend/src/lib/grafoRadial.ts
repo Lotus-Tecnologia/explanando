@@ -30,6 +30,14 @@ export interface NoPosicionado {
   y: number;
   /** O raio do desenho do nó, pelo tamanho do ramo. */
   tamanho: number;
+
+  /**
+   * O arco até o vizinho do mesmo anel, em unidades de desenho.
+   *
+   * Sai do layout porque o desenho precisa dele para decidir o que **não** desenhar: num
+   * anel com 222 nós ombro a ombro, adornos por nó viram uma faixa sólida.
+   */
+  arcoAteOVizinho: number;
 }
 
 export interface SetorDoGrafo {
@@ -280,6 +288,7 @@ export function montarGrafo(todos: readonly NoDoEstado[]): DesenhoDoGrafo {
           x: raio * Math.sin(angulo),
           y: -raio * Math.cos(angulo),
           tamanho: tamanhoDoNo(no, arcoEntreVizinhos),
+          arcoAteOVizinho: arcoEntreVizinhos,
         });
       });
     }
@@ -301,12 +310,22 @@ export function montarGrafo(todos: readonly NoDoEstado[]): DesenhoDoGrafo {
     }
   }
 
+  // O rótulo do anel vem do primeiro nó que caiu nele — mesma regra do rótulo do setor.
+  // Quem traduz é o domínio; repetir a tabela aqui é como as duas saem de sincronia.
+  const rotulosPorAnel = new Map<number, string>();
+
+  for (const no of restantes) {
+    if (!rotulosPorAnel.has(no.anel)) {
+      rotulosPorAnel.set(no.anel, no.rotuloDoAnel);
+    }
+  }
+
   const aneis: AnelDoGrafo[] = [...aneisUsados]
     .sort((a, b) => a - b)
     .map((indice) => ({
       indice,
       raio: RAIO_DO_MIOLO + PASSO_DO_ANEL * (indice + 1),
-      rotulo: "",
+      rotulo: rotulosPorAnel.get(indice) ?? "",
     }));
 
   return {
@@ -325,6 +344,8 @@ export function montarGrafo(todos: readonly NoDoEstado[]): DesenhoDoGrafo {
  * Reta ligando dois pontos do mesmo anel passaria por cima de tudo que está entre eles. A
  * curva com ponto de controle puxado para o miolo é o que faz um feixe de cem arestas
  * continuar legível — é o mesmo princípio do agrupamento por borda dos grafos radiais.
+ *
+ * **Só é desenhada assim quando há um nó selecionado.** Ver <see cref="caminhoDoTalo"/>.
  */
 export function caminhoDaAresta(
   de: { x: number; y: number },
@@ -334,6 +355,147 @@ export function caminhoDaAresta(
   const cy = (de.y + para.y) * 0.32;
 
   return `M ${de.x.toFixed(1)} ${de.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${para.x.toFixed(1)} ${para.y.toFixed(1)}`;
+}
+
+/** Quanto do vão entre anéis o talo ocupa. */
+const FRACAO_DO_TALO = 0.34;
+
+/**
+ * O arco mínimo entre dois vizinhos para o talo valer a pena.
+ *
+ * **Abaixo disto os talos encostam uns nos outros e viram uma faixa hachurada.** No anel
+ * externo são 222 entidades quase coladas, e 222 tracinhos paralelos não dizem "cada uma
+ * pende de alguém" — dizem "há uma borda cinza aqui". O talo existe para apontar uma
+ * direção; quando vira textura, ele perde a função e só ganha tinta.
+ *
+ * Quem fica sem talo não fica sem informação: selecionar o nó desenha a aresta inteira.
+ */
+const ARCO_MINIMO_PARA_TALO = 7;
+
+/**
+ * O **talo**: o tracinho radial que sai de um nó em direção a quem manda nele.
+ *
+ * <b>É o conserto do problema visual mais grave do desenho.</b> Eram 334 arestas curvas
+ * atravessando o disco inteiro ao mesmo tempo, e o resultado era um leque de linhas que
+ * dominava a tela e não permitia seguir nenhuma delas. Cada uma é um fato verdadeiro, e
+ * as 334 juntas não comunicavam nenhum.
+ *
+ * Num desenho radial a **posição já diz a hierarquia**: o nó está no anel de fora, logo
+ * pende de alguém no anel de dentro. O talo confirma a direção sem desenhar o trajeto
+ * inteiro — é o que a referência faz, e por isso o grafo dela respira.
+ *
+ * O trajeto completo não se perdeu: ao selecionar um nó, aí sim as arestas dele aparecem
+ * por inteiro, com <see cref="caminhoDaAresta"/>. É quando são poucas e legíveis.
+ */
+export function caminhoDoTalo(para: {
+  x: number;
+  y: number;
+  raio: number;
+  arcoAteOVizinho: number;
+}): string {
+  if (para.raio <= 0 || para.arcoAteOVizinho < ARCO_MINIMO_PARA_TALO) return "";
+
+  const fim = Math.max(0, para.raio - PASSO_DO_ANEL * FRACAO_DO_TALO);
+  const escala = fim / para.raio;
+
+  return (
+    `M ${para.x.toFixed(1)} ${para.y.toFixed(1)} `
+    + `L ${(para.x * escala).toFixed(1)} ${(para.y * escala).toFixed(1)}`
+  );
+}
+
+/**
+ * A cunha de um setor, como um anel parcial entre dois raios.
+ *
+ * **O setor existia no cálculo e não existia na tela.** `montarGrafo` sempre devolveu
+ * `setores` com rótulo e ângulos, e o componente nunca os usou: o eixo angular — o poder —
+ * só aparecia na legenda embaixo do desenho. Pintar a cunha é o que faz a dimensão existir
+ * para quem olha, e é de graça, porque o dado já estava pronto.
+ */
+export function caminhoDoSetor(
+  inicio: number,
+  fim: number,
+  raioInterno: number,
+  raioExterno: number,
+): string {
+  const ponto = (angulo: number, raio: number) =>
+    `${(raio * Math.sin(angulo)).toFixed(1)} ${(-raio * Math.cos(angulo)).toFixed(1)}`;
+
+  // O flag de arco maior: um setor de mais de meia volta precisa dele, senão o SVG desenha
+  // o caminho curto e a cunha do Executivo vira o complemento dela mesma.
+  const maior = fim - inicio > Math.PI ? 1 : 0;
+
+  return (
+    `M ${ponto(inicio, raioInterno)} `
+    + `L ${ponto(inicio, raioExterno)} `
+    + `A ${raioExterno} ${raioExterno} 0 ${maior} 1 ${ponto(fim, raioExterno)} `
+    + `L ${ponto(fim, raioInterno)} `
+    + `A ${raioInterno} ${raioInterno} 0 ${maior} 0 ${ponto(inicio, raioInterno)} Z`
+  );
+}
+
+/**
+ * O tamanho de fonte com que o nome de um poder cabe no arco do próprio setor.
+ *
+ * **Sem isto o rótulo invade os vizinhos.** "Funções essenciais à Justiça" tem 28
+ * caracteres e o setor dele é o piso de 30°: a 13 de fonte o texto mede quase o dobro do
+ * arco disponível e atravessa por cima do Judiciário e do Legislativo. Medido na tela: 285
+ * pixels de texto para 152 de arco.
+ *
+ * Encolher é melhor que abreviar, porque abreviar um nome que vem do domínio seria
+ * inventar uma segunda grafia dele aqui no navegador. Abaixo do piso de legibilidade o
+ * rótulo some do desenho — e continua na legenda, logo abaixo, onde tem largura sobrando.
+ */
+export function fonteDoRotuloDoSetor(
+  texto: string,
+  inicio: number,
+  fim: number,
+  raio: number,
+): { fonte: number; espaco: number } | null {
+  const arco = Math.max(0, (fim - inicio) * raio);
+  const letras = Math.max(1, texto.length);
+
+  // 0,62 é a largura média de uma maiúscula em relação ao corpo da fonte do site, aferida
+  // na tela. Não precisa ser exata; precisa errar para o lado de sobrar espaço.
+  const fonteQueCabe = arco / (letras * 0.62);
+
+  if (fonteQueCabe < 7.5) return null;
+
+  const fonte = Math.min(13, fonteQueCabe);
+
+  // O espaçamento entre letras é luxo de quem tem arco sobrando. Num setor apertado ele é
+  // a primeira coisa a ir embora.
+  const folga = arco - letras * fonte * 0.62;
+
+  return { fonte, espaco: Math.max(0, Math.min(2.4, folga / letras)) };
+}
+
+/**
+ * O arco em que um rótulo curvo corre, do começo ao fim de um setor.
+ *
+ * **O sentido depende de onde o setor está, e o critério é a metade de BAIXO — não a da
+ * esquerda.** Um arco sempre horário deixa o texto de ponta-cabeça quando o meio do setor
+ * cai abaixo do centro; ali o arco é gerado ao contrário e o texto se endireita. A
+ * primeira versão testava `sin(meio) < 0`, que é a metade esquerda, e o resultado foi
+ * "LEGISLATIVO" escrito espelhado no alto à esquerda: o setor está em cima, onde não
+ * precisava de inversão nenhuma.
+ *
+ * Como o ângulo corre de meio-dia no sentido horário, "abaixo do centro" é exatamente
+ * <c>cos(meio) &lt; 0</c>.
+ */
+export function arcoDoRotulo(inicio: number, fim: number, raio: number): string {
+  const volta = Math.PI * 2;
+  const meio = ((((inicio + fim) / 2) % volta) + volta) % volta;
+  const deCabecaParaBaixo = Math.cos(meio) < 0;
+
+  const [a, b, sentido] = deCabecaParaBaixo ? [fim, inicio, 0] : [inicio, fim, 1];
+
+  const ponto = (angulo: number) =>
+    `${(raio * Math.sin(angulo)).toFixed(1)} ${(-raio * Math.cos(angulo)).toFixed(1)}`;
+
+  const maior = Math.abs(fim - inicio) > Math.PI ? 1 : 0;
+
+  return `M ${ponto(a)} A ${raio} ${raio} 0 ${maior} ${sentido} ${ponto(b)}`;
 }
 
 /**

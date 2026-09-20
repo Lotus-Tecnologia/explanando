@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   RAIO_DO_MIOLO,
+  arcoDoRotulo,
   caminhoDaForma,
+  caminhoDoSetor,
+  caminhoDoTalo,
+  fonteDoRotuloDoSetor,
   formaDoNo,
   giroPara,
   montarGrafo,
@@ -33,6 +37,11 @@ describe("montarGrafo", () => {
     chaveDoTipo,
     chaveDoPoder,
     anel,
+
+    // O rotulo vem do dominio; aqui basta ser distinto por anel, porque o que os testes
+    // checam e' que o desenho leia o rotulo do anel certo.
+    rotuloDoAnel: `Anel ${anel}`,
+
     natureza: null,
     baseLegal: null,
     unidadesSubordinadas: 0,
@@ -221,5 +230,123 @@ describe("giroPara", () => {
 
     // Um no' que ja' esta' embaixo nao gira.
     expect(giroPara(Math.PI)).toBeCloseTo(0, 6);
+  });
+});
+
+/**
+ * A moldura do desenho: as cunhas de poder, a régua dos anéis e o talo.
+ *
+ * **Estes testes nasceram de erros que só a tela pegou.** O rótulo do Legislativo saiu
+ * espelhado; o de "Funções essenciais à Justiça" atravessou por cima de dois setores
+ * vizinhos; e os talos do anel externo viraram uma faixa hachurada. Nenhum dos três
+ * quebrava nada — o desenho continuava aparecendo, só que errado.
+ */
+describe("arcoDoRotulo", () => {
+  const meiaVolta = Math.PI;
+
+  it("no alto do disco, o texto corre no sentido horario", () => {
+    // Setor em volta do meio-dia. Horario = da esquerda para a direita, que e' como se le.
+    const d = arcoDoRotulo(-0.4, 0.4, 100);
+
+    // O ultimo parametro antes das coordenadas finais e' o sentido do arco: 1 e' horario.
+    expect(d).toMatch(/A 100 100 0 0 1 /);
+  });
+
+  it("embaixo do disco, o texto corre ao contrario — senao sai de ponta-cabeca", () => {
+    const d = arcoDoRotulo(meiaVolta - 0.4, meiaVolta + 0.4, 100);
+
+    expect(d).toMatch(/A 100 100 0 0 0 /);
+  });
+
+  it("na metade ESQUERDA do alto, NAO inverte", () => {
+    // O erro real: a primeira versao testava a metade esquerda em vez da de baixo, e
+    // escrevia "LEGISLATIVO" espelhado num setor que esta' em cima.
+    const d = arcoDoRotulo(5.4, 6.1, 100);
+
+    expect(d).toMatch(/A 100 100 0 0 1 /);
+  });
+
+  it("na metade ESQUERDA de baixo, inverte", () => {
+    const d = arcoDoRotulo(3.6, 4.3, 100);
+
+    expect(d).toMatch(/A 100 100 0 0 0 /);
+  });
+});
+
+describe("fonteDoRotuloDoSetor", () => {
+  it("nome curto em setor largo fica no corpo cheio", () => {
+    const medida = fonteDoRotuloDoSetor("EXECUTIVO", 0, Math.PI, 380);
+
+    expect(medida?.fonte).toBe(13);
+  });
+
+  it("nome comprido em setor de 30 graus ENCOLHE, em vez de invadir o vizinho", () => {
+    // O caso real: "FUNÇÕES ESSENCIAIS À JUSTIÇA" media 285 pixels de texto para 152 de
+    // arco, e passava por cima do Judiciario e do Legislativo.
+    const trintaGraus = (30 * Math.PI) / 180;
+    const medida = fonteDoRotuloDoSetor("FUNÇÕES ESSENCIAIS À JUSTIÇA", 0, trintaGraus, 380);
+
+    expect(medida).not.toBeNull();
+    expect(medida!.fonte).toBeLessThan(13);
+
+    // E o texto tem que caber mesmo: e' a conta que o componente confia.
+    expect(medida!.fonte * 28 * 0.62).toBeLessThanOrEqual(trintaGraus * 380 + 0.01);
+  });
+
+  it("quando nem encolhido cabe, o rotulo some do desenho", () => {
+    // Sumir e' melhor que espremer ate' ficar ilegivel: o nome continua na legenda.
+    expect(fonteDoRotuloDoSetor("FUNÇÕES ESSENCIAIS À JUSTIÇA", 0, 0.08, 100)).toBeNull();
+  });
+
+  it("o espacamento entre letras e' a primeira coisa a ir embora", () => {
+    const largo = fonteDoRotuloDoSetor("EXECUTIVO", 0, Math.PI, 380);
+    const apertado = fonteDoRotuloDoSetor("EXECUTIVO", 0, 0.2, 380);
+
+    expect(largo!.espaco).toBeGreaterThan(apertado!.espaco);
+  });
+});
+
+describe("caminhoDoSetor", () => {
+  it("um setor de mais de meia volta usa o flag de arco maior", () => {
+    // Sem ele o SVG desenha o caminho curto, e a cunha do Executivo vira o complemento
+    // dela mesma — o desenho fica com o buraco no lugar da tinta.
+    const d = caminhoDoSetor(0, Math.PI * 1.4, 60, 300);
+
+    expect(d).toMatch(/A 300 300 0 1 1 /);
+  });
+
+  it("um setor pequeno nao usa", () => {
+    expect(caminhoDoSetor(0, 0.5, 60, 300)).toMatch(/A 300 300 0 0 1 /);
+  });
+
+  it("o caminho e' fechado, senao o preenchimento vaza", () => {
+    expect(caminhoDoSetor(0, 0.5, 60, 300).trim().endsWith("Z")).toBe(true);
+  });
+});
+
+describe("caminhoDoTalo", () => {
+  it("aponta para o centro, e nao para longe dele", () => {
+    const d = caminhoDoTalo({ x: 0, y: -300, raio: 300, arcoAteOVizinho: 40 });
+    const numeros = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+
+    expect(numeros).toHaveLength(4);
+
+    const [, comeco, , fim] = numeros;
+
+    // Comeca em -300 e termina mais perto de zero, sem atravessar o centro.
+    expect(comeco).toBe(-300);
+    expect(Math.abs(fim)).toBeLessThan(Math.abs(comeco));
+    expect(Math.abs(fim)).toBeGreaterThan(0);
+    expect(Math.sign(fim)).toBe(Math.sign(comeco));
+  });
+
+  it("some quando os vizinhos estao colados", () => {
+    // 222 entidades ombro a ombro dao 222 tracinhos paralelos, que nao dizem "cada uma
+    // pende de alguem" — dizem "ha' uma borda cinza aqui".
+    expect(caminhoDoTalo({ x: 0, y: -300, raio: 300, arcoAteOVizinho: 2 })).toBe("");
+  });
+
+  it("no centro exato nao ha talo", () => {
+    expect(caminhoDoTalo({ x: 0, y: 0, raio: 0, arcoAteOVizinho: 40 })).toBe("");
   });
 });

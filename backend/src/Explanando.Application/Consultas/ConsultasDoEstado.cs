@@ -48,6 +48,21 @@ public sealed record NoDoEstado
     /// <c>VocabularioDoEstado.AnelDe</c>.</para>
     /// </summary>
     public required int Anel { get; init; }
+
+    /// <summary>
+    /// O nome do anel, por extenso: "Administração direta", "Administração indireta"…
+    ///
+    /// <para>Viaja em cada nó, e não numa lista à parte, pela mesma razão que
+    /// <see cref="Poder"/>: <b>quem traduz é o domínio</b>, e o desenho lê o rótulo do
+    /// primeiro nó que encontrar naquele anel. Uma segunda tabela no navegador seria uma
+    /// tradução duplicada, e duplicata é como as duas saem de sincronia.</para>
+    ///
+    /// <para>Sem ele, o eixo radial do grafo fica <b>sem nome na tela</b> — foi assim até
+    /// alguém comparar o desenho com o da referência e notar que a segunda dimensão
+    /// existia no cálculo e não existia para o leitor.</para>
+    /// </summary>
+    public required string RotuloDoAnel { get; init; }
+
     public string? Natureza { get; init; }
 
     /// <summary>

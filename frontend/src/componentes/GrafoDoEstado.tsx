@@ -4,8 +4,12 @@ import { useState } from "react";
 import type { NoDoEstado } from "@/lib/contrato";
 import {
   RAIO_DO_MIOLO,
+  arcoDoRotulo,
   caminhoDaAresta,
   caminhoDaForma,
+  caminhoDoSetor,
+  caminhoDoTalo,
+  fonteDoRotuloDoSetor,
   formaDoNo,
   giroPara,
   montarGrafo,
@@ -60,7 +64,9 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
   const emFoco = (codigo: number) =>
     selecionado === null || codigo === selecionado || ligadas.has(codigo);
 
-  const margem = 54;
+  // A margem agora precisa caber o rotulo curvo do poder, que corre por fora do anel
+  // externo. Sem folga ele sai do viewBox e some sem erro nenhum.
+  const margem = 78;
   const lado = (grafo.raioExterno + margem) * 2;
   const destacado = sobre ?? selecionado;
   const rotulado = destacado === null ? null : porCodigo.get(destacado);
@@ -90,6 +96,22 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
             transform={`rotate(${giroEmGraus.toFixed(2)})`}
             style={{ transition: "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)" }}
           >
+            {/*
+              As cunhas de poder. Vêm primeiro de tudo: são o fundo sobre o qual o resto
+              é desenhado, e é delas que o eixo ANGULAR passa a existir para quem olha.
+              Antes, o poder só aparecia na cor do nó e na legenda embaixo.
+            */}
+            {grafo.setores.map((setor) => (
+              <path
+                key={`cunha-${setor.chave}`}
+                d={caminhoDoSetor(setor.inicio, setor.fim, RAIO_DO_MIOLO * 0.92, grafo.raioExterno)}
+                fill={corDoPoder(setor.chave)}
+                /* Tinta muito pálida: a cunha situa, e não compete com o nó. */
+                opacity={0.07}
+                pointerEvents="none"
+              />
+            ))}
+
             {/* Os anéis, como guias finíssimas. Sólidas: tracejado em grade lê-se como
                 "projeção", e estas são posições reais. */}
             {grafo.aneis.map((anel) => (
@@ -104,33 +126,104 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
               />
             ))}
 
-            {/* As arestas. Quando há seleção, só as dele. */}
-            {grafo.arestas.map((aresta) => {
-              const de = porCodigo.get(aresta.de);
-              const para = porCodigo.get(aresta.para);
+            {/*
+              As arestas, em dois regimes.
 
-              // Aresta que sai do miolo parte do centro.
-              const origem = de ?? (noMiolo.has(aresta.de) ? { x: 0, y: 0 } : null);
+              SEM seleção, cada nó recebe só um TALO — o tracinho radial que aponta para
+              quem manda nele. Eram 334 curvas atravessando o disco ao mesmo tempo, e o
+              leque que elas formavam dominava a tela sem deixar seguir nenhuma: cada
+              aresta é um fato verdadeiro, e as 334 juntas não comunicavam nenhum.
 
-              if (!origem || !para) return null;
+              COM seleção, as arestas do nó escolhido aparecem por inteiro. É quando são
+              poucas, e quando o trajeto completo é a informação que se quer.
+            */}
+            {selecionado === null
+              ? grafo.nos.map((p) => {
+                  const talo = caminhoDoTalo(p);
 
-              const relevante =
-                selecionado === null ||
-                aresta.de === selecionado ||
-                aresta.para === selecionado;
+                  // Vazio quando o anel esta' cheio demais — ver ARCO_MINIMO_PARA_TALO.
+                  if (talo === "") return null;
 
-              if (selecionado !== null && !relevante) return null;
+                  return (
+                  <path
+                    key={`talo-${p.no.codigo}`}
+                    d={talo}
+                    fill="none"
+                    stroke={corDoPoder(p.no.chaveDoPoder)}
+                    strokeWidth={0.9}
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    opacity={0.38}
+                    pointerEvents="none"
+                  />
+                  );
+                })
+              : grafo.arestas.map((aresta) => {
+                  const de = porCodigo.get(aresta.de);
+                  const para = porCodigo.get(aresta.para);
+
+                  // Aresta que sai do miolo parte do centro.
+                  const origem = de ?? (noMiolo.has(aresta.de) ? { x: 0, y: 0 } : null);
+
+                  if (!origem || !para) return null;
+
+                  if (aresta.de !== selecionado && aresta.para !== selecionado) return null;
+
+                  return (
+                    <path
+                      key={`${aresta.de}-${aresta.para}`}
+                      d={caminhoDaAresta(origem, para)}
+                      fill="none"
+                      stroke={corDoPoder(para.no.chaveDoPoder)}
+                      strokeWidth={1.6}
+                      vectorEffect="non-scaling-stroke"
+                      opacity={0.85}
+                    />
+                  );
+                })}
+
+            {/*
+              O rótulo do poder, curvado na borda do seu setor. Vive DENTRO do grupo que
+              gira, porque pertence à roda: quando o disco vira, o nome do poder vira
+              junto com os órgãos dele.
+            */}
+            <defs>
+              {grafo.setores.map((setor) => (
+                <path
+                  key={`arco-${setor.chave}`}
+                  id={`arco-${setor.chave}`}
+                  d={arcoDoRotulo(setor.inicio, setor.fim, grafo.raioExterno + 19)}
+                  fill="none"
+                />
+              ))}
+            </defs>
+
+            {grafo.setores.map((setor) => {
+              const texto = setor.rotulo.toUpperCase();
+              const medida = fonteDoRotuloDoSetor(
+                texto,
+                setor.inicio,
+                setor.fim,
+                grafo.raioExterno + 19,
+              );
+
+              // Nulo quando nem encolhido caberia. O nome continua na legenda.
+              if (medida === null) return null;
 
               return (
-                <path
-                  key={`${aresta.de}-${aresta.para}`}
-                  d={caminhoDaAresta(origem, para)}
-                  fill="none"
-                  stroke={corDoPoder(para.no.chaveDoPoder)}
-                  strokeWidth={relevante && selecionado !== null ? 1.6 : 0.8}
-                  vectorEffect="non-scaling-stroke"
-                  opacity={selecionado === null ? 0.22 : 0.85}
-                />
+                <text
+                  key={`rotulo-${setor.chave}`}
+                  fill={corDoPoder(setor.chave)}
+                  fontSize={medida.fonte}
+                  fontWeight={700}
+                  letterSpacing={medida.espaco}
+                  opacity={0.85}
+                  pointerEvents="none"
+                >
+                  <textPath href={`#arco-${setor.chave}`} startOffset="50%" textAnchor="middle">
+                    {texto}
+                  </textPath>
+                </text>
               );
             })}
 
@@ -161,6 +254,29 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
               </g>
             ) : null}
           </g>
+
+          {/*
+            O nome de cada anel — o eixo RADIAL, que é a natureza jurídica.
+
+            Fica FORA do grupo que gira, e é deliberado: o anel não roda junto com a roda,
+            porque "administração indireta" continua sendo o mesmo anel depois de o disco
+            virar. Só o conteúdo gira; a régua fica.
+
+            Estava faltando por inteiro. O raio era natureza jurídica desde o começo, o
+            cálculo já sabia disso, e nada na tela dizia — a segunda dimensão do desenho
+            existia só no parágrafo abaixo dele.
+
+            Some enquanto há um nó selecionado: a roda gira para pôr o escolhido embaixo,
+            que é exatamente onde a régua fica, e a tarja acabava em cima dele. Quem está
+            olhando uma unidade não está consultando a régua.
+          */}
+          {selecionado !== null
+            ? null
+            : grafo.aneis.map((anel) =>
+                anel.rotulo === "" ? null : (
+                  <RotuloDoAnel key={`anel-${anel.indice}`} raio={anel.raio} texto={anel.rotulo} />
+                ),
+              )}
 
           {/* O miolo não gira: é a raiz, e ela é o eixo. */}
           <circle
@@ -193,7 +309,13 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
             <strong className="font-semibold">raio</strong> é a natureza jurídica — ente
             federativo no centro, depois administração direta e administração indireta. A
             forma do nó repete o tipo, para quem não distingue as cores. Passe o ponteiro
-            para ver o nome; clique para isolar as ligações.
+            para ver o nome.
+          </p>
+          <p>
+            O tracinho que sai de cada nó aponta para quem manda nele.{" "}
+            <strong className="font-semibold">Clique</strong> para ver a ligação inteira:
+            desenhar as 334 de uma vez produzia um emaranhado em que nenhuma delas podia
+            ser seguida.
           </p>
           <p>
             Cada poder ocupa no mínimo 30° do círculo, senão o Legislativo — 4 órgãos
@@ -290,6 +412,45 @@ function NoDoGrafo({
  * Fundo opaco com a cor do poder no texto: sobre um feixe de arestas, texto sem fundo
  * vira ilegível na hora.
  */
+/**
+ * O nome de um anel, escrito sobre a régua radial.
+ *
+ * **Fica na vertical de baixo, com uma tarja atrás.** Ali é onde o desenho tem menos nó em
+ * qualquer rotação, e a tarja resolve o resto: sem ela o texto cai em cima de uma aresta
+ * ou de um contorno e vira borrão. O deslocamento para dentro do anel é o que impede o
+ * rótulo de sentar exatamente sobre os nós, que ficam no raio exato.
+ */
+function RotuloDoAnel({ raio, texto }: { raio: number; texto: string }) {
+  // Bem para DENTRO do anel, e nao rente a ele: os nos ficam no raio exato, e um rotulo
+  // colado na linha divide espaco com eles. Aqui ele cai no vao entre dois aneis.
+  const y = raio - 26;
+  const largura = texto.length * 5.6 + 14;
+
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={-largura / 2}
+        y={y - 9}
+        width={largura}
+        height={14}
+        rx={7}
+        fill="var(--color-fundo)"
+        opacity={0.82}
+      />
+      <text
+        y={y}
+        textAnchor="middle"
+        fontSize={9.5}
+        fontWeight={700}
+        letterSpacing={1.1}
+        fill="var(--color-texto-suave)"
+      >
+        {texto.toUpperCase()}
+      </text>
+    </g>
+  );
+}
+
 function RotuloFlutuante({ texto, cor }: { texto: string; cor: string }) {
   /*
     O NOME, e não a sigla. "PE" não diz nada a quem está descobrindo o que é aquele ponto,

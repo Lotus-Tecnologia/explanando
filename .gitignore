@@ -55,3 +55,7 @@ frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
 frontend/.turbo/
+
+# Referencias visuais usadas durante o desenvolvimento (prints do CivLab e afins).
+# Nao versionadas: sao material de terceiros e so servem de apoio enquanto se desenha.
+ref/
