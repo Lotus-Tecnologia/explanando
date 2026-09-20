@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AlternadorDeVista } from "@/componentes/AlternadorDeVista";
 import { LegendaDaRede } from "@/componentes/GrafoDaRede";
 import {
   AgrupamentosDaRede,
@@ -70,6 +71,10 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       <section className="border-b border-borda-suave bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+          <div className="mb-6">
+            <AlternadorDeVista atual="pessoas" />
+          </div>
+
           <p className="text-xs font-bold tracking-widest text-acento uppercase">
             Fornecedores em comum · dados abertos
           </p>

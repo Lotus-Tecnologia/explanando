@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AlternadorDeVista } from "@/componentes/AlternadorDeVista";
 import { GrafoDoEstado, LegendaDePoderes } from "@/componentes/GrafoDoEstado";
 import { DistribuicaoDoEstado, LinhaDoTempoDoEstado } from "@/componentes/PainelDoEstado";
 import { SerieDePessoal } from "@/componentes/SerieDePessoal";
@@ -100,6 +101,14 @@ export default async function Pagina() {
       {/*  O desenho                                                        */}
       {/* ---------------------------------------------------------------- */}
       <section className="mx-auto max-w-5xl px-4 py-12">
+        {/*
+          As duas vistas do mesmo contexto. Fica em cima do desenho, e nao so' no menu:
+          separadas la' em cima elas pareciam duas secoes sem relacao.
+        */}
+        <div className="mb-6">
+          <AlternadorDeVista atual="instituicoes" />
+        </div>
+
         <GrafoDoEstado nos={mapa.nos} />
 
         <div className="mt-6">
