@@ -1,7 +1,7 @@
 import { CASAS, type Casa } from "./casas";
 import type {
   DespesaDetalhada,
-  MapaDaRede,
+  MapaDePoderCompleto,
   MapaDoEstado,
   MudancaDoEstado,
   NoDoEstado,
@@ -248,14 +248,14 @@ export function obterDespesa(id: string): Promise<DespesaDetalhada | null> {
  * dado não veio.
  */
 /**
- * O mapa de fornecedores compartilhados.
+ * O mapa de poder — quem ocupa as cadeiras de comando, nos quatro poderes.
  *
- * Nulo quando a API não responde — e a página **precisa** distinguir isso de um mapa
- * vazio, que significaria "ninguém divide fornecedor", uma afirmação bem diferente.
+ * Nulo quando a API não responde, e a página precisa distinguir isso de um mapa com
+ * poderes vazios: o segundo é uma afirmação sobre o Estado, o primeiro é sobre nós.
  */
-export async function obterMapaDaRede(): Promise<MapaDaRede | null> {
+export async function obterMapaDePoder(): Promise<MapaDePoderCompleto | null> {
   try {
-    return await buscar<MapaDaRede>("/api/v1/rede");
+    return await buscar<MapaDePoderCompleto>("/api/v1/cadeiras");
   } catch {
     return null;
   }

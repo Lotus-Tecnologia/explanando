@@ -353,88 +353,65 @@ export interface MapaDoEstado {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  O mapa de fornecedores compartilhados — a vista de PESSOAS do mapa do      */
-/*  Estado. Ver docs/referencias/civlab.md §6 e o ADR-0017.                    */
+/*  O mapa de poder — quem ocupa as cadeiras de comando.                      */
+/*  Ver ADR das cadeiras e docs/referencias/civlab.md §6.                     */
 /* -------------------------------------------------------------------------- */
 
-export interface ParlamentarNaRede {
-  id: string;
-  nome: string;
-  partido: string;
-  uf: string;
+export interface CadeiraDoMapa {
+  cargo: string;
 
-  /** Por extenso: `Deputado` ou `Senador`. */
-  casa: string;
+  /** Nulo e' cadeira VAGA — ver `vaga`. Nao e' "nao sabemos". */
+  ocupante: string | null;
 
-  /** A chave estavel, para o desenho escolher a forma do no'. */
-  chaveDaCasa: string;
-
+  orgao: string | null;
+  partido: string | null;
+  uf: string | null;
   fotoUrl: string | null;
 
-  /** Quantos fornecedores deste mapa ele divide com alguem. */
-  ligacoes: number;
+  /** O no' do grafo, quando conhecido. E' o que liga as duas vistas. */
+  codigoSiorg: number | null;
 
-  /** Quantas OUTRAS pessoas esses fornecedores lhe trazem. Nao e' o mesmo que `ligacoes`. */
-  vizinhos: number;
+  /** A URL de onde isto foi lido. Vai para a tela, nao so' para o log. */
+  fonte: string;
+
+  verificadoEm: string;
+  vaga: boolean;
+
+  /** Transcrita a' mao de um portal que nao e' legivel por maquina. */
+  curada: boolean;
+}
+
+export interface CamadaDoMapa {
+  /** A chave estavel: `chefia`, `cupula`, `comando`, `representacao`. */
+  chave: string;
+
+  /** O nome no vocabulario DESTE poder: "Ministros de Estado", "Mesa Diretora". */
+  rotulo: string;
+
+  /** De cima para baixo no desenho. 0 e' a chefia. */
+  ordem: number;
+
+  cadeiras: CadeiraDoMapa[];
+}
+
+export interface MapaDePoder {
+  chaveDoPoder: string;
+  poder: string;
+  camadas: CamadaDoMapa[];
+  totalDeCadeiras: number;
+  vagas: number;
 
   /**
-   * O que passa pelos fornecedores em comum — **nao** o gasto dele.
-   *
-   * O nome do campo diz isso porque o numero, sozinho, seria lido como a cota inteira.
+   * A verificacao mais ANTIGA do conjunto, e nao a mais nova: e' o pior caso da tela.
+   * Nulo quando nao ha' cadeira nenhuma.
    */
-  valorNoMapa: number;
+  verificadoDesde: string | null;
+
+  /** Nulo quando ha' cadeiras. Preenchido explica a ausencia. */
+  porQueFalta: string | null;
 }
 
-export interface LigacaoDaRede {
-  documento: string;
-  fornecedor: string;
-
-  /** Sempre de 2 a 5 ids. */
-  parlamentares: string[];
-
-  valor: number;
-  notas: number;
-
-  /** O CNAE cru. Nao temos tabela de descricao, e inventar a leitura do codigo seria pior. */
-  cnaePrincipal: string | null;
-
-  municipio: string | null;
-  uf: string | null;
-  abertaEm: string | null;
-}
-
-export interface ParDaRede {
-  de: string;
-  para: string;
-
-  /** Quantos fornecedores os dois dividem. Sempre >= 2. */
-  fornecedores: number;
-
-  valor: number;
-
-  /** A variavel que explica o desenho: 91% dos pares densos sao do mesmo estado. */
-  mesmaUf: boolean;
-
-  mesmoPartido: boolean;
-}
-
-export interface MapaDaRede {
-  parlamentares: ParlamentarNaRede[];
-  ligacoes: LigacaoDaRede[];
-
-  /** Os pares densos — a aresta do desenho. */
-  pares: ParDaRede[];
-
-  /** Quantos pares dividem UM fornecedor so', e por isso ficam de fora. */
-  paresComUmFornecedorSo: number;
-
-  fornecedoresNaBase: number;
-  fornecedoresCompartilhados: number;
-  maiorFornecedorCompartilhado: string | null;
-  parlamentaresAtendidosPeloMaior: number;
-
-  /** As tres frases que o desenho nao pode ser lido sem. Vem da API, nao da tela. */
-  ressalva: string;
-  porQueEsteCorte: string;
-  oQueADensidadeMostra: string;
+export interface MapaDePoderCompleto {
+  poderes: MapaDePoder[];
+  ressalvaDaCuradoria: string;
 }

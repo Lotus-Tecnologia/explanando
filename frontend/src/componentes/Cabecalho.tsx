@@ -77,14 +77,12 @@ export function Cabecalho() {
           */}
           <span aria-hidden="true" className="mx-1 h-5 w-px bg-borda-suave" />
 
-          <Aba href="/estado" rotulo="Estado" ativa={caminho.startsWith("/estado")} />
-
           {/*
-            A rede fica ao lado do Estado, depois do mesmo separador: as duas respondem à
-            mesma pergunta por ângulos opostos — o Estado mostra as instituições, a rede
-            mostra as pessoas. Nenhuma das duas fala de cota nem de gasto por parlamentar.
+            As duas vistas do Estado — instituicoes e quem comanda — moram DENTRO de
+            /estado, e trocam no pe' do desenho. Nao ha' aba propria: sao a mesma pergunta
+            vista de dois angulos, e separa-las no menu as fazia parecer secoes distintas.
           */}
-          <Aba href="/rede" rotulo="Rede" ativa={caminho.startsWith("/rede")} />
+          <Aba href="/estado" rotulo="Estado" ativa={caminho.startsWith("/estado")} />
         </nav>
 
         <div className="ms-auto">

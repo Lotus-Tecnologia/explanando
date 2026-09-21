@@ -59,9 +59,6 @@ const ROTAS_FIXAS = [
   // outra pagina em portugues que desenhe a estrutura organizacional federal inteira.
   { caminho: "/estado", prioridade: 0.9 },
 
-  // A vista de pessoas do mesmo contexto: quem divide fornecedor com quem. Mesma
-  // prioridade, pela mesma razao — nao existe equivalente em portugues.
-  { caminho: "/rede", prioridade: 0.9 },
 
   // A política é página pública e precisa ser encontrável — inclusive por quem quer exercer
   // um direito e não sabe por onde começar.

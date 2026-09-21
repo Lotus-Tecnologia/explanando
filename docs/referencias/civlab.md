@@ -169,16 +169,16 @@ Retratos vêm do **Wikimedia Commons**, servidos pelo otimizador de imagem do Ne
 | **Cartão OUT/IN com o antigo riscado** | ✅ **feito** | Serve à estrutura: renomeação, mudança de sigla, mudança de pai |
 | **Descrição em prosa** | ❌ | O SIORG não publica descrição. Escrever à mão para 96 mil unidades é inviável; para os ~330 órgãos, é possível |
 | Link para a fonte legal / site oficial | ❌ | O SIORG não traz nenhum dos dois |
-| **Ocupante com retrato** | ❌ | Precisa do DOU (INLABS, seu cadastro) ou de outra fonte |
+| **Ocupante com retrato** | ⚠️ **parcial** | Executivo e Legislativo: sim (retrato só no Legislativo — o Planalto publica lista de texto). Judiciário: não, e o portal do STF não serve HTML |
 | Feed de notícias | ❌ | Fonte nova, e um custo recorrente |
 | **"Who's connected?" agrupado** | ⚠️ | Temos o pai e os filhos. Um grupo só, não nove |
 | **Contabilidade de cadeiras ("7 of 7 seats")** | ❌ | Ninguém publica cargos autorizados no Brasil — já procurei |
-| Cadeiras vagas / interinos | ❌ | Depende do item acima |
+| Cadeiras vagas / interinos | ⚠️ | O modelo já distingue cadeira **vaga** de "não sabemos", e a tela desenha as duas diferente. Falta a fonte que diga quais estão vagas |
 | **Linha do tempo de mudanças** | ✅ | **Já temos `MudancaEstrutural`** — falta só a tela |
 | **Cartão OUT/IN riscado** | ⚠️ | Serve tal e qual para renomeação e mudança de pai; o de pessoas depende do DOU |
 | Overview por tipo e por poder | ✅ | Já calculamos os dois |
 | Busca | ✅ | Trivial sobre os 336 nós |
-| **Power map** | ✅ **feito, com outra aresta** | Ver [ADR-0017](../decisoes/ADR-0017-mapa-de-fornecedores.md). Notícias não temos; fornecedor em comum temos. Virou `/rede` |
+| **Power map** | ✅ **feito** | Ver [ADR-0018](../decisoes/ADR-0018-cadeiras-de-comando.md). Notícias não temos; **cargo de comando temos** — 138 cadeiras, do Planalto e das APIs do Congresso. Vive dentro de `/estado`, e troca conforme o poder clicado no grafo |
 | Tema claro/escuro | ✅ | Já temos |
 | Troca de governo | — | Não se aplica: um país só |
 

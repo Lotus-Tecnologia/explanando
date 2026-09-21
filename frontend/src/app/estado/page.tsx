@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlternadorDeVista } from "@/componentes/AlternadorDeVista";
-import { GrafoDoEstado, LegendaDePoderes } from "@/componentes/GrafoDoEstado";
+import { LegendaDePoderes } from "@/componentes/GrafoDoEstado";
+import { VistasDoEstado } from "@/componentes/VistasDoEstado";
 import { DistribuicaoDoEstado, LinhaDoTempoDoEstado } from "@/componentes/PainelDoEstado";
 import { SerieDePessoal } from "@/componentes/SerieDePessoal";
-import { listarMudancasDoEstado, obterMapaDoEstado, obterSerieDePessoal } from "@/lib/api";
+import {
+  listarMudancasDoEstado,
+  obterMapaDePoder,
+  obterMapaDoEstado,
+  obterSerieDePessoal,
+} from "@/lib/api";
 import { formatarNumero } from "@/lib/formato";
 import { corDaEscala, corDoPoder } from "@/lib/grafo";
 
@@ -14,8 +19,8 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "O mapa do Estado brasileiro",
   description:
-    "Que órgãos existem na administração pública federal, de quem cada um depende e sob "
-    + "que norma foi criado. Dados do SIORG, a estrutura organizacional oficial.",
+    "Que órgãos existem na administração pública federal, de quem cada um depende e sob " +
+    "que norma foi criado. Dados do SIORG, a estrutura organizacional oficial.",
   alternates: { canonical: "/estado" },
 };
 
@@ -33,10 +38,11 @@ export const metadata: Metadata = {
  * cadastro. Omitir a ausência faria o mapa parecer completo quando é meio mapa.
  */
 export default async function Pagina() {
-  const [mapa, mudancas, serie] = await Promise.all([
+  const [mapa, mudancas, serie, poderes] = await Promise.all([
     obterMapaDoEstado(),
     listarMudancasDoEstado(30),
     obterSerieDePessoal(),
+    obterMapaDePoder(),
   ]);
 
   if (!mapa) {
@@ -72,8 +78,8 @@ export default async function Pagina() {
               {formatarNumero(mapa.totalDeUnidades)} unidades
             </strong>{" "}
             compõem a administração pública federal — de ministérios a conselhos de três
-            pessoas. Aqui estão todas: de quem cada uma depende, quanta gente trabalha nelas,
-            e se foram criadas por lei ou por uma assinatura interna.
+            pessoas. Aqui estão todas: de quem cada uma depende, quanta gente trabalha nelas, e
+            se foram criadas por lei ou por uma assinatura interna.
           </p>
 
           {mapa.totalDeServidores != null ? (
@@ -102,14 +108,10 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       <section className="mx-auto max-w-5xl px-4 py-12">
         {/*
-          As duas vistas do mesmo contexto. Fica em cima do desenho, e nao so' no menu:
-          separadas la' em cima elas pareciam duas secoes sem relacao.
+          As duas vistas do mesmo contexto, uma substituindo a outra. O alternador desceu
+          para o pe' do desenho — e' controle do objeto que se olha, e nao da navegacao.
         */}
-        <div className="mb-6">
-          <AlternadorDeVista atual="instituicoes" />
-        </div>
-
-        <GrafoDoEstado nos={mapa.nos} />
+        <VistasDoEstado nos={mapa.nos} poderes={poderes} />
 
         <div className="mt-6">
           <LegendaDePoderes poderes={mapa.porPoder} />
@@ -180,8 +182,8 @@ export default async function Pagina() {
                   : `${(mapa.coberturaDoPessoal * 100).toFixed(1).replace(".", ",")}%`}
               </dd>
               <dd className="mt-1 text-xs text-texto-suave">
-                O resto está em rubricas que o cadastro de estrutura não tem — os governos
-                dos ex-territórios, por exemplo.
+                O resto está em rubricas que o cadastro de estrutura não tem — os governos dos
+                ex-territórios, por exemplo.
               </dd>
             </div>
 
@@ -190,10 +192,9 @@ export default async function Pagina() {
                 De qual poder
               </dt>
               <dd className="mt-1 text-sm text-texto">
-                Só do <strong className="font-semibold text-titulo">Executivo civil</strong>.
-                O Judiciário e o Legislativo mantêm folhas próprias e aparecem aqui apenas
-                em parte — por isso muitos tribunais mostram &ldquo;sem dado&rdquo; em vez de
-                zero.
+                Só do <strong className="font-semibold text-titulo">Executivo civil</strong>. O
+                Judiciário e o Legislativo mantêm folhas próprias e aparecem aqui apenas em
+                parte — por isso muitos tribunais mostram &ldquo;sem dado&rdquo; em vez de zero.
               </dd>
             </div>
           </dl>
@@ -237,8 +238,8 @@ export default async function Pagina() {
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm text-texto-suave">
-            Os {formatarNumero(orgaos.length)} do primeiro nível, do maior ramo para o menor.
-            É a mesma informação do desenho, em texto — quem não distingue as cores lê aqui.
+            Os {formatarNumero(orgaos.length)} do primeiro nível, do maior ramo para o menor. É
+            a mesma informação do desenho, em texto — quem não distingue as cores lê aqui.
           </p>
 
           <ul className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
@@ -302,7 +303,9 @@ export default async function Pagina() {
               falta é a ponte entre os códigos de órgão das duas fontes, que não são os mesmos.
             </li>
             <li>
-              <strong className="font-semibold text-titulo">As nomeações ao longo do tempo</strong>{" "}
+              <strong className="font-semibold text-titulo">
+                As nomeações ao longo do tempo
+              </strong>{" "}
               estão no Diário Oficial, e o acesso estruturado a ele depende de um cadastro que
               ainda não fizemos.
             </li>
@@ -314,8 +317,8 @@ export default async function Pagina() {
           </ul>
 
           <p className="mt-3 text-sm text-texto-suave">
-            Preferimos dizer isto a deixar o mapa parecer completo. É a mesma regra que vale
-            no resto do site: ausência de dado nunca é apresentada como ausência de fato.
+            Preferimos dizer isto a deixar o mapa parecer completo. É a mesma regra que vale no
+            resto do site: ausência de dado nunca é apresentada como ausência de fato.
           </p>
         </div>
       </section>

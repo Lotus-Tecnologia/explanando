@@ -44,6 +44,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 11 | O grafo do Estado — 96.658 unidades do SIORG | ✅ Concluída | [etapa-11-grafo-do-estado.md](etapa-11-grafo-do-estado.md) |
 | 12 | Quem trabalha no Estado — 759.351 vínculos, sem um nome no banco | ✅ Concluída | [etapa-12-quadro-de-pessoal.md](etapa-12-quadro-de-pessoal.md) |
 | 13 | Quem contrata com quem — 224 parlamentares em 49 ilhas de fornecedor em comum | ✅ Concluída | [etapa-13-mapa-de-fornecedores.md](etapa-13-mapa-de-fornecedores.md) |
+| 14 | O mapa de poder — 138 cadeiras de comando, de três fontes | ✅ Concluída | [etapa-14-mapa-de-poder.md](etapa-14-mapa-de-poder.md) |
 
 ## Incidentes
 

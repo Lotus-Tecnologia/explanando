@@ -111,21 +111,31 @@ public sealed class ClienteDeLiderancas(HttpClient http) : IFonteDeCadeiras
         };
     }
 
+    /// <summary>
+    /// O cargo, montado a partir da <b>unidade</b> de liderança.
+    ///
+    /// <para><b>A unidade é o que distingue duas lideranças da mesma pessoa, e a primeira
+    /// versão a jogou fora.</b> Ela montava "Líder do Senado Federal — UNIÃO" a partir do
+    /// tipo mais o partido, e a Professora Dorinha Seabra apareceu <i>três vezes</i> com o
+    /// mesmo rótulo: ela lidera o partido, o bloco e a Bancada Feminina. São três cargos
+    /// reais e diferentes, e o mapa mostrava três círculos idênticos — que o React ainda
+    /// reclamou de chave repetida, mas o leitor teria lido como erro de duplicação.</para>
+    ///
+    /// <para>Dos 47 líderes, 4 são casos assim. O partido continua no campo dele, que é
+    /// onde pertence.</para>
+    /// </summary>
     private static string MontarCargo(Lideranca registro)
     {
-        var tipo = registro.DescricaoTipoLideranca ?? "Líder";
         var unidade = registro.DescricaoTipoUnidadeLideranca;
 
         if (string.IsNullOrWhiteSpace(unidade))
         {
-            return tipo;
+            return registro.DescricaoTipoLideranca ?? "Líder";
         }
 
         var partido = registro.SiglaPartidoFiliacao;
 
-        return string.IsNullOrWhiteSpace(partido)
-            ? $"{tipo} — {unidade}"
-            : $"{tipo} — {partido}";
+        return string.IsNullOrWhiteSpace(partido) ? unidade : $"{unidade} — {partido}";
     }
 
     private sealed record Lideranca(

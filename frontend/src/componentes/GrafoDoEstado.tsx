@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { NoDoEstado } from "@/lib/contrato";
 import {
   RAIO_DO_MIOLO,
@@ -36,9 +36,35 @@ import { PainelDaUnidade } from "./PainelDaUnidade";
  * **Forma, e não só cor.** Órgão é quadrado, entidade é hexágono, ente é círculo,
  * colegiado é losango. Quem não distingue as cores dos poderes distingue os contornos.
  */
-export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
+export function GrafoDoEstado({
+  nos,
+  aoEscolherPoder,
+  comZoom = true,
+}: {
+  nos: readonly NoDoEstado[];
+
+  /**
+   * Chamado ao clicar na **cunha** de um poder — não num nó.
+   *
+   * É o que liga as duas vistas: clicar no Executivo aqui e encontrar os ministros dele no
+   * mapa de poder. A cunha já existia como fundo; passou a ser alvo.
+   */
+  aoEscolherPoder?: (chaveDoPoder: string) => void;
+
+  comZoom?: boolean;
+}) {
   const [selecionado, setSelecionado] = useState<number | null>(null);
   const [sobre, setSobre] = useState<number | null>(null);
+
+  /*
+    Zoom e deslocamento. O mapa tem 334 nos e os do anel externo tem poucos pixels de
+    lado: sem aproximar, o rotulo deles nao se le e o alvo de clique nao se acerta. O
+    estado e' do componente, e nao da URL, porque e' postura de leitura e nao conteudo.
+  */
+  const [zoom, setZoom] = useState(1);
+  const [deslocamento, setDeslocamento] = useState({ x: 0, y: 0 });
+  const arrastando = useRef<{ x: number; y: number } | null>(null);
+  const [sobrePoder, setSobrePoder] = useState<string | null>(null);
 
   const grafo = montarGrafo(nos);
 
@@ -68,6 +94,27 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
   // externo. Sem folga ele sai do viewBox e some sem erro nenhum.
   const margem = 78;
   const lado = (grafo.raioExterno + margem) * 2;
+
+  // O zoom encolhe a JANELA, e nao aumenta o desenho: e' o que mantem a espessura das
+  // linhas (todas com vectorEffect) e o tamanho do texto proporcionais ao que se ve.
+  const visivel = lado / zoom;
+  const janela = [
+    -visivel / 2 + deslocamento.x,
+    -visivel / 2 + deslocamento.y,
+    visivel,
+    visivel,
+  ]
+    .map((n) => n.toFixed(1))
+    .join(" ");
+
+  function aproximar(fator: number) {
+    setZoom((atual) => Math.min(6, Math.max(1, atual * fator)));
+  }
+
+  function enquadrar() {
+    setZoom(1);
+    setDeslocamento({ x: 0, y: 0 });
+  }
   const destacado = sobre ?? selecionado;
   const rotulado = destacado === null ? null : porCodigo.get(destacado);
 
@@ -80,10 +127,51 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
         />
       </div>
 
-      <figure className="m-0">
+      <figure className="relative m-0">
+        {comZoom ? (
+          <ControlesDeZoom
+            zoom={zoom}
+            aoAproximar={() => aproximar(1.5)}
+            aoAfastar={() => aproximar(1 / 1.5)}
+            aoEnquadrar={enquadrar}
+          />
+        ) : null}
+
         <svg
-          viewBox={`${-lado / 2} ${-lado / 2} ${lado} ${lado}`}
-          className="mx-auto block h-auto w-full max-w-[42rem] touch-manipulation"
+          viewBox={janela}
+          className="mx-auto block h-auto w-full max-w-[42rem] touch-manipulation active:cursor-grabbing"
+          /*
+            O cursor de "arrastando" sai do CSS (`active:`), e nao do ref: ler
+            `arrastando.current` durante a renderizacao e' o que o react-hooks/refs proibe,
+            e com razao — o valor pode mudar sem provocar novo desenho, e a mao ficaria
+            fechada depois de soltar.
+          */
+          style={{ cursor: zoom > 1 ? "grab" : "default" }}
+          onPointerDown={(evento) => {
+            if (!comZoom || zoom === 1) return;
+
+            arrastando.current = { x: evento.clientX, y: evento.clientY };
+            evento.currentTarget.setPointerCapture(evento.pointerId);
+          }}
+          onPointerMove={(evento) => {
+            const inicio = arrastando.current;
+
+            if (!inicio) return;
+
+            // A conversao de pixel para unidade de viewBox depende do zoom: sem ela, o
+            // desenho foge do ponteiro quanto mais aproximado estiver.
+            const escala = visivel / evento.currentTarget.clientWidth;
+
+            setDeslocamento((atual) => ({
+              x: atual.x - (evento.clientX - inicio.x) * escala,
+              y: atual.y - (evento.clientY - inicio.y) * escala,
+            }));
+
+            arrastando.current = { x: evento.clientX, y: evento.clientY };
+          }}
+          onPointerUp={() => {
+            arrastando.current = null;
+          }}
           role="img"
           aria-label={
             `Mapa da estrutura do Estado: ${formatarNumero(grafo.nos.length)} órgãos e ` +
@@ -104,12 +192,33 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
             {grafo.setores.map((setor) => (
               <path
                 key={`cunha-${setor.chave}`}
-                d={caminhoDoSetor(setor.inicio, setor.fim, RAIO_DO_MIOLO * 0.92, grafo.raioExterno)}
+                d={caminhoDoSetor(
+                  setor.inicio,
+                  setor.fim,
+                  RAIO_DO_MIOLO * 0.92,
+                  grafo.raioExterno,
+                )}
                 fill={corDoPoder(setor.chave)}
                 /* Tinta muito pálida: a cunha situa, e não compete com o nó. */
-                opacity={0.07}
-                pointerEvents="none"
-              />
+                opacity={sobrePoder === setor.chave ? 0.16 : 0.07}
+                style={{
+                  transition: "opacity 180ms ease",
+                  cursor: aoEscolherPoder ? "pointer" : "default",
+                }}
+                pointerEvents={aoEscolherPoder ? "auto" : "none"}
+                onMouseEnter={() => setSobrePoder(setor.chave)}
+                onMouseLeave={() => setSobrePoder(null)}
+                onClick={(evento) => {
+                  if (!aoEscolherPoder) return;
+
+                  // Sem isto o clique sobe ate' o <svg>, que limpa a selecao — e o leitor
+                  // veria a vista trocar e o no' escolhido sumir no mesmo gesto.
+                  evento.stopPropagation();
+                  aoEscolherPoder(setor.chave);
+                }}
+              >
+                <title>{`Ver quem comanda: ${setor.rotulo}`}</title>
+              </path>
             ))}
 
             {/* Os anéis, como guias finíssimas. Sólidas: tracejado em grade lê-se como
@@ -145,17 +254,17 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
                   if (talo === "") return null;
 
                   return (
-                  <path
-                    key={`talo-${p.no.codigo}`}
-                    d={talo}
-                    fill="none"
-                    stroke={corDoPoder(p.no.chaveDoPoder)}
-                    strokeWidth={0.9}
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                    opacity={0.38}
-                    pointerEvents="none"
-                  />
+                    <path
+                      key={`talo-${p.no.codigo}`}
+                      d={talo}
+                      fill="none"
+                      stroke={corDoPoder(p.no.chaveDoPoder)}
+                      strokeWidth={0.9}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                      opacity={0.38}
+                      pointerEvents="none"
+                    />
                   );
                 })
               : grafo.arestas.map((aresta) => {
@@ -274,7 +383,11 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
             ? null
             : grafo.aneis.map((anel) =>
                 anel.rotulo === "" ? null : (
-                  <RotuloDoAnel key={`anel-${anel.indice}`} raio={anel.raio} texto={anel.rotulo} />
+                  <RotuloDoAnel
+                    key={`anel-${anel.indice}`}
+                    raio={anel.raio}
+                    texto={anel.rotulo}
+                  />
                 ),
               )}
 
@@ -307,20 +420,20 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
           <p>
             O <strong className="font-semibold">ângulo</strong> é o poder; o{" "}
             <strong className="font-semibold">raio</strong> é a natureza jurídica — ente
-            federativo no centro, depois administração direta e administração indireta. A
-            forma do nó repete o tipo, para quem não distingue as cores. Passe o ponteiro
-            para ver o nome.
+            federativo no centro, depois administração direta e administração indireta. A forma
+            do nó repete o tipo, para quem não distingue as cores. Passe o ponteiro para ver o
+            nome.
           </p>
           <p>
             O tracinho que sai de cada nó aponta para quem manda nele.{" "}
             <strong className="font-semibold">Clique</strong> para ver a ligação inteira:
-            desenhar as 334 de uma vez produzia um emaranhado em que nenhuma delas podia
-            ser seguida.
+            desenhar as 334 de uma vez produzia um emaranhado em que nenhuma delas podia ser
+            seguida.
           </p>
           <p>
-            Cada poder ocupa no mínimo 30° do círculo, senão o Legislativo — 4 órgãos
-            contra 266 do Executivo — ficaria pequeno demais para ser clicado. A
-            desproporção continua visível, e os números exatos estão na legenda.
+            Cada poder ocupa no mínimo 30° do círculo, senão o Legislativo — 4 órgãos contra 266
+            do Executivo — ficaria pequeno demais para ser clicado. A desproporção continua
+            visível, e os números exatos estão na legenda.
           </p>
         </figcaption>
       </figure>
@@ -343,6 +456,71 @@ export function GrafoDoEstado({ nos }: { nos: readonly NoDoEstado[] }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Os controles de aproximação.
+ *
+ * **Botões, e não só a roda do mouse.** O anel externo tem 222 entidades com poucos
+ * pixels de lado, e sem aproximar o rótulo não se lê nem o alvo se acerta — mas amarrar
+ * isso à roda do mouse sozinho deixaria de fora quem usa teclado e quem está no celular,
+ * e ainda sequestraria a rolagem da página, que é o jeito mais rápido de irritar um
+ * leitor. Com zoom aplicado, arrastar desloca.
+ */
+function ControlesDeZoom({
+  zoom,
+  aoAproximar,
+  aoAfastar,
+  aoEnquadrar,
+}: {
+  zoom: number;
+  aoAproximar: () => void;
+  aoAfastar: () => void;
+  aoEnquadrar: () => void;
+}) {
+  return (
+    <div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-selo border border-borda-suave bg-surface/90 p-1 backdrop-blur">
+      <Botao rotulo="Afastar" simbolo="−" aoClicar={aoAfastar} inativo={zoom <= 1} />
+
+      <span className="numeros w-10 text-center text-xs text-texto-suave">
+        {zoom.toFixed(1)}×
+      </span>
+
+      <Botao rotulo="Aproximar" simbolo="+" aoClicar={aoAproximar} inativo={zoom >= 6} />
+
+      <Botao
+        rotulo="Enquadrar o mapa inteiro"
+        simbolo="⤢"
+        aoClicar={aoEnquadrar}
+        inativo={zoom === 1}
+      />
+    </div>
+  );
+}
+
+function Botao({
+  rotulo,
+  simbolo,
+  aoClicar,
+  inativo,
+}: {
+  rotulo: string;
+  simbolo: string;
+  aoClicar: () => void;
+  inativo: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={aoClicar}
+      disabled={inativo}
+      aria-label={rotulo}
+      title={rotulo}
+      className="flex size-7 items-center justify-center rounded-campo text-sm font-bold text-texto-suave hover:bg-realce hover:text-titulo disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+    >
+      {simbolo}
+    </button>
   );
 }
 
