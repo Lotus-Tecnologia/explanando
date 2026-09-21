@@ -32,6 +32,9 @@ public class ServicoDeColetaDeCadeirasTests
 
         public List<string> FontesSubstituidas { get; } = [];
 
+        /// <summary>O que o banco "ja' tinha" quando o teste comeca.</summary>
+        public Dictionary<string, DateTimeOffset> Ultimas { get; } = [];
+
         public Task SubstituirAsync(
             string fonte,
             IReadOnlyList<CadeiraDeComando> cadeiras,
@@ -42,6 +45,10 @@ public class ServicoDeColetaDeCadeirasTests
 
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyDictionary<string, DateTimeOffset>> UltimaColetaAsync(
+            CancellationToken cancelamento = default) =>
+            Task.FromResult<IReadOnlyDictionary<string, DateTimeOffset>>(Ultimas);
     }
 
     private static NovaCadeira Cadeira(string cargo) => new()
@@ -158,6 +165,87 @@ public class ServicoDeColetaDeCadeirasTests
         Assert.All(
             repositorio.PorFonte["planalto"],
             cadeira => Assert.Equal(Agora, cadeira.VerificadoEm));
+    }
+
+    [Fact]
+    public async Task So_recoleta_a_fonte_VENCIDA__e_deixa_a_fresca_em_paz()
+    {
+        // O ponto da agenda. Bater de novo num portal que respondeu ontem e' abuso de
+        // servico publico, e nao adianta nada.
+        var repositorio = new RepositorioEmMemoria();
+
+        repositorio.Ultimas["camara"] = Agora.AddDays(-1);
+        repositorio.Ultimas["planalto"] = Agora.AddDays(-30);
+
+        var resumo = await Servico(
+                repositorio,
+                new FonteFalsa("planalto", new ColetaDeCadeiras
+                {
+                    Fonte = "planalto",
+                    Cadeiras = [Cadeira("Ministro A")],
+                }),
+                new FonteFalsa("camara", new ColetaDeCadeiras
+                {
+                    Fonte = "camara",
+                    Cadeiras = [Cadeira("Presidente da Câmara")],
+                }))
+            .ColetarSeVencidoAsync(TimeSpan.FromDays(7));
+
+        Assert.Equal(["planalto"], repositorio.FontesSubstituidas);
+        Assert.Single(resumo.PorFonte);
+    }
+
+    [Fact]
+    public async Task Fonte_que_NUNCA_rodou_esta_vencida_por_definicao()
+    {
+        // Coletor novo, ou que nunca conseguiu gravar, nao pode ficar de fora para sempre
+        // so' porque nao tem carimbo.
+        var repositorio = new RepositorioEmMemoria();
+
+        var resumo = await Servico(repositorio, new FonteFalsa("planalto", new ColetaDeCadeiras
+        {
+            Fonte = "planalto",
+            Cadeiras = [Cadeira("Ministro A")],
+        })).ColetarSeVencidoAsync(TimeSpan.FromDays(7));
+
+        Assert.Equal(1, resumo.Gravadas);
+    }
+
+    [Fact]
+    public async Task Fonte_que_FALHOU_continua_vencida__e_e_tentada_na_proxima()
+    {
+        // O carimbo so' avanca quando GRAVA. Uma fonte que falhou nao registra nada, entao
+        // a passada seguinte a tenta de novo — que e' exatamente o que se quer de uma
+        // fonte fragil como a que le HTML.
+        var repositorio = new RepositorioEmMemoria();
+
+        var servico = Servico(repositorio, new FonteFalsa("planalto", new ColetaDeCadeiras
+        {
+            Fonte = "planalto",
+            Falha = "portal fora do ar",
+        }));
+
+        await servico.ColetarSeVencidoAsync(TimeSpan.FromDays(7));
+
+        Assert.Empty(repositorio.Ultimas);
+        Assert.Empty(repositorio.FontesSubstituidas);
+    }
+
+    [Fact]
+    public async Task Tudo_fresco__nao_roda_nada()
+    {
+        var repositorio = new RepositorioEmMemoria();
+
+        repositorio.Ultimas["planalto"] = Agora.AddHours(-2);
+
+        var resumo = await Servico(repositorio, new FonteFalsa("planalto", new ColetaDeCadeiras
+        {
+            Fonte = "planalto",
+            Cadeiras = [Cadeira("Ministro A")],
+        })).ColetarSeVencidoAsync(TimeSpan.FromDays(7));
+
+        Assert.Empty(resumo.PorFonte);
+        Assert.Empty(repositorio.FontesSubstituidas);
     }
 
     [Fact]

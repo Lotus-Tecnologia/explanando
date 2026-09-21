@@ -55,4 +55,16 @@ public interface IRepositorioDeCadeiras
         string fonte,
         IReadOnlyList<CadeiraDeComando> cadeiras,
         CancellationToken cancelamento = default);
+
+    /// <summary>
+    /// Quando cada coletor gravou pela última vez.
+    ///
+    /// <para><b>Por coletor, e não um carimbo só.</b> Se o Planalto falha há três semanas
+    /// enquanto a Câmara grava toda noite, um carimbo global estaria sempre fresco e o
+    /// Executivo nunca seria tentado de novo — a tela mostraria um ministério parado com
+    /// cara de atual. Coletor que falta do dicionário nunca rodou, e está vencido por
+    /// definição.</para>
+    /// </summary>
+    Task<IReadOnlyDictionary<string, DateTimeOffset>> UltimaColetaAsync(
+        CancellationToken cancelamento = default);
 }

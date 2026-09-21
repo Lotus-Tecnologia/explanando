@@ -2,6 +2,7 @@ using System.Globalization;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Ciclo;
 using Explanando.Application.Cadeiras;
+using Explanando.Domain.Cadeiras;
 using Explanando.Application.Estado;
 using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
@@ -249,7 +250,19 @@ switch (comando)
             // cai por sua conta: a falha de uma nao apaga o que as outras ja' gravaram.
             var coletaDeCadeiras = servicos.GetRequiredService<ServicoDeColetaDeCadeiras>();
 
-            var resumoDasCadeiras = await coletaDeCadeiras.ColetarAsync();
+            // --se-vencido e' o que a agenda usa: so' rele' as fontes paradas ha' mais de
+            // uma semana. Sem a bandeira, forca tudo — que e' o que se quer ao depurar.
+            var soSeVencido = Array.IndexOf(args, "--se-vencido") >= 0;
+
+            var resumoDasCadeiras = soSeVencido
+                ? await coletaDeCadeiras.ColetarSeVencidoAsync(ValidadeDaCadeira.Padrao)
+                : await coletaDeCadeiras.ColetarAsync();
+
+            if (resumoDasCadeiras.PorFonte.Count == 0)
+            {
+                Console.WriteLine("Nenhuma fonte vencida: nada a reler.");
+                return 0;
+            }
 
             foreach (var porFonte in resumoDasCadeiras.PorFonte)
             {
@@ -731,7 +744,10 @@ switch (comando)
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
-              dotnet run -- coletar-cadeiras              quem ocupa os cargos de comando
+              dotnet run -- coletar-cadeiras [--se-vencido]
+                                                          quem ocupa os cargos de comando;
+                                                          --se-vencido rele' so' as fontes
+                                                          paradas ha mais de uma semana
               dotnet run -- coletar-pessoal --ano 2026 --mes 7 [--meses N]
                                                           o quadro de pessoal; --meses N
                                                           recolhe tambem os anteriores

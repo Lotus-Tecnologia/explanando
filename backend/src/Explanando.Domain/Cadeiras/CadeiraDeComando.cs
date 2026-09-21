@@ -46,6 +46,28 @@ public enum OrigemDaCadeira
     Curada = 2,
 }
 
+/// <summary>
+/// De quanto em quanto tempo cada fonte é relida.
+/// </summary>
+public static class ValidadeDaCadeira
+{
+    /// <summary>
+    /// Sete dias.
+    ///
+    /// <para><b>Muito mais curto que o do grafo, e por um motivo concreto.</b> A estrutura
+    /// do Estado muda em escala de meses — um ministério é criado por decreto e o SIORG
+    /// leva semanas para refletir. Um <i>ocupante</i> muda da noite para o dia: uma
+    /// exoneração sai no Diário Oficial de manhã e o site do Planalto é atualizado no
+    /// mesmo dia.</para>
+    ///
+    /// <para>Sete dias é o maior atraso que ainda permite dizer "verificado nesta semana"
+    /// sem constrangimento. O custo de encurtar seria quase nulo — são 35 requisições —,
+    /// mas bater de hora em hora em portal de governo para reler a mesma lista é abuso de
+    /// serviço público.</para>
+    /// </summary>
+    public static readonly TimeSpan Padrao = TimeSpan.FromDays(7);
+}
+
 /// <summary>Os dados de criação de uma cadeira, vindos de um coletor.</summary>
 public sealed record NovaCadeira
 {

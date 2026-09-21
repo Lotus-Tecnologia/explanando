@@ -1,4 +1,6 @@
+using Explanando.Application.Cadeiras;
 using Explanando.Application.Ciclo;
+using Explanando.Domain.Cadeiras;
 using Explanando.Domain.Regras;
 
 namespace Explanando.Worker;
@@ -39,6 +41,11 @@ public sealed partial class Worker(
         {
             do
             {
+                // As cadeiras PRIMEIRO, e sao independentes do ciclo. O ciclo mensal e'
+                // sobre despesa e roda uma vez por mes; ocupante de cargo muda da noite
+                // para o dia, e sete dias de atraso ja' e' o teto do aceitavel.
+                await TentarCadeirasAsync(stoppingToken).ConfigureAwait(false);
+
                 await TentarCicloAsync(stoppingToken).ConfigureAwait(false);
             }
             while (await temporizador.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false));
@@ -49,6 +56,45 @@ public sealed partial class Worker(
         }
 
         ServicoEncerrado(logger);
+    }
+
+    /// <summary>
+    /// Relê as cadeiras de comando cujas fontes venceram.
+    ///
+    /// <para><b>Fica fora do ciclo mensal de propósito.</b> O ciclo é sobre despesa: ele
+    /// coleta notas, varre regras e consolida, e roda uma vez por mês. Um ministro muda da
+    /// noite para o dia — pendurar a releitura das cadeiras no ciclo faria a tela mostrar
+    /// um ministério de trinta dias atrás com cara de atual, que é exatamente o que o
+    /// <c>verificadoEm</c> de cada linha existe para denunciar.</para>
+    ///
+    /// <para>O vencimento é perguntado ao banco, por coletor, pela mesma razão que o do
+    /// ciclo: contar o tempo em memória perderia a conta a cada reinício.</para>
+    /// </summary>
+    private async Task TentarCadeirasAsync(CancellationToken cancelamento)
+    {
+        using var escopo = fabricaDeEscopos.CreateScope();
+
+        var coleta = escopo.ServiceProvider.GetRequiredService<ServicoDeColetaDeCadeiras>();
+
+        try
+        {
+            var resumo = await coleta
+                .ColetarSeVencidoAsync(ValidadeDaCadeira.Padrao, cancelamento)
+                .ConfigureAwait(false);
+
+            if (resumo.PorFonte.Count == 0)
+            {
+                return;
+            }
+
+            CadeirasColetadas(logger, resumo.Gravadas, resumo.PorFonte.Count, resumo.Falhas);
+        }
+        catch (Exception erro) when (erro is not OperationCanceledException)
+        {
+            // Como no ciclo: uma passada que falha nao derruba o servico, e a fonte
+            // continua vencida — entao a proxima tenta de novo sozinha.
+            CadeirasFalharam(logger, erro);
+        }
     }
 
     private async Task TentarCicloAsync(CancellationToken cancelamento)
@@ -123,4 +169,15 @@ public sealed partial class Worker(
     [LoggerMessage(EventId = 1005, Level = LogLevel.Information,
         Message = "Servico de atualizacao encerrado.")]
     private static partial void ServicoEncerrado(ILogger logger);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Information,
+        Message = "Cadeiras de comando relidas: {Gravadas} de {Fontes} fonte(s) vencida(s), "
+            + "{Falhas} com falha.")]
+    private static partial void CadeirasColetadas(
+        ILogger logger, int gravadas, int fontes, int falhas);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Error,
+        Message = "A releitura das cadeiras falhou. A fonte continua vencida e a proxima "
+            + "passada tenta de novo.")]
+    private static partial void CadeirasFalharam(ILogger logger, Exception erro);
 }

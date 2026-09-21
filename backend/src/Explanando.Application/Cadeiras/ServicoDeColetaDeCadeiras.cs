@@ -37,13 +37,39 @@ public sealed class ServicoDeColetaDeCadeiras(
     IRepositorioDeCadeiras repositorio,
     TimeProvider relogio)
 {
-    public async Task<ResumoDaColetaDeCadeiras> ColetarAsync(
+    /// <summary>
+    /// Coleta as fontes que estão vencidas, e só elas.
+    ///
+    /// <para><b>O vencimento é por coletor.</b> Uma fonte que gravou ontem não é
+    /// incomodada; uma que nunca rodou, ou que falhou e ficou para trás, é tentada de
+    /// novo a cada passada. É o que impede a tabela de envelhecer em silêncio sem
+    /// transformar o serviço num martelo sobre portais que já responderam.</para>
+    /// </summary>
+    public async Task<ResumoDaColetaDeCadeiras> ColetarSeVencidoAsync(
+        TimeSpan validade,
         CancellationToken cancelamento = default)
+    {
+        var ultimas = await repositorio.UltimaColetaAsync(cancelamento).ConfigureAwait(false);
+        var limite = relogio.GetUtcNow() - validade;
+
+        var vencidas = fontes
+            .Where(fonte => !ultimas.TryGetValue(fonte.Nome, out var quando) || quando < limite)
+            .ToList();
+
+        return await ColetarAsync(vencidas, cancelamento).ConfigureAwait(false);
+    }
+
+    public Task<ResumoDaColetaDeCadeiras> ColetarAsync(CancellationToken cancelamento = default) =>
+        ColetarAsync(fontes, cancelamento);
+
+    private async Task<ResumoDaColetaDeCadeiras> ColetarAsync(
+        IEnumerable<IFonteDeCadeiras> aColetar,
+        CancellationToken cancelamento)
     {
         var agora = relogio.GetUtcNow();
         var resultados = new List<ResultadoPorFonte>();
 
-        foreach (var fonte in fontes)
+        foreach (var fonte in aColetar)
         {
             var coleta = await fonte.LerAsync(cancelamento).ConfigureAwait(false);
 

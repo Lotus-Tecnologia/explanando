@@ -50,4 +50,20 @@ public sealed class RepositorioDeCadeiras(ExplanandoDbContext contexto) : IRepos
             await transacao.CommitAsync(cancelamento).ConfigureAwait(false);
         }).ConfigureAwait(false);
     }
+
+    public async Task<IReadOnlyDictionary<string, DateTimeOffset>> UltimaColetaAsync(
+        CancellationToken cancelamento = default)
+    {
+        var linhas = await contexto.CadeirasDeComando
+            .AsNoTracking()
+            .GroupBy(cadeira => cadeira.Coletor)
+            .Select(grupo => new { Coletor = grupo.Key, Quando = grupo.Max(c => c.VerificadoEm) })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        return linhas.ToDictionary(
+            linha => linha.Coletor,
+            linha => linha.Quando,
+            StringComparer.Ordinal);
+    }
 }
