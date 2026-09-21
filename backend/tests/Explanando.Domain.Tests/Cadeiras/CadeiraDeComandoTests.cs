@@ -33,14 +33,22 @@ public class CadeiraDeComandoTests
         // entra acompanhado do endereco de onde o governo o publicou.
         var sem = Nova() with { Fonte = "   " };
 
-        Assert.Throws<ArgumentException>(() => CadeiraDeComando.Criar(sem, Agora));
+        Assert.Throws<ArgumentException>(() => CadeiraDeComando.Criar(sem, "planalto", Agora));
+    }
+
+    [Fact]
+    public void Uma_cadeira_sem_COLETOR_nao_existe()
+    {
+        // O coletor e' a chave de substituicao. Sem ele, a proxima coleta nao sabe o que
+        // apagar e passa a DOBRAR as cadeiras a cada passada, silenciosamente.
+        Assert.Throws<ArgumentException>(() => CadeiraDeComando.Criar(Nova(), "  ", Agora));
     }
 
     [Fact]
     public void Uma_cadeira_sem_cargo_nao_existe()
     {
         Assert.Throws<ArgumentException>(() =>
-            CadeiraDeComando.Criar(Nova() with { Cargo = "" }, Agora));
+            CadeiraDeComando.Criar(Nova() with { Cargo = "" }, "planalto", Agora));
     }
 
     [Fact]
@@ -48,7 +56,7 @@ public class CadeiraDeComandoTests
     {
         // Sem ela a tabela envelhece em silencio: o ministro troca e a nossa linha
         // continua igual, com a mesma cara de verdade.
-        var cadeira = CadeiraDeComando.Criar(Nova(), Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova(), "planalto", Agora);
 
         Assert.Equal(Agora, cadeira.VerificadoEm);
     }
@@ -56,7 +64,7 @@ public class CadeiraDeComandoTests
     [Fact]
     public void Diz_ha_quantos_dias_nao_e_verificada()
     {
-        var cadeira = CadeiraDeComando.Criar(Nova(), Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova(), "planalto", Agora);
 
         Assert.Equal(45, cadeira.DiasSemVerificar(Agora.AddDays(45)));
     }
@@ -64,7 +72,7 @@ public class CadeiraDeComandoTests
     [Fact]
     public void Relogio_para_tras_nao_produz_idade_negativa()
     {
-        var cadeira = CadeiraDeComando.Criar(Nova(), Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova(), "planalto", Agora);
 
         Assert.Equal(0, cadeira.DiasSemVerificar(Agora.AddDays(-10)));
     }
@@ -75,7 +83,7 @@ public class CadeiraDeComandoTests
         // ADR-0009 aplicado a pessoas: "vaga" e "nao sabemos" sao coisas diferentes. Quem
         // nao sabe nao coleta a cadeira; quem coleta com ocupante nulo esta' dizendo que a
         // cadeira existe e esta' vazia.
-        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = null }, Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = null }, "planalto", Agora);
 
         Assert.True(cadeira.Vaga);
         Assert.Null(cadeira.Ocupante);
@@ -86,7 +94,7 @@ public class CadeiraDeComandoTests
     {
         // Uma celula vazia na fonte nao e' um ocupante chamado "". Deixar passar faria a
         // tela desenhar um retrato sem nome em vez de uma cadeira vaga.
-        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = "   " }, Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = "   " }, "planalto", Agora);
 
         Assert.True(cadeira.Vaga);
     }
@@ -94,7 +102,7 @@ public class CadeiraDeComandoTests
     [Fact]
     public void Espacos_ao_redor_do_nome_somem()
     {
-        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = "  Fulano  " }, Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova() with { Ocupante = "  Fulano  " }, "planalto", Agora);
 
         Assert.Equal("Fulano", cadeira.Ocupante);
     }
@@ -104,7 +112,7 @@ public class CadeiraDeComandoTests
     {
         // E' o campo que liga as duas vistas. Exigi-lo faria a ponte por nome, que falha em
         // alguns casos, apagar ministerios do mapa de poder.
-        var cadeira = CadeiraDeComando.Criar(Nova() with { CodigoSiorg = null }, Agora);
+        var cadeira = CadeiraDeComando.Criar(Nova() with { CodigoSiorg = null }, "planalto", Agora);
 
         Assert.Null(cadeira.CodigoSiorg);
         Assert.Equal("Ministro de Estado da Fazenda", cadeira.Cargo);

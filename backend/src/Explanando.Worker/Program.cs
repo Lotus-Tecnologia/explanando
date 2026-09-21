@@ -1,6 +1,7 @@
 using System.Globalization;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Ciclo;
+using Explanando.Application.Cadeiras;
 using Explanando.Application.Estado;
 using Explanando.Application.Retencao;
 using Explanando.Application.Ingestao;
@@ -239,6 +240,33 @@ switch (comando)
             }
 
             return saida.Falhas.Count > 0 ? 1 : 0;
+        }
+
+    case "coletar-cadeiras":
+        {
+            // Quem ocupa as cadeiras de comando. Tres fontes independentes — o portal da
+            // Presidencia (HTML), a API da Camara e a de liderancas do Senado — e cada uma
+            // cai por sua conta: a falha de uma nao apaga o que as outras ja' gravaram.
+            var coletaDeCadeiras = servicos.GetRequiredService<ServicoDeColetaDeCadeiras>();
+
+            var resumoDasCadeiras = await coletaDeCadeiras.ColetarAsync();
+
+            foreach (var porFonte in resumoDasCadeiras.PorFonte)
+            {
+                Console.WriteLine(
+                    porFonte.Falha is null
+                        ? $"  {porFonte.Fonte,-12} {porFonte.Gravadas,4} cadeiras"
+                        : $"  {porFonte.Fonte,-12} FALHOU: {porFonte.Falha}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine(
+                $"{resumoDasCadeiras.Gravadas} cadeiras gravadas, "
+                + $"{resumoDasCadeiras.Falhas} fonte(s) com falha.");
+
+            // Falha parcial nao e' sucesso, mas tambem nao apagou nada: o codigo de saida
+            // avisa a agenda sem sugerir que o mapa ficou vazio.
+            return resumoDasCadeiras.Falhas > 0 ? 1 : 0;
         }
 
     case "coletar-estado":
@@ -703,6 +731,7 @@ switch (comando)
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
+              dotnet run -- coletar-cadeiras              quem ocupa os cargos de comando
               dotnet run -- coletar-pessoal --ano 2026 --mes 7 [--meses N]
                                                           o quadro de pessoal; --meses N
                                                           recolhe tambem os anteriores

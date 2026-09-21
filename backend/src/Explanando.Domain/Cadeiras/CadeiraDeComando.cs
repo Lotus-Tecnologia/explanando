@@ -108,11 +108,21 @@ public sealed class CadeiraDeComando
     {
         Cargo = string.Empty;
         Fonte = string.Empty;
+        Coletor = string.Empty;
     }
 
-    public static CadeiraDeComando Criar(NovaCadeira nova, DateTimeOffset quando)
+    /// <param name="coletor">
+    /// Quem leu esta linha — <c>planalto</c>, <c>camara</c>, <c>liderancas</c>. É a chave
+    /// de substituição: cada coleta apaga só o que aquele coletor gravou antes.
+    /// </param>
+    public static CadeiraDeComando Criar(NovaCadeira nova, string coletor, DateTimeOffset quando)
     {
         ArgumentNullException.ThrowIfNull(nova);
+
+        if (string.IsNullOrWhiteSpace(coletor))
+        {
+            throw new ArgumentException("A cadeira precisa saber quem a coletou.", nameof(coletor));
+        }
 
         if (string.IsNullOrWhiteSpace(nova.Cargo))
         {
@@ -129,6 +139,7 @@ public sealed class CadeiraDeComando
         return new CadeiraDeComando
         {
             Id = Guid.CreateVersion7(),
+            Coletor = coletor.Trim(),
             Poder = nova.Poder,
             Camada = nova.Camada,
             Cargo = nova.Cargo.Trim(),
@@ -145,6 +156,17 @@ public sealed class CadeiraDeComando
     }
 
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// Quem leu esta linha.
+    ///
+    /// <para>Existe para a substituição ser <b>exata</b>. A primeira versão deduzia o
+    /// coletor do prefixo da URL — <c>gov.br</c> é o Planalto, <c>legis.senado</c> são as
+    /// lideranças —, o que é uma tabela de adivinhação escondida no repositório: bastaria
+    /// o Planalto mudar de domínio para a coleta parar de apagar a anterior e passar a
+    /// dobrar o Executivo a cada passada, silenciosamente.</para>
+    /// </summary>
+    public string Coletor { get; private set; }
 
     public Poder Poder { get; private set; }
 

@@ -1,3 +1,5 @@
+using Explanando.Infrastructure.Integracoes.Planalto;
+using Explanando.Application.Cadeiras;
 using Explanando.Application.Ingestao;
 using Explanando.Infrastructure.Integracoes.BrasilApi;
 using Explanando.Infrastructure.Integracoes.Camara;
@@ -157,6 +159,49 @@ public static class ServicosDeIntegracao
                 http.DefaultRequestHeaders.Add("Accept", "application/zip, */*");
                 http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
             });
+
+        // ---------------------------------------------------------------
+        //  As cadeiras de comando — uma fonte por origem
+        //
+        //  O PLANALTO exige o conjunto COMPLETO de cabecalhos de navegador. Nao e' o
+        //  User-Agent sozinho: sem Sec-Fetch-Mode ou Accept-Language o gov.br responde
+        //  404 — nao 403 —, que e' o modo de falhar mais dificil de diagnosticar que
+        //  existe. Quem "limpar" esta lista por parecer superflua derruba a coleta do
+        //  Executivo inteira. Ver a nota em ClienteDoPlanalto.
+        // ---------------------------------------------------------------
+        servicos
+            .AddHttpClient<ClienteDoPlanalto>(http =>
+            {
+                http.Timeout = TimeSpan.FromSeconds(60);
+                ClienteDoPlanalto.ConfigurarCabecalhos(http);
+            })
+            .AddStandardResilienceHandler();
+
+        servicos
+            .AddHttpClient<ClienteDeCadeirasDaCamara>(http =>
+            {
+                http.BaseAddress = new Uri("https://dadosabertos.camara.leg.br/api/v2/");
+                http.Timeout = TimeSpan.FromSeconds(60);
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            })
+            .AddStandardResilienceHandler();
+
+        servicos
+            .AddHttpClient<ClienteDeLiderancas>(http =>
+            {
+                http.BaseAddress = new Uri("https://legis.senado.leg.br/dadosabertos/");
+                http.Timeout = TimeSpan.FromSeconds(60);
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            })
+            .AddStandardResilienceHandler();
+
+        // A ORDEM importa: e' a ordem em que as fontes rodam, e a primeira a falhar nao
+        // impede as seguintes. Poe o Executivo na frente porque e' a mais fragil (le HTML).
+        servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDoPlanalto>());
+        servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDeCadeirasDaCamara>());
+        servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDeLiderancas>());
 
         servicos
             .AddHttpClient<IFonteDeCadastroEmpresarial, ClienteBrasilApi>(http =>

@@ -1,3 +1,4 @@
+using Explanando.Application.Cadeiras;
 using Explanando.Application.Ciclo;
 using Explanando.Application.Auditoria;
 using Explanando.Application.Consultas;
@@ -103,6 +104,13 @@ public static class ServicosDaInfraestrutura
 
         // O mapa de fornecedores compartilhados — a vista de pessoas do mesmo contexto.
         // Cache obrigatorio: montar o mapa varre a tabela de despesas inteira.
+        // O mapa de poder. Sem cache: sao ~100 linhas numa consulta sem juncao, e o
+        // dado muda quando um coletor roda — poe-lo atras de seis horas de cache faria a
+        // troca de um ministro levar seis horas para aparecer, sem ganho nenhum.
+        servicos.AddScoped<IRepositorioDeCadeiras, RepositorioDeCadeiras>();
+        servicos.AddScoped<ServicoDeColetaDeCadeiras>();
+        servicos.AddScoped<IConsultasDeCadeiras, ConsultasDeCadeirasEfCore>();
+
         servicos.AddScoped<ConsultasDaRedeEfCore>();
         servicos.AddScoped<IConsultasDaRede>(provedor => new ConsultasDaRedeComCache(
             provedor.GetRequiredService<ConsultasDaRedeEfCore>(),

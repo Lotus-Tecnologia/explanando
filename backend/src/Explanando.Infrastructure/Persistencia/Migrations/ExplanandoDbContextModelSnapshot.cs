@@ -262,6 +262,91 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.ToTable("scores_risco", (string)null);
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Cadeiras.CadeiraDeComando", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Camada")
+                        .HasColumnType("integer")
+                        .HasColumnName("camada");
+
+                    b.Property<string>("Cargo")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)")
+                        .HasColumnName("cargo");
+
+                    b.Property<int?>("CodigoSiorg")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_siorg");
+
+                    b.Property<string>("Coletor")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("coletor");
+
+                    b.Property<string>("Fonte")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("fonte");
+
+                    b.Property<string>("FotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("foto_url");
+
+                    b.Property<string>("Ocupante")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("ocupante");
+
+                    b.Property<string>("Orgao")
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)")
+                        .HasColumnName("orgao");
+
+                    b.Property<int>("Origem")
+                        .HasColumnType("integer")
+                        .HasColumnName("origem");
+
+                    b.Property<string>("Partido")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("partido");
+
+                    b.Property<int>("Poder")
+                        .HasColumnType("integer")
+                        .HasColumnName("poder");
+
+                    b.Property<string>("Uf")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("uf");
+
+                    b.Property<DateTimeOffset>("VerificadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verificado_em");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cadeiras_de_comando");
+
+                    b.HasIndex("CodigoSiorg")
+                        .HasDatabaseName("ix_cadeiras_siorg");
+
+                    b.HasIndex("Coletor")
+                        .HasDatabaseName("ix_cadeiras_coletor");
+
+                    b.HasIndex("Poder", "Camada")
+                        .HasDatabaseName("ix_cadeiras_poder_camada");
+
+                    b.ToTable("cadeiras_de_comando", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Contestacoes.ContestacaoDespesa", b =>
                 {
                     b.Property<Guid>("Id")

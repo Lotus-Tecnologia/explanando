@@ -66,6 +66,7 @@ app.MapGet("/saude", () => Results.Ok(new { situacao = "ok" }))
 app.MapEndpointsPublicos();
 app.MapEndpointsDoEstado();
 app.MapEndpointsDaRede();
+app.MapEndpointsDasCadeiras();
 
 await app.RunAsync().ConfigureAwait(false);
 

@@ -1,4 +1,5 @@
 using Explanando.Domain.Auditoria;
+using Explanando.Domain.Cadeiras;
 using Explanando.Domain.Contestacoes;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
@@ -72,6 +73,17 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     public DbSet<LotacaoDoOrgao> LotacoesDoOrgao => Set<LotacaoDoOrgao>();
 
     public DbSet<ContagemPorFuncao> ContagensPorFuncao => Set<ContagemPorFuncao>();
+
+    /// <summary>
+    /// As cadeiras de comando — a unica tabela com nome de pessoa, e a excecao declarada
+    /// a' regra de <see cref="LotacoesDoOrgao"/>.
+    ///
+    /// <para>Sao ~100 cargos cujo ocupante o proprio governo publica com nome e sobrenome
+    /// (portal da Presidencia, APIs do Congresso). Cada linha carrega a URL de onde saiu e
+    /// a data em que foi vista; sem as duas, a linha nem e' criada. Ver a nota em
+    /// <c>CadeiraDeComando</c> e o ADR das cadeiras.</para>
+    /// </summary>
+    public DbSet<CadeiraDeComando> CadeirasDeComando => Set<CadeiraDeComando>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
