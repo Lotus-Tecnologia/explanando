@@ -96,3 +96,37 @@ A ordem que eu proporia, agora que o grafo fechou a metade das estruturas:
 3. **O cadastro no INLABS** — é a única coisa do CivLab que continua bloqueada em você, e
    é de cinco minutos. Destrava a linha do tempo de nomeações.
 4. **O deploy** — assim que houver uma sessão com o Gustavo disponível para os dois `login`.
+
+---
+
+## 6. A fonte de notícia por órgão — medida em 2026-09-21, e nenhuma serve
+
+A barra lateral do mapa do Estado já traz *o que mudou nesta unidade*, que é apuração
+nossa. Faltava o segundo feed, de **notícia de verdade** sobre o órgão. Quatro rotas foram
+testadas ao vivo, e o resultado é um "não" com número, não um palpite:
+
+| Rota | Resultado medido |
+|---|---|
+| **Google News RSS** | Funciona, e a **licença do próprio feed proíbe**: *"made available solely for the purpose of rendering Google News results within a personal feed reader for personal, non-commercial use"* |
+| **Agência Brasil**, casando o nome do órgão no **título** | **0 de 100** manchetes citam o nome oficial de um órgão. Jornalismo escreve "governo", "Planalto", "Congresso" — não "Ministério do Desenvolvimento, Indústria, Comércio e Serviços" |
+| **Agência Brasil**, casando na **descrição** | 46% casam, e a atribuição erra: uma matéria sobre o MPF foi marcada como sendo do **STF**, outra sobre o Comitê Gestor da Internet virou **Congresso Nacional**. É o *entity linking* falhando exatamente como previsto |
+| **Feed próprio do órgão no gov.br** | Existe — o da Saúde é `/saude/pt-br/assuntos/noticias-ms/noticias-da-saude/rss.xml` —, mas o caminho é idiossincrático. Descoberta pela sigla acha **5 de 60 autarquias (8%)** e **9 de 26 ministérios (34%)**, e parte desses 34% aponta para o feed da raiz do site ou de uma seção avulsa |
+
+> **A armadilha que quase passou.** A primeira contagem de descoberta deu 60%. Era falsa:
+> a maioria dos feeds "encontrados" era `https://www.gov.br/RSS`, o feed do site inteiro,
+> servido pela página genérica que aparece quando `gov.br/{sigla}` não existe. Parecer um
+> achado não é ser um achado.
+
+### O que sobra, e é decisão de produto
+
+Uma **tabela curada** de ~25 URLs de feed, uma por ministério, verificada item a item. Isso
+não é automação: é compromisso de manutenção editorial, o mesmo que o
+[ADR-0018](decisoes/ADR-0018-cadeiras-de-comando.md) chama de `OrigemDaCadeira.Curada` e
+que hoje não é usado por nenhuma linha.
+
+E há a ressalva de conteúdo: **feed de órgão é o órgão falando de si mesmo**. É release,
+não jornalismo. Se entrar, o rótulo tem de ser *"o que o próprio órgão anuncia"* — nunca
+*"notícias"* —, porque a diferença entre as duas coisas é o produto inteiro.
+
+**Enquanto não se decide, a barra lateral fica com um feed só**: o nosso, que é a linha do
+tempo de mudanças estruturais daquela unidade.
