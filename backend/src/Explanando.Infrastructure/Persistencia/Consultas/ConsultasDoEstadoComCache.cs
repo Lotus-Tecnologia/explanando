@@ -85,4 +85,21 @@ public sealed class ConsultasDoEstadoComCache(IConsultasDoEstado interno, Hybrid
             Validade,
             cancellationToken: cancelamento)
             .ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasDaUnidadeAsync(
+        int codigo,
+        int quantidade,
+        CancellationToken cancelamento = default) =>
+        await cache.GetOrCreateAsync(
+            string.Create(CultureInfo.InvariantCulture, $"estado:mudancas:{codigo}:{quantidade}"),
+            (Interno: interno, Codigo: codigo, Quantidade: quantidade),
+            static (estado, ct) =>
+                new ValueTask<IReadOnlyList<MudancaDoEstado>>(
+                    estado.Interno.ListarMudancasDaUnidadeAsync(
+                        estado.Codigo,
+                        estado.Quantidade,
+                        ct)),
+            Validade,
+            cancellationToken: cancelamento)
+            .ConfigureAwait(false);
 }

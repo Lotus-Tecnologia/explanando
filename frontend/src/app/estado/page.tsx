@@ -111,7 +111,7 @@ export default async function Pagina() {
           As duas vistas do mesmo contexto, uma substituindo a outra. O alternador desceu
           para o pe' do desenho — e' controle do objeto que se olha, e nao da navegacao.
         */}
-        <VistasDoEstado nos={mapa.nos} poderes={poderes} />
+        <VistasDoEstado nos={mapa.nos} poderes={poderes} temHistorico={mapa.temHistorico} />
 
         <div className="mt-6">
           <LegendaDePoderes poderes={mapa.porPoder} />

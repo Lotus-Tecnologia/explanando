@@ -248,6 +248,25 @@ export function obterDespesa(id: string): Promise<DespesaDetalhada | null> {
  * dado não veio.
  */
 /**
+ * O que mudou **nesta** unidade.
+ *
+ * Rota própria, e não um filtro da lista geral no navegador: aquela é limitada às mais
+ * recentes, e filtrá-la por unidade devolveria "nada mudou" para um órgão cujas mudanças
+ * ficaram fora do corte — que é outra afirmação.
+ *
+ * Nulo quando a API não responde, e a tela distingue isso de lista vazia.
+ */
+export async function listarMudancasDaUnidade(
+  codigo: number,
+): Promise<MudancaDoEstado[] | null> {
+  try {
+    return await buscar<MudancaDoEstado[]>(`/api/v1/estado/${codigo}/mudancas`);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * O mapa de poder — quem ocupa as cadeiras de comando, nos quatro poderes.
  *
  * Nulo quando a API não responde, e a página precisa distinguir isso de um mapa com

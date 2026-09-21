@@ -127,7 +127,7 @@ export function LinhaDoTempoDoEstado({
  * Aqui ela serve à estrutura, e não a pessoas: o que sai e entra é o nome de um órgão, a
  * sigla, ou a unidade a que ele responde.
  */
-function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
+export function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
   const saiu = mudanca.de;
   const entrou = mudanca.para;
 

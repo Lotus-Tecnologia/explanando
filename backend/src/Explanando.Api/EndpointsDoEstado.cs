@@ -58,6 +58,16 @@ public static class EndpointsDoEstado
             .WithName("ObterUnidadeDoEstado")
             .WithSummary("Uma unidade da estrutura.");
 
+        grupo.MapGet("/{codigo:int}/mudancas", ListarMudancasDaUnidadeAsync)
+            .WithName("ListarMudancasDaUnidade")
+            .WithSummary("O que mudou nesta unidade, da mudança mais nova para a mais velha.")
+            .WithDescription(
+                "Rota própria, e não um filtro da lista geral: aquela é limitada às mais "
+                + "recentes, e filtrá-la por unidade devolveria 'nada mudou' para um órgão "
+                + "cujas mudanças ficaram fora do corte — que é outra afirmação. Lista "
+                + "vazia aqui pode significar 'ainda não comparamos': `temHistorico`, no "
+                + "mapa, diz qual dos dois casos é.");
+
         grupo.MapGet("/{codigo:int}/unidades", ObterSubarvoreAsync)
             .WithName("ObterSubarvoreDoEstado")
             .WithSummary("Os filhos diretos de uma unidade.")
@@ -100,6 +110,15 @@ public static class EndpointsDoEstado
         int codigo,
         CancellationToken cancelamento) =>
         Results.Ok(await consultas.ObterSubarvoreAsync(codigo, cancelamento).ConfigureAwait(false));
+
+    private static async Task<IResult> ListarMudancasDaUnidadeAsync(
+        IConsultasDoEstado consultas,
+        int codigo,
+        int? quantidade,
+        CancellationToken cancelamento) =>
+        Results.Ok(await consultas
+            .ListarMudancasDaUnidadeAsync(codigo, quantidade ?? 20, cancelamento)
+            .ConfigureAwait(false));
 
     private static async Task<IResult> ListarMudancasAsync(
         IConsultasDoEstado consultas,

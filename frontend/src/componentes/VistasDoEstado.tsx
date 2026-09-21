@@ -27,9 +27,13 @@ type Vista = "instituicoes" | "poder";
 export function VistasDoEstado({
   nos,
   poderes,
+  temHistorico = false,
 }: {
   nos: readonly NoDoEstado[];
   poderes: MapaDePoderCompleto | null;
+
+  /** Já houve segunda coleta. Segue até a barra lateral — ver `MudancasDaUnidade`. */
+  temHistorico?: boolean;
 }) {
   const [vista, setVista] = useState<Vista>("instituicoes");
 
@@ -45,6 +49,7 @@ export function VistasDoEstado({
         {vista === "instituicoes" ? (
           <GrafoDoEstado
             nos={nos}
+            temHistorico={temHistorico}
             aoEscolherPoder={
               poderes === null
                 ? undefined
@@ -78,10 +83,11 @@ export function VistasDoEstado({
       </div>
 
       {/*
-        O alternador fica ao pé do desenho, como na referência, e não no topo da página:
-        é um controle do objeto que se está olhando, não da navegação do site.
+        O alternador fica no CANTO INFERIOR DIREITO, como na referência: é um controle do
+        objeto que se está olhando, não da navegação do site. No celular ele centraliza,
+        porque encostado na borda de uma tela estreita ele briga com o polegar.
       */}
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6 flex justify-center lg:justify-end">
         <Alternador
           vista={vista}
           aoTrocar={setVista}

@@ -274,12 +274,30 @@ public sealed class ConsultasDoEstadoEfCore(ExplanandoDbContext contexto) : ICon
         return Projetar(unidade, descendentes, pessoal, pessoalDoRamo);
     }
 
-    public async Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasAsync(
+    public Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasAsync(
         int quantidade,
-        CancellationToken cancelamento = default)
+        CancellationToken cancelamento = default) =>
+        ListarAsync(null, quantidade, cancelamento);
+
+    public Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasDaUnidadeAsync(
+        int codigo,
+        int quantidade,
+        CancellationToken cancelamento = default) =>
+        ListarAsync(codigo, quantidade, cancelamento);
+
+    private async Task<IReadOnlyList<MudancaDoEstado>> ListarAsync(
+        int? codigo,
+        int quantidade,
+        CancellationToken cancelamento)
     {
-        var mudancas = await contexto.MudancasEstruturais
-            .AsNoTracking()
+        var consulta = contexto.MudancasEstruturais.AsNoTracking();
+
+        if (codigo is { } unidade)
+        {
+            consulta = consulta.Where(mudanca => mudanca.CodigoUnidade == unidade);
+        }
+
+        var mudancas = await consulta
             .OrderByDescending(mudanca => mudanca.DetectadaEm)
             .Take(Math.Clamp(quantidade, 1, 200))
             .ToListAsync(cancelamento)

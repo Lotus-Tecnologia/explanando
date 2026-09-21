@@ -216,6 +216,19 @@ public interface IConsultasDoEstado
         CancellationToken cancelamento = default);
 
     /// <summary>
+    /// O que mudou <b>nesta</b> unidade, da mais nova para a mais velha.
+    ///
+    /// <para>Endpoint próprio, e não um filtro da lista geral no navegador: a lista geral
+    /// é limitada às mais recentes, e filtrá-la por unidade devolveria "nada mudou" para
+    /// um órgão cujas mudanças ficaram fora do corte. É a diferença entre não ter
+    /// acontecido e não ter cabido na página.</para>
+    /// </summary>
+    Task<IReadOnlyList<MudancaDoEstado>> ListarMudancasDaUnidadeAsync(
+        int codigo,
+        int quantidade,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
     /// A série mensal do quadro de pessoal, da competência mais antiga para a mais nova.
     ///
     /// <para>Com <paramref name="codigoUnidade"/> nulo, é o Estado inteiro — <b>inclusive

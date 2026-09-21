@@ -19,6 +19,7 @@ import { corDoPoder } from "@/lib/grafo";
 import { formatarNumero } from "@/lib/formato";
 import { BuscaNoGrafo } from "./BuscaNoGrafo";
 import { PainelDaUnidade } from "./PainelDaUnidade";
+import { MudancasDaUnidade } from "./MudancasDaUnidade";
 
 /**
  * O mapa da estrutura do Estado, como grafo de nós e arestas.
@@ -40,8 +41,17 @@ export function GrafoDoEstado({
   nos,
   aoEscolherPoder,
   comZoom = true,
+  temHistorico = false,
 }: {
   nos: readonly NoDoEstado[];
+
+  /**
+   * Já houve uma segunda coleta do SIORG?
+   *
+   * Vai até a barra lateral: sem isto, "nenhuma mudança nesta unidade" seria lido como
+   * "nada mudou" quando significa "ainda não comparamos".
+   */
+  temHistorico?: boolean;
 
   /**
    * Chamado ao clicar na **cunha** de um poder — não num nó.
@@ -119,123 +129,129 @@ export function GrafoDoEstado({
   const rotulado = destacado === null ? null : porCodigo.get(destacado);
 
   return (
-    <div>
-      <div className="mb-4">
-        <BuscaNoGrafo
-          nos={grafo.nos.map((p) => p.no)}
-          aoEscolher={(codigo) => setSelecionado(codigo)}
-        />
-      </div>
-
-      <figure className="relative m-0">
-        {comZoom ? (
-          <ControlesDeZoom
-            zoom={zoom}
-            aoAproximar={() => aproximar(1.5)}
-            aoAfastar={() => aproximar(1 / 1.5)}
-            aoEnquadrar={enquadrar}
+    /*
+      Duas colunas a partir de `lg`: o desenho fica e a barra lateral aparece ao lado, como
+      na referência. Abaixo disso a barra vira um bloco embaixo — empilhar e' o unico jeito
+      de caber, e abrir uma gaveta sobre o desenho esconderia justamente o que se clicou.
+    */
+    <div className={escolhido ? "lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6" : ""}>
+      <div className="min-w-0">
+        <div className="mb-4">
+          <BuscaNoGrafo
+            nos={grafo.nos.map((p) => p.no)}
+            aoEscolher={(codigo) => setSelecionado(codigo)}
           />
-        ) : null}
+        </div>
 
-        <svg
-          viewBox={janela}
-          className="mx-auto block h-auto w-full max-w-[42rem] touch-manipulation active:cursor-grabbing"
-          /*
+        <figure className="relative m-0">
+          {comZoom ? (
+            <ControlesDeZoom
+              zoom={zoom}
+              aoAproximar={() => aproximar(1.5)}
+              aoAfastar={() => aproximar(1 / 1.5)}
+              aoEnquadrar={enquadrar}
+            />
+          ) : null}
+
+          <svg
+            viewBox={janela}
+            className="mx-auto block h-auto w-full max-w-[42rem] touch-manipulation active:cursor-grabbing"
+            /*
             O cursor de "arrastando" sai do CSS (`active:`), e nao do ref: ler
             `arrastando.current` durante a renderizacao e' o que o react-hooks/refs proibe,
             e com razao — o valor pode mudar sem provocar novo desenho, e a mao ficaria
             fechada depois de soltar.
           */
-          style={{ cursor: zoom > 1 ? "grab" : "default" }}
-          onPointerDown={(evento) => {
-            if (!comZoom || zoom === 1) return;
+            style={{ cursor: zoom > 1 ? "grab" : "default" }}
+            onPointerDown={(evento) => {
+              if (!comZoom || zoom === 1) return;
 
-            arrastando.current = { x: evento.clientX, y: evento.clientY };
-            evento.currentTarget.setPointerCapture(evento.pointerId);
-          }}
-          onPointerMove={(evento) => {
-            const inicio = arrastando.current;
+              arrastando.current = { x: evento.clientX, y: evento.clientY };
+              evento.currentTarget.setPointerCapture(evento.pointerId);
+            }}
+            onPointerMove={(evento) => {
+              const inicio = arrastando.current;
 
-            if (!inicio) return;
+              if (!inicio) return;
 
-            // A conversao de pixel para unidade de viewBox depende do zoom: sem ela, o
-            // desenho foge do ponteiro quanto mais aproximado estiver.
-            const escala = visivel / evento.currentTarget.clientWidth;
+              // A conversao de pixel para unidade de viewBox depende do zoom: sem ela, o
+              // desenho foge do ponteiro quanto mais aproximado estiver.
+              const escala = visivel / evento.currentTarget.clientWidth;
 
-            setDeslocamento((atual) => ({
-              x: atual.x - (evento.clientX - inicio.x) * escala,
-              y: atual.y - (evento.clientY - inicio.y) * escala,
-            }));
+              setDeslocamento((atual) => ({
+                x: atual.x - (evento.clientX - inicio.x) * escala,
+                y: atual.y - (evento.clientY - inicio.y) * escala,
+              }));
 
-            arrastando.current = { x: evento.clientX, y: evento.clientY };
-          }}
-          onPointerUp={() => {
-            arrastando.current = null;
-          }}
-          role="img"
-          aria-label={
-            `Mapa da estrutura do Estado: ${formatarNumero(grafo.nos.length)} órgãos e ` +
-            "entidades, dispostos por poder no ângulo e por natureza jurídica no raio. " +
-            "A lista completa, navegável pelo teclado, vem logo abaixo do desenho."
-          }
-          onClick={() => setSelecionado(null)}
-        >
-          <g
-            transform={`rotate(${giroEmGraus.toFixed(2)})`}
-            style={{ transition: "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)" }}
+              arrastando.current = { x: evento.clientX, y: evento.clientY };
+            }}
+            onPointerUp={() => {
+              arrastando.current = null;
+            }}
+            role="img"
+            aria-label={
+              `Mapa da estrutura do Estado: ${formatarNumero(grafo.nos.length)} órgãos e ` +
+              "entidades, dispostos por poder no ângulo e por natureza jurídica no raio. " +
+              "A lista completa, navegável pelo teclado, vem logo abaixo do desenho."
+            }
+            onClick={() => setSelecionado(null)}
           >
-            {/*
+            <g
+              transform={`rotate(${giroEmGraus.toFixed(2)})`}
+              style={{ transition: "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)" }}
+            >
+              {/*
               As cunhas de poder. Vêm primeiro de tudo: são o fundo sobre o qual o resto
               é desenhado, e é delas que o eixo ANGULAR passa a existir para quem olha.
               Antes, o poder só aparecia na cor do nó e na legenda embaixo.
             */}
-            {grafo.setores.map((setor) => (
-              <path
-                key={`cunha-${setor.chave}`}
-                d={caminhoDoSetor(
-                  setor.inicio,
-                  setor.fim,
-                  RAIO_DO_MIOLO * 0.92,
-                  grafo.raioExterno,
-                )}
-                fill={corDoPoder(setor.chave)}
-                /* Tinta muito pálida: a cunha situa, e não compete com o nó. */
-                opacity={sobrePoder === setor.chave ? 0.16 : 0.07}
-                style={{
-                  transition: "opacity 180ms ease",
-                  cursor: aoEscolherPoder ? "pointer" : "default",
-                }}
-                pointerEvents={aoEscolherPoder ? "auto" : "none"}
-                onMouseEnter={() => setSobrePoder(setor.chave)}
-                onMouseLeave={() => setSobrePoder(null)}
-                onClick={(evento) => {
-                  if (!aoEscolherPoder) return;
+              {grafo.setores.map((setor) => (
+                <path
+                  key={`cunha-${setor.chave}`}
+                  d={caminhoDoSetor(
+                    setor.inicio,
+                    setor.fim,
+                    RAIO_DO_MIOLO * 0.92,
+                    grafo.raioExterno,
+                  )}
+                  fill={corDoPoder(setor.chave)}
+                  /* Tinta muito pálida: a cunha situa, e não compete com o nó. */
+                  opacity={sobrePoder === setor.chave ? 0.16 : 0.07}
+                  style={{
+                    transition: "opacity 180ms ease",
+                    cursor: aoEscolherPoder ? "pointer" : "default",
+                  }}
+                  pointerEvents={aoEscolherPoder ? "auto" : "none"}
+                  onMouseEnter={() => setSobrePoder(setor.chave)}
+                  onMouseLeave={() => setSobrePoder(null)}
+                  onClick={(evento) => {
+                    if (!aoEscolherPoder) return;
 
-                  // Sem isto o clique sobe ate' o <svg>, que limpa a selecao — e o leitor
-                  // veria a vista trocar e o no' escolhido sumir no mesmo gesto.
-                  evento.stopPropagation();
-                  aoEscolherPoder(setor.chave);
-                }}
-              >
-                <title>{`Ver quem comanda: ${setor.rotulo}`}</title>
-              </path>
-            ))}
+                    // Sem isto o clique sobe ate' o <svg>, que limpa a selecao — e o leitor
+                    // veria a vista trocar e o no' escolhido sumir no mesmo gesto.
+                    evento.stopPropagation();
+                    aoEscolherPoder(setor.chave);
+                  }}
+                >
+                  <title>{`Ver quem comanda: ${setor.rotulo}`}</title>
+                </path>
+              ))}
 
-            {/* Os anéis, como guias finíssimas. Sólidas: tracejado em grade lê-se como
+              {/* Os anéis, como guias finíssimas. Sólidas: tracejado em grade lê-se como
                 "projeção", e estas são posições reais. */}
-            {grafo.aneis.map((anel) => (
-              <circle
-                key={anel.indice}
-                r={anel.raio}
-                fill="none"
-                stroke="var(--color-borda-suave)"
-                strokeWidth={1}
-                vectorEffect="non-scaling-stroke"
-                opacity={0.5}
-              />
-            ))}
+              {grafo.aneis.map((anel) => (
+                <circle
+                  key={anel.indice}
+                  r={anel.raio}
+                  fill="none"
+                  stroke="var(--color-borda-suave)"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                  opacity={0.5}
+                />
+              ))}
 
-            {/*
+              {/*
               As arestas, em dois regimes.
 
               SEM seleção, cada nó recebe só um TALO — o tracinho radial que aponta para
@@ -246,125 +262,129 @@ export function GrafoDoEstado({
               COM seleção, as arestas do nó escolhido aparecem por inteiro. É quando são
               poucas, e quando o trajeto completo é a informação que se quer.
             */}
-            {selecionado === null
-              ? grafo.nos.map((p) => {
-                  const talo = caminhoDoTalo(p);
+              {selecionado === null
+                ? grafo.nos.map((p) => {
+                    const talo = caminhoDoTalo(p);
 
-                  // Vazio quando o anel esta' cheio demais — ver ARCO_MINIMO_PARA_TALO.
-                  if (talo === "") return null;
+                    // Vazio quando o anel esta' cheio demais — ver ARCO_MINIMO_PARA_TALO.
+                    if (talo === "") return null;
 
-                  return (
-                    <path
-                      key={`talo-${p.no.codigo}`}
-                      d={talo}
-                      fill="none"
-                      stroke={corDoPoder(p.no.chaveDoPoder)}
-                      strokeWidth={0.9}
-                      strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
-                      opacity={0.38}
-                      pointerEvents="none"
-                    />
-                  );
-                })
-              : grafo.arestas.map((aresta) => {
-                  const de = porCodigo.get(aresta.de);
-                  const para = porCodigo.get(aresta.para);
+                    return (
+                      <path
+                        key={`talo-${p.no.codigo}`}
+                        d={talo}
+                        fill="none"
+                        stroke={corDoPoder(p.no.chaveDoPoder)}
+                        strokeWidth={0.9}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        opacity={0.38}
+                        pointerEvents="none"
+                      />
+                    );
+                  })
+                : grafo.arestas.map((aresta) => {
+                    const de = porCodigo.get(aresta.de);
+                    const para = porCodigo.get(aresta.para);
 
-                  // Aresta que sai do miolo parte do centro.
-                  const origem = de ?? (noMiolo.has(aresta.de) ? { x: 0, y: 0 } : null);
+                    // Aresta que sai do miolo parte do centro.
+                    const origem = de ?? (noMiolo.has(aresta.de) ? { x: 0, y: 0 } : null);
 
-                  if (!origem || !para) return null;
+                    if (!origem || !para) return null;
 
-                  if (aresta.de !== selecionado && aresta.para !== selecionado) return null;
+                    if (aresta.de !== selecionado && aresta.para !== selecionado) return null;
 
-                  return (
-                    <path
-                      key={`${aresta.de}-${aresta.para}`}
-                      d={caminhoDaAresta(origem, para)}
-                      fill="none"
-                      stroke={corDoPoder(para.no.chaveDoPoder)}
-                      strokeWidth={1.6}
-                      vectorEffect="non-scaling-stroke"
-                      opacity={0.85}
-                    />
-                  );
-                })}
+                    return (
+                      <path
+                        key={`${aresta.de}-${aresta.para}`}
+                        d={caminhoDaAresta(origem, para)}
+                        fill="none"
+                        stroke={corDoPoder(para.no.chaveDoPoder)}
+                        strokeWidth={1.6}
+                        vectorEffect="non-scaling-stroke"
+                        opacity={0.85}
+                      />
+                    );
+                  })}
 
-            {/*
+              {/*
               O rótulo do poder, curvado na borda do seu setor. Vive DENTRO do grupo que
               gira, porque pertence à roda: quando o disco vira, o nome do poder vira
               junto com os órgãos dele.
             */}
-            <defs>
-              {grafo.setores.map((setor) => (
-                <path
-                  key={`arco-${setor.chave}`}
-                  id={`arco-${setor.chave}`}
-                  d={arcoDoRotulo(setor.inicio, setor.fim, grafo.raioExterno + 19)}
-                  fill="none"
+              <defs>
+                {grafo.setores.map((setor) => (
+                  <path
+                    key={`arco-${setor.chave}`}
+                    id={`arco-${setor.chave}`}
+                    d={arcoDoRotulo(setor.inicio, setor.fim, grafo.raioExterno + 19)}
+                    fill="none"
+                  />
+                ))}
+              </defs>
+
+              {grafo.setores.map((setor) => {
+                const texto = setor.rotulo.toUpperCase();
+                const medida = fonteDoRotuloDoSetor(
+                  texto,
+                  setor.inicio,
+                  setor.fim,
+                  grafo.raioExterno + 19,
+                );
+
+                // Nulo quando nem encolhido caberia. O nome continua na legenda.
+                if (medida === null) return null;
+
+                return (
+                  <text
+                    key={`rotulo-${setor.chave}`}
+                    fill={corDoPoder(setor.chave)}
+                    fontSize={medida.fonte}
+                    fontWeight={700}
+                    letterSpacing={medida.espaco}
+                    opacity={0.85}
+                    pointerEvents="none"
+                  >
+                    <textPath
+                      href={`#arco-${setor.chave}`}
+                      startOffset="50%"
+                      textAnchor="middle"
+                    >
+                      {texto}
+                    </textPath>
+                  </text>
+                );
+              })}
+
+              {/* Os nós. */}
+              {grafo.nos.map((p) => (
+                <NoDoGrafo
+                  key={p.no.codigo}
+                  posicionado={p}
+                  aceso={destacado === p.no.codigo}
+                  apagado={!emFoco(p.no.codigo)}
+                  aoEntrar={() => setSobre(p.no.codigo)}
+                  aoSair={() => setSobre(null)}
+                  aoEscolher={() => setSelecionado(p.no.codigo)}
                 />
               ))}
-            </defs>
 
-            {grafo.setores.map((setor) => {
-              const texto = setor.rotulo.toUpperCase();
-              const medida = fonteDoRotuloDoSetor(
-                texto,
-                setor.inicio,
-                setor.fim,
-                grafo.raioExterno + 19,
-              );
-
-              // Nulo quando nem encolhido caberia. O nome continua na legenda.
-              if (medida === null) return null;
-
-              return (
-                <text
-                  key={`rotulo-${setor.chave}`}
-                  fill={corDoPoder(setor.chave)}
-                  fontSize={medida.fonte}
-                  fontWeight={700}
-                  letterSpacing={medida.espaco}
-                  opacity={0.85}
+              {/* O rótulo flutuante do nó apontado. Contra-girado para o texto ficar de pé
+                mesmo com o disco virado. */}
+              {rotulado ? (
+                <g
+                  transform={`translate(${rotulado.x} ${rotulado.y}) rotate(${(-giroEmGraus).toFixed(2)})`}
                   pointerEvents="none"
                 >
-                  <textPath href={`#arco-${setor.chave}`} startOffset="50%" textAnchor="middle">
-                    {texto}
-                  </textPath>
-                </text>
-              );
-            })}
+                  <RotuloFlutuante
+                    texto={rotulado.no.nome}
+                    cor={corDoPoder(rotulado.no.chaveDoPoder)}
+                  />
+                </g>
+              ) : null}
+            </g>
 
-            {/* Os nós. */}
-            {grafo.nos.map((p) => (
-              <NoDoGrafo
-                key={p.no.codigo}
-                posicionado={p}
-                aceso={destacado === p.no.codigo}
-                apagado={!emFoco(p.no.codigo)}
-                aoEntrar={() => setSobre(p.no.codigo)}
-                aoSair={() => setSobre(null)}
-                aoEscolher={() => setSelecionado(p.no.codigo)}
-              />
-            ))}
-
-            {/* O rótulo flutuante do nó apontado. Contra-girado para o texto ficar de pé
-                mesmo com o disco virado. */}
-            {rotulado ? (
-              <g
-                transform={`translate(${rotulado.x} ${rotulado.y}) rotate(${(-giroEmGraus).toFixed(2)})`}
-                pointerEvents="none"
-              >
-                <RotuloFlutuante
-                  texto={rotulado.no.nome}
-                  cor={corDoPoder(rotulado.no.chaveDoPoder)}
-                />
-              </g>
-            ) : null}
-          </g>
-
-          {/*
+            {/*
             O nome de cada anel — o eixo RADIAL, que é a natureza jurídica.
 
             Fica FORA do grupo que gira, e é deliberado: o anel não roda junto com a roda,
@@ -379,67 +399,71 @@ export function GrafoDoEstado({
             que é exatamente onde a régua fica, e a tarja acabava em cima dele. Quem está
             olhando uma unidade não está consultando a régua.
           */}
-          {selecionado !== null
-            ? null
-            : grafo.aneis.map((anel) =>
-                anel.rotulo === "" ? null : (
-                  <RotuloDoAnel
-                    key={`anel-${anel.indice}`}
-                    raio={anel.raio}
-                    texto={anel.rotulo}
-                  />
-                ),
-              )}
+            {selecionado !== null
+              ? null
+              : grafo.aneis.map((anel) =>
+                  anel.rotulo === "" ? null : (
+                    <RotuloDoAnel
+                      key={`anel-${anel.indice}`}
+                      raio={anel.raio}
+                      texto={anel.rotulo}
+                    />
+                  ),
+                )}
 
-          {/* O miolo não gira: é a raiz, e ela é o eixo. */}
-          <circle
-            r={RAIO_DO_MIOLO - 8}
-            fill="var(--color-surface)"
-            stroke="var(--color-acento)"
-            strokeWidth={2}
-            vectorEffect="non-scaling-stroke"
-          />
+            {/* O miolo não gira: é a raiz, e ela é o eixo. */}
+            <circle
+              r={RAIO_DO_MIOLO - 8}
+              fill="var(--color-surface)"
+              stroke="var(--color-acento)"
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+            />
 
-          {grafo.miolo.map((no, i) => (
-            <text
-              key={no.codigo}
-              textAnchor="middle"
-              y={i === 0 ? -6 : 14}
-              className={
-                i === 0
-                  ? "fill-titulo font-display text-[15px] font-bold"
-                  : "fill-texto-suave text-[12px]"
-              }
-            >
-              {no.sigla ?? no.nome}
-            </text>
-          ))}
-        </svg>
+            {grafo.miolo.map((no, i) => (
+              <text
+                key={no.codigo}
+                textAnchor="middle"
+                y={i === 0 ? -6 : 14}
+                className={
+                  i === 0
+                    ? "fill-titulo font-display text-[15px] font-bold"
+                    : "fill-texto-suave text-[12px]"
+                }
+              >
+                {no.sigla ?? no.nome}
+              </text>
+            ))}
+          </svg>
 
-        <figcaption className="mt-4 space-y-2 text-sm text-texto-suave">
-          <p>
-            O <strong className="font-semibold">ângulo</strong> é o poder; o{" "}
-            <strong className="font-semibold">raio</strong> é a natureza jurídica — ente
-            federativo no centro, depois administração direta e administração indireta. A forma
-            do nó repete o tipo, para quem não distingue as cores. Passe o ponteiro para ver o
-            nome.
-          </p>
-          <p>
-            O tracinho que sai de cada nó aponta para quem manda nele.{" "}
-            <strong className="font-semibold">Clique</strong> para ver a ligação inteira:
-            desenhar as 334 de uma vez produzia um emaranhado em que nenhuma delas podia ser
-            seguida.
-          </p>
-          <p>
-            Cada poder ocupa no mínimo 30° do círculo, senão o Legislativo — 4 órgãos contra 266
-            do Executivo — ficaria pequeno demais para ser clicado. A desproporção continua
-            visível, e os números exatos estão na legenda.
-          </p>
-        </figcaption>
-      </figure>
+          <figcaption className="mt-4 space-y-2 text-sm text-texto-suave">
+            <p>
+              O <strong className="font-semibold">ângulo</strong> é o poder; o{" "}
+              <strong className="font-semibold">raio</strong> é a natureza jurídica — ente
+              federativo no centro, depois administração direta e administração indireta. A
+              forma do nó repete o tipo, para quem não distingue as cores. Passe o ponteiro para
+              ver o nome.
+            </p>
+            <p>
+              O tracinho que sai de cada nó aponta para quem manda nele.{" "}
+              <strong className="font-semibold">Clique</strong> para ver a ligação inteira:
+              desenhar as 334 de uma vez produzia um emaranhado em que nenhuma delas podia ser
+              seguida.
+            </p>
+            <p>
+              Cada poder ocupa no mínimo 30° do círculo, senão o Legislativo — 4 órgãos contra
+              266 do Executivo — ficaria pequeno demais para ser clicado. A desproporção
+              continua visível, e os números exatos estão na legenda.
+            </p>
+          </figcaption>
+        </figure>
+      </div>
 
       {escolhido ? (
-        <div className="mt-6">
+        <aside
+          aria-label="Detalhe da unidade selecionada"
+          className="mt-6 space-y-6 lg:sticky lg:top-24 lg:mt-0 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"
+        >
           <PainelDaUnidade
             no={escolhido.no}
             /*
@@ -453,7 +477,18 @@ export function GrafoDoEstado({
             ]}
             aoFechar={() => setSelecionado(null)}
           />
-        </div>
+
+          {/*
+            A chave e' o codigo da unidade: trocar de orgao RECRIA o componente, que volta
+            a "carregando" sozinho. E' o jeito que o React recomenda para repor estado, e
+            evita o setState em cascata dentro do efeito.
+          */}
+          <MudancasDaUnidade
+            key={escolhido.no.codigo}
+            codigo={escolhido.no.codigo}
+            temHistorico={temHistorico}
+          />
+        </aside>
       ) : null}
     </div>
   );
