@@ -188,6 +188,16 @@ public static class ServicosDeIntegracao
             .AddStandardResilienceHandler();
 
         servicos
+            .AddHttpClient<ClienteDaMesaDoCongresso>(http =>
+            {
+                http.BaseAddress = new Uri("https://legis.senado.leg.br/dadosabertos/");
+                http.Timeout = TimeSpan.FromSeconds(60);
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
+                http.DefaultRequestHeaders.Add("User-Agent", "Explanando/1.0 (+transparencia)");
+            })
+            .AddStandardResilienceHandler();
+
+        servicos
             .AddHttpClient<ClienteDeLiderancas>(http =>
             {
                 http.BaseAddress = new Uri("https://legis.senado.leg.br/dadosabertos/");
@@ -202,6 +212,7 @@ public static class ServicosDeIntegracao
         servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDoPlanalto>());
         servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDeCadeirasDaCamara>());
         servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDeLiderancas>());
+        servicos.AddScoped<IFonteDeCadeiras>(p => p.GetRequiredService<ClienteDaMesaDoCongresso>());
 
         servicos
             .AddHttpClient<IFonteDeCadastroEmpresarial, ClienteBrasilApi>(http =>

@@ -13,7 +13,9 @@ planalto      39 cadeiras   Presidente da República + 38 ministros de Estado
 camara        52 cadeiras   Mesa Diretora + 30 presidências de comissão
 liderancas    47 cadeiras   líderes das duas Casas e do Congresso Nacional
 ------------------------------------------------------------------------
-             138 cadeiras, 0 fontes com falha
+mesa-cn        1 cadeira    Presidente do Senado e do Congresso Nacional
+------------------------------------------------------------------------
+             139 cadeiras, 0 fontes com falha
 ```
 
 Na tela, dentro de `/estado`: um alternador ao pé do desenho troca **Instituições** por
@@ -54,6 +56,33 @@ Duas, e são a mesma decisão tomada duas vezes.
 Um mapa de **comando** com noventa vice-presidentes não é um mapa de comando: é o
 organograma da Casa. A Mesa mantém os vices, porque ali o colegiado *é* o órgão de direção
 e a 1ª Vice-Presidência da Câmara é cargo de verdade.
+
+## 4-A. A presidência do Senado só apareceu pela porta dos fundos
+
+A primeira entrega tinha **uma** cadeira na camada "Presidência das Casas" — só a Câmara.
+Metade do Congresso faltando, num mapa que se propõe a mostrar quem comanda.
+
+O Senado **não publica a Mesa dele**. Foram sondados `composicao/mesa`,
+`composicao/mesa/atual`, `composicao/mesa/SF` e `composicao/comissao/MESA` — todos 404 —,
+e a lista geral de colegiados traz uma única Mesa: a do **Congresso Nacional**, código
+1616. E é o bastante, porque quem preside o Congresso é, por determinação constitucional,
+o Presidente do Senado.
+
+```
+Presidente da República                                Luiz Inácio Lula da Silva
+Presidente da Câmara dos Deputados                     Hugo Motta        REPUBLICANOS-PB
+Presidente do Senado Federal e do Congresso Nacional   Davi Alcolumbre   UNIÃO-AP
+```
+
+Só o presidente entra. A Mesa do Congresso é mista, e dois dos seus membros já estão no
+mapa pela Mesa da Câmara — trazer os sete duplicaria pessoas na mesma tela por ocuparem
+dois cargos reais, que é verdade que confunde mais do que informa. **A Mesa do Senado
+propriamente dita continua faltando**, e faltará enquanto o Senado não a publicar.
+
+O código do colegiado é um número mágico e não dá para fugir dele: o endpoint de
+composição o exige, e a lista geral não filtra por tipo. A defesa é falhar — se 1616
+deixar de ser a Mesa, a coleta para em vez de gravar a presidência de outro colegiado
+qualquer na chefia do Legislativo.
 
 ## 5. O Judiciário ficou de fora, e a tela diz por quê
 
@@ -110,8 +139,8 @@ declarada, não como código morto esquecido.
 
 | | |
 |---|---:|
-| Cadeiras no banco | 138 |
-| Fontes | 3, independentes |
+| Cadeiras no banco | 139 |
+| Fontes | 4, independentes |
 | Testes de backend | 918 |
 | Testes de frontend | 213 |
 | Páginas estáticas no build | 863 |
