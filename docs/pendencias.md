@@ -128,5 +128,48 @@ E há a ressalva de conteúdo: **feed de órgão é o órgão falando de si mesm
 não jornalismo. Se entrar, o rótulo tem de ser *"o que o próprio órgão anuncia"* — nunca
 *"notícias"* —, porque a diferença entre as duas coisas é o produto inteiro.
 
-**Enquanto não se decide, a barra lateral fica com um feed só**: o nosso, que é a linha do
-tempo de mudanças estruturais daquela unidade.
+### O levantamento feito à mão, em 2026-09-21
+
+A tabela curada foi levantada e **verificada uma a uma**, não estimada. Partiu da lista
+oficial em `gov.br/pt-br/orgaos-do-governo` — 38 ministérios e órgãos da Presidência —, e
+cada um passou por três tentativas: o caminho padrão `/pt-br/assuntos/noticias`, a
+navegação do próprio site atrás de uma página de notícias, e `/RSS` construído sobre a
+pasta encontrada. Cada candidato foi então **baixado e lido**.
+
+**Três feeds servem, de trinta e oito.**
+
+| Órgão | Feed | Itens | Estado |
+|---|---|---:|---|
+| Saúde | `/saude/pt-br/assuntos/noticias-ms/noticias-da-saude/RSS` | 16 | ✅ limpo |
+| Desenvolvimento Regional | `/mdr/pt-br/noticias-midr/RSS` | 16 | ✅ limpo |
+| Defesa | `/defesa/pt-br/centrais-de-conteudo/noticias/RSS` | 101 | ⚠️ notícia misturada com PDF solto |
+
+O resto se divide em três modos de falhar, e **nenhum deles é "o site está fora do ar"**:
+
+- **12 devolvem o feed da raiz do site**, que no Plone publica todo objeto criado. Os
+  primeiros itens do GSI são `Foto 1_5_CNFron.jpeg`; os do MDR-antigo,
+  `chuva_em_sao_paulo.webp`; os de Cidades, `8.2026 OUV.pdf`. É o inventário do gestor de
+  conteúdo, não a página de notícias.
+- **2 devolvem uma lista de pastas**, não de matérias: o MDIC traz
+  `2026 (Período eleitoral)` e o feed genérico da Saúde traz `Notícias para os estados`.
+- **21 não têm feed nenhum.** MEC, Fazenda, MME e Turismo têm página de notícias, e
+  `/RSS` sobre ela responde com zero itens — o recurso não está habilitado.
+
+> **Um tropeço que vale registrar.** A primeira contagem automática deu 14 de 38. Doze
+> desses eram o feed da raiz do site. Depois de abrir os itens um a um, sobraram três.
+> Duas vezes seguidas neste levantamento o número fácil era o número errado.
+
+### A conclusão
+
+**Não vale construir a ingestão.** Seriam domínio, tabela, migração, coletor, consulta,
+endpoint, tela e testes — o mesmo tamanho do bloco das cadeiras — para alimentar **3 dos
+336 órgãos do mapa**, menos de 1%. E o efeito colateral seria pior que a ausência: uma
+barra lateral que mostra notícia na Saúde, no MDR e na Defesa, e nada nos outros 333, faz
+os 333 parecerem abandonados em vez de não publicados.
+
+Se a decisão mudar, o caminho está pronto: as três URLs acima estão verificadas, o formato
+é RSS 2.0 comum, e o rótulo tem de ser **"o que o próprio órgão anuncia"** — nunca
+"notícias" —, porque é release institucional e não jornalismo.
+
+**Enquanto isso, a barra lateral fica com um feed só**: o nosso, que é a linha do tempo de
+mudanças estruturais daquela unidade.
