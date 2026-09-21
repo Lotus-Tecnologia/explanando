@@ -37,9 +37,26 @@ export function Cabecalho() {
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
         <Link
           href="/"
-          className="font-display text-lg font-bold tracking-tight text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+          className="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-titulo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
         >
-          Explanando
+          <span
+            aria-hidden="true"
+            className="flex size-7 items-center justify-center rounded-campo bg-titulo text-white shadow-xs"
+          >
+            <svg
+              className="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M3 12h6m6 0h6M12 3v6m0 6v6" />
+            </svg>
+          </span>
+          <span>Explanando</span>
         </Link>
 
         <nav aria-label="Seções" className="flex items-center gap-1">

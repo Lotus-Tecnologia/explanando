@@ -8,25 +8,8 @@ import { iniciais, retratoSeguro } from "@/lib/fotos";
 import type { ItemDoRanking } from "@/lib/contrato";
 
 /**
- * O ranking de uma casa: busca sobre o conjunto inteiro, exibição paginada, ordenação por
- * qualquer coluna.
- *
- * **A busca e a paginação não são a mesma coisa, e a diferença é uma decisão.** Antes, a
- * tabela trazia os 513 de uma vez sem paginar, e o motivo registrado era bom: paginar de 50
- * em 50 esconderia 463 pessoas atrás de dez cliques, num produto cujo leitor típico chega
- * procurando **um** parlamentar específico. Por isso a busca varre a lista completa, e não a
- * página visível. Digitou, achou. A contagem diz "X de Y" para que isso seja visível.
- *
- * **A ordenação por coluna é outra decisão, e tem uma ressalva.** A ordem que o servidor
- * manda é a do ADR-0009, e ela exclui do índice quem está abaixo do piso amostral — ordenar
- * por um índice que não se sustenta seria publicar ruído com nome e foto. Reordenar aqui não
- * pode desfazer isso, então **nulo vai sempre para o fim, nos dois sentidos**: quem não tem
- * densidade medida não é ranqueado por ela, fica apartado e rotulado.
- *
- * A coluna `#` guarda a posição na ordenação canônica da página, e **não** o índice da linha
- * na tela. Reordenar por outra coluna deixa os números fora de sequência de propósito: é
- * assim que se vê que o 3º em volume é o 87º em densidade. Clicar em `#` devolve a ordem do
- * servidor.
+ * O ranking de uma casa com data-grid denso, filtros multi-critério,
+ * busca instantânea, ordenação completa e exportação CSV.
  */
 
 const POR_PAGINA = 25;
@@ -39,7 +22,7 @@ interface Ordem {
   direcao: Direcao;
 }
 
-/** Dobra acento e caixa: ninguém digita "JOÃO ANDRÉ" com til para procurar. */
+/** Dobra acento e caixa para busca insensível a diacríticos. */
 function dobrar(texto: string): string {
   return texto
     .normalize("NFD")
@@ -53,8 +36,7 @@ interface Linhado {
 }
 
 /**
- * O valor de uma linha na chave pedida. `null` significa **não medido**, e é tratado à
- * parte na comparação — nunca como zero.
+ * O valor de uma linha na chave pedida. `null` significa não medido.
  */
 function valorDe(linha: Linhado, chave: ChaveDeOrdem): number | string | null {
   switch (chave) {
@@ -80,14 +62,7 @@ function ordenar(linhas: Linhado[], ordem: Ordem): Linhado[] {
     const va = valorDe(a, ordem.chave);
     const vb = valorDe(b, ordem.chave);
 
-    /*
-      Nulo por último SEMPRE, e não por capricho de apresentação.
-
-      O ADR-0009 exclui do ranking de risco quem está abaixo do piso amostral, porque a
-      densidade de quem tem 20 despesas é ruído. Se o nulo participasse da comparação, o
-      sentido decrescente o jogaria para o topo — e a tela publicaria como "mais arriscado"
-      exatamente quem o motor se recusou a medir.
-    */
+    // Nulo por último SEMPRE (ADR-0009)
     if (va === null && vb === null) return a.posicao - b.posicao;
     if (va === null) return 1;
     if (vb === null) return -1;
@@ -96,7 +71,6 @@ function ordenar(linhas: Linhado[], ordem: Ordem): Linhado[] {
       return sinal * String(va).localeCompare(String(vb), "pt-BR");
     }
 
-    // Empate cai na ordem canônica do servidor, para a tabela não tremer entre renderizações.
     return va === vb ? a.posicao - b.posicao : sinal * (va - vb);
   });
 }
@@ -122,58 +96,48 @@ function Retrato({ item }: { item: ItemDoRanking }) {
       width={36}
       height={36}
       unoptimized
-      /*
-        `alt` vazio de propósito: o nome vem escrito ao lado, e um leitor de tela anunciando
-        "foto de Fulano" logo antes de "Fulano" lê a mesma pessoa duas vezes.
-      */
-      className="size-9 shrink-0 rounded-selo bg-surface object-cover"
+      className="size-9 shrink-0 rounded-selo bg-surface object-cover border border-borda-suave"
     />
   );
 }
 
 function Linha({ item, posicao }: Linhado) {
   return (
-    <tr className="hover:bg-surface">
-      <td className="numeros px-3 py-2.5 text-sm text-texto-suave">{posicao}</td>
+    <tr className="transition-colors hover:bg-surface/80">
+      <td className="numeros px-3 py-3 text-sm text-texto-suave font-semibold">{posicao}</td>
 
-      <td className="px-3 py-2.5">
+      <td className="px-3 py-3">
         <div className="flex items-center gap-3">
           <Retrato item={item} />
 
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <Link
               href={`/parlamentares/${item.id}`}
               className="block truncate text-sm font-semibold text-titulo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
             >
               {item.nomeParlamentar}
             </Link>
-            <span className="block truncate text-xs text-texto-suave">
-              {item.siglaPartido} · {item.uf}
-              {/*
-                O volume repetido aqui, e só no celular. A tabela tem seis colunas e rola na
-                horizontal em tela estreita — o que empurrava justamente o VOLUME para fora,
-                numa página que ordena por volume.
-              */}
-              <span className="sm:hidden">
-                {" · "}
-                <span className="numeros font-semibold text-texto">
-                  {formatarReais(item.volumeTotalGasto)}
-                </span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-texto-suave">
+              <span className="rounded-selo bg-surface border border-borda-suave px-1.5 py-0.2 font-semibold text-texto">
+                {item.siglaPartido}
               </span>
-            </span>
+              <span>·</span>
+              <span className="font-semibold text-texto-suave">{item.uf}</span>
+
+              {/* Volume no celular */}
+              <span className="sm:hidden font-semibold text-texto">
+                · {formatarReais(item.volumeTotalGasto)}
+              </span>
+            </div>
           </span>
         </div>
       </td>
 
-      <td className="numeros hidden px-3 py-2.5 text-right text-sm font-semibold whitespace-nowrap text-titulo sm:table-cell">
+      <td className="numeros hidden px-3 py-3 text-right text-sm font-bold whitespace-nowrap text-titulo sm:table-cell">
         {formatarReais(item.volumeTotalGasto)}
       </td>
 
-      <td className="numeros hidden px-3 py-2.5 text-right text-sm sm:table-cell">
-        {/*
-          Nulo e zero são coisas diferentes. Abaixo do piso amostral a densidade não foi
-          medida, e escrever "0,00" afirmaria que foi.
-        */}
+      <td className="numeros hidden px-3 py-3 text-right text-sm sm:table-cell">
         {item.indiceDeRisco === null ? (
           <span
             className="text-xs text-abstencao-texto"
@@ -182,32 +146,51 @@ function Linha({ item, posicao }: Linhado) {
             amostra insuficiente
           </span>
         ) : (
-          formatarDensidade(item.indiceDeRisco)
+          <span className="font-semibold text-texto">
+            {formatarDensidade(item.indiceDeRisco)}
+          </span>
         )}
       </td>
 
-      <td className="numeros px-3 py-2.5 text-right text-sm whitespace-nowrap">
-        <span className="text-alta-texto">{item.flagsAltas}</span>
-        <span className="text-texto-suave"> · </span>
-        <span className="text-media-texto">{item.flagsMedias}</span>
-        <span className="text-texto-suave"> · </span>
-        <span className="text-texto-suave">{item.flagsBaixas}</span>
+      <td className="numeros px-3 py-3 text-right text-sm whitespace-nowrap">
+        <div className="inline-flex items-center justify-end gap-1.5">
+          <span
+            className="inline-flex items-center gap-0.5 rounded-sm bg-alta-fundo px-1 py-0.5 text-xs font-bold text-alta-texto border border-alta-texto/20"
+            title={`${item.flagsAltas} achados de alta relevância`}
+          >
+            <span
+              aria-hidden="true"
+              className="size-1.5 bg-alta-texto [clip-path:polygon(30%_0,70%_0,100%_30%,100%_70%,70%_100%,30%_100%,0_70%,0_30%)]"
+            />
+            {item.flagsAltas}
+          </span>
+          <span
+            className="inline-flex items-center gap-0.5 rounded-sm bg-media-fundo px-1 py-0.5 text-xs font-semibold text-media-texto border border-media-texto/20"
+            title={`${item.flagsMedias} achados de média relevância`}
+          >
+            <span
+              aria-hidden="true"
+              className="size-1.5 bg-media-texto [clip-path:polygon(50%_0,100%_100%,0_100%)]"
+            />
+            {item.flagsMedias}
+          </span>
+          <span
+            className="inline-flex items-center gap-0.5 rounded-sm bg-surface px-1 py-0.5 text-xs font-medium text-texto-suave border border-borda-suave"
+            title={`${item.flagsBaixas} achados de baixa relevância`}
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-baixa-texto" />
+            {item.flagsBaixas}
+          </span>
+        </div>
       </td>
 
-      <td className="numeros hidden px-3 py-2.5 text-right text-sm text-texto-suave sm:table-cell">
+      <td className="numeros hidden px-3 py-3 text-right text-sm text-texto-suave sm:table-cell">
         {formatarNumero(item.despesasAvaliadas)}
       </td>
     </tr>
   );
 }
 
-/**
- * Um cabeçalho que ordena.
- *
- * O `<th>` carrega `aria-sort` e o botão carrega o rótulo — é o par que faz um leitor de
- * tela anunciar "coluna ordenada em ordem decrescente" em vez de só ler o texto. A seta é
- * `aria-hidden` porque `aria-sort` já disse a mesma coisa, e ouvir duas vezes atrapalha.
- */
 function CabecalhoOrdenavel({
   children,
   chave,
@@ -250,45 +233,94 @@ function CabecalhoOrdenavel({
   );
 }
 
+export interface TabelaDoRankingProps {
+  itens: ItemDoRanking[];
+  rotulo: string;
+  filtroPartidoExterno?: string;
+  onMudarFiltroPartido?: (partido: string) => void;
+  filtroUfExterno?: string;
+  onMudarFiltroUf?: (uf: string) => void;
+}
+
 export function TabelaDoRanking({
   itens,
   rotulo,
-}: {
-  itens: ItemDoRanking[];
-  rotulo: string;
-}) {
+  filtroPartidoExterno,
+  onMudarFiltroPartido,
+  filtroUfExterno,
+  onMudarFiltroUf,
+}: TabelaDoRankingProps) {
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [filtroPartidoInterno, setFiltroPartidoInterno] = useState("");
+  const [filtroUfInterno, setFiltroUfInterno] = useState("");
+  const [filtroSeveridade, setFiltroSeveridade] = useState<"todos" | "altas" | "amostra">("todos");
 
-  // O padrão é a ordem que o servidor mandou — a do ADR-0009 para esta página.
   const [ordem, setOrdem] = useState<Ordem>({ chave: "posicao", direcao: "asc" });
 
-  // A posição é calculada ANTES de filtrar e de reordenar. Renumerar diria que a pessoa
-  // filtrada é a primeira colocada, que é o oposto do que o número significa.
+  const partidoAtivo = filtroPartidoExterno !== undefined ? filtroPartidoExterno : filtroPartidoInterno;
+  const ufAtiva = filtroUfExterno !== undefined ? filtroUfExterno : filtroUfInterno;
+
   const comPosicao = useMemo(
     () => itens.map((item, indice) => ({ item, posicao: indice + 1 })),
     [itens],
   );
 
+  // Lista de partidos únicos com quantidade
+  const listaPartidos = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const { item } of comPosicao) {
+      const p = item.siglaPartido.trim();
+      if (p) mapa.set(p, (mapa.get(p) ?? 0) + 1);
+    }
+    return Array.from(mapa.entries()).sort((a, b) => b[1] - a[1]);
+  }, [comPosicao]);
+
+  // Lista de UFs únicas com quantidade
+  const listaUfs = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const { item } of comPosicao) {
+      const u = item.uf.trim();
+      if (u) mapa.set(u, (mapa.get(u) ?? 0) + 1);
+    }
+    return Array.from(mapa.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [comPosicao]);
+
   const encontrados = useMemo(() => {
     const procurado = dobrar(busca.trim());
 
-    const filtrados =
-      procurado === ""
-        ? comPosicao
-        : comPosicao.filter(({ item }) =>
-            dobrar(`${item.nomeParlamentar} ${item.siglaPartido} ${item.uf}`).includes(
-              procurado,
-            ),
-          );
+    const filtrados = comPosicao.filter(({ item }) => {
+      // 1. Busca por texto
+      if (procurado !== "") {
+        const textoCompleto = dobrar(`${item.nomeParlamentar} ${item.siglaPartido} ${item.uf}`);
+        if (!textoCompleto.includes(procurado)) return false;
+      }
+
+      // 2. Filtro de Partido
+      if (partidoAtivo !== "" && item.siglaPartido !== partidoAtivo) {
+        return false;
+      }
+
+      // 3. Filtro de UF
+      if (ufAtiva !== "" && item.uf !== ufAtiva) {
+        return false;
+      }
+
+      // 4. Filtro de Severidade
+      if (filtroSeveridade === "altas" && item.flagsAltas <= 0) {
+        return false;
+      }
+      if (filtroSeveridade === "amostra" && item.indiceDeRisco === null) {
+        return false;
+      }
+
+      return true;
+    });
 
     return ordenar(filtrados, ordem);
-  }, [comPosicao, busca, ordem]);
+  }, [comPosicao, busca, partidoAtivo, ufAtiva, filtroSeveridade, ordem]);
 
   const totalDePaginas = Math.max(1, Math.ceil(encontrados.length / POR_PAGINA));
-
-  // Buscar de novo pode encurtar a lista abaixo da página em que se estava; sem este limite
-  // a tela ficaria vazia com a paginação apontando para o nada.
   const paginaAtual = Math.min(pagina, totalDePaginas);
   const inicio = (paginaAtual - 1) * POR_PAGINA;
   const visiveis = encontrados.slice(inicio, inicio + POR_PAGINA);
@@ -298,66 +330,262 @@ export function TabelaDoRanking({
     setPagina(1);
   }
 
-  /**
-   * Primeiro clique escolhe a coluna; o seguinte inverte.
-   *
-   * Número abre em decrescente e texto em crescente, porque é o que se quer em cada caso:
-   * de dinheiro se procura o maior, de nome se procura o A. Abrir sempre do mesmo jeito
-   * obrigaria a dois cliques em metade das colunas.
-   */
+  function mudarPartido(novo: string) {
+    if (onMudarFiltroPartido) {
+      onMudarFiltroPartido(novo);
+    } else {
+      setFiltroPartidoInterno(novo);
+    }
+    setPagina(1);
+  }
+
+  function mudarUf(nova: string) {
+    if (onMudarFiltroUf) {
+      onMudarFiltroUf(nova);
+    } else {
+      setFiltroUfInterno(nova);
+    }
+    setPagina(1);
+  }
+
+  function limparTodosFiltros() {
+    setBusca("");
+    mudarPartido("");
+    mudarUf("");
+    setFiltroSeveridade("todos");
+    setPagina(1);
+  }
+
   function alternarOrdem(chave: ChaveDeOrdem, padraoDescendente: boolean) {
     setOrdem((atual) =>
       atual.chave === chave
         ? { chave, direcao: atual.direcao === "asc" ? "desc" : "asc" }
         : { chave, direcao: padraoDescendente ? "desc" : "asc" },
     );
-
     setPagina(1);
   }
 
+  function exportarCsv() {
+    const cabecalho = [
+      "Posicao",
+      "Nome",
+      "Partido",
+      "UF",
+      "Casa",
+      "VolumeGasto",
+      "DespesasAvaliadas",
+      "IndiceDeRisco",
+      "FlagsAltas",
+      "FlagsMedias",
+      "FlagsBaixas",
+    ];
+
+    const linhasCsv = encontrados.map(({ item, posicao }) => [
+      posicao,
+      `"${item.nomeParlamentar.replace(/"/g, '""')}"`,
+      `"${item.siglaPartido}"`,
+      `"${item.uf}"`,
+      `"${item.casa}"`,
+      item.volumeTotalGasto.toFixed(2),
+      item.despesasAvaliadas,
+      item.indiceDeRisco !== null ? item.indiceDeRisco.toFixed(2) : "",
+      item.flagsAltas,
+      item.flagsMedias,
+      item.flagsBaixas,
+    ]);
+
+    const csvContent =
+      "\uFEFF" + [cabecalho.join(";"), ...linhasCsv.map((l) => l.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `ranking-${rotulo.toLowerCase().replace(/\s+/g, "-")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  const temFiltroAtivo =
+    busca.trim() !== "" ||
+    partidoAtivo !== "" ||
+    ufAtiva !== "" ||
+    filtroSeveridade !== "todos";
+
   return (
-    <div className="mt-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0 flex-1 sm:max-w-sm">
-          <label htmlFor="busca" className="block text-xs font-semibold text-texto-suave">
-            Procurar parlamentar
-          </label>
+    <div className="mt-8 flex flex-col gap-4">
+      {/* ---------------------------------------------------------------- */}
+      {/*  BARRA DE FERRAMENTAS & FILTROS MULTI-CRITÉRIO                   */}
+      {/* ---------------------------------------------------------------- */}
+      <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* 1. Busca por nome */}
+          <div>
+            <label htmlFor="busca" className="block text-xs font-semibold text-texto-suave">
+              Procurar parlamentar
+            </label>
+            <div className="relative mt-1">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-texto-suave"
+              >
+                ⌕
+              </span>
+              <input
+                id="busca"
+                type="search"
+                value={busca}
+                onChange={(evento) => procurar(evento.target.value)}
+                placeholder="nome, partido ou UF"
+                autoComplete="off"
+                className="w-full rounded-campo border border-borda-suave bg-fundo py-2 pr-3 pl-8 text-sm text-texto placeholder:text-texto-suave/70 focus-visible:border-titulo focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-titulo"
+              />
+            </div>
+          </div>
 
-          <div className="relative mt-1">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-texto-suave"
+          {/* 2. Filtro por Partido */}
+          <div>
+            <label htmlFor="filtro-partido" className="block text-xs font-semibold text-texto-suave">
+              Filtrar por partido
+            </label>
+            <select
+              id="filtro-partido"
+              value={partidoAtivo}
+              onChange={(e) => mudarPartido(e.target.value)}
+              className="mt-1 w-full rounded-campo border border-borda-suave bg-fundo px-3 py-2 text-sm text-texto focus-visible:border-titulo focus-visible:outline-2 focus-visible:outline-titulo"
             >
-              ⌕
-            </span>
+              <option value="">Todos os partidos ({listaPartidos.length})</option>
+              {listaPartidos.map(([sigla, qtd]) => (
+                <option key={sigla} value={sigla}>
+                  {sigla} ({qtd})
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <input
-              id="busca"
-              type="search"
-              value={busca}
-              onChange={(evento) => procurar(evento.target.value)}
-              placeholder="nome, partido ou UF"
-              autoComplete="off"
-              className="w-full rounded-campo border border-borda-suave bg-fundo py-2 pr-3 pl-8 text-sm text-texto placeholder:text-texto-suave focus-visible:border-titulo focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-titulo"
-            />
+          {/* 3. Filtro por UF */}
+          <div>
+            <label htmlFor="filtro-uf" className="block text-xs font-semibold text-texto-suave">
+              Filtrar por estado (UF)
+            </label>
+            <select
+              id="filtro-uf"
+              value={ufAtiva}
+              onChange={(e) => mudarUf(e.target.value)}
+              className="mt-1 w-full rounded-campo border border-borda-suave bg-fundo px-3 py-2 text-sm text-texto focus-visible:border-titulo focus-visible:outline-2 focus-visible:outline-titulo"
+            >
+              <option value="">Todas as UFs ({listaUfs.length})</option>
+              {listaUfs.map(([uf, qtd]) => (
+                <option key={uf} value={uf}>
+                  {uf} ({qtd})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Filtro de Severidade / Amostra */}
+          <div>
+            <label htmlFor="filtro-severidade" className="block text-xs font-semibold text-texto-suave">
+              Critério de risco
+            </label>
+            <select
+              id="filtro-severidade"
+              value={filtroSeveridade}
+              onChange={(e) => {
+                setFiltroSeveridade(e.target.value as "todos" | "altas" | "amostra");
+                setPagina(1);
+              }}
+              className="mt-1 w-full rounded-campo border border-borda-suave bg-fundo px-3 py-2 text-sm text-texto focus-visible:border-titulo focus-visible:outline-2 focus-visible:outline-titulo"
+            >
+              <option value="todos">Todos os parlamentares</option>
+              <option value="altas">Com achados de alta relevância (altas &gt; 0)</option>
+              <option value="amostra">Apenas com amostra completa (≥ 100 despesas)</option>
+            </select>
           </div>
         </div>
 
-        {/*
-          A contagem vive numa região viva: quem usa leitor de tela precisa saber que a lista
-          encolheu, e a mudança acontece longe do campo onde o foco está.
+        {/* Linha de status, filtros ativos e exportação */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-borda-suave/60 pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Região viva acessível */}
+            <p className="text-sm text-texto-suave" role="status" aria-live="polite">
+              <strong className="numeros text-titulo font-bold">{formatarNumero(encontrados.length)}</strong>{" "}
+              {encontrados.length === 1 ? "parlamentar" : "parlamentares"}
+              {temFiltroAtivo ? ` de ${formatarNumero(comPosicao.length)}` : ""}
+            </p>
 
-          Ela diz "X de Y" sempre que há busca — a garantia visível de que a paginação não
-          esconde ninguém, porque a busca varreu a lista inteira e não só esta página.
-        */}
-        <p className="text-sm text-texto-suave" role="status" aria-live="polite">
-          <strong className="numeros text-titulo">{formatarNumero(encontrados.length)}</strong>{" "}
-          {encontrados.length === 1 ? "parlamentar" : "parlamentares"}
-          {busca.trim() === "" ? "" : ` de ${formatarNumero(comPosicao.length)}`}
-        </p>
+            {/* Badges de filtros ativos */}
+            {partidoAtivo && (
+              <span className="inline-flex items-center gap-1 rounded-selo bg-realce px-2 py-0.5 text-xs font-semibold text-titulo">
+                Partido: {partidoAtivo}
+                <button
+                  type="button"
+                  onClick={() => mudarPartido("")}
+                  className="hover:opacity-75 focus-visible:outline-none"
+                  aria-label={`Remover filtro de partido ${partidoAtivo}`}
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
+            {ufAtiva && (
+              <span className="inline-flex items-center gap-1 rounded-selo bg-realce px-2 py-0.5 text-xs font-semibold text-titulo">
+                UF: {ufAtiva}
+                <button
+                  type="button"
+                  onClick={() => mudarUf("")}
+                  className="hover:opacity-75 focus-visible:outline-none"
+                  aria-label={`Remover filtro de UF ${ufAtiva}`}
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
+            {filtroSeveridade !== "todos" && (
+              <span className="inline-flex items-center gap-1 rounded-selo bg-realce px-2 py-0.5 text-xs font-semibold text-titulo">
+                {filtroSeveridade === "altas" ? "Só altas" : "Amostra completa"}
+                <button
+                  type="button"
+                  onClick={() => setFiltroSeveridade("todos")}
+                  className="hover:opacity-75 focus-visible:outline-none"
+                  aria-label="Remover filtro de severidade"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
+            {temFiltroAtivo && (
+              <button
+                type="button"
+                onClick={limparTodosFiltros}
+                className="text-xs font-semibold text-titulo underline underline-offset-2 hover:text-titulo-hover ml-1"
+              >
+                Limpar todos
+              </button>
+            )}
+          </div>
+
+          {/* Botão de Exportação CSV */}
+          <button
+            type="button"
+            onClick={exportarCsv}
+            title="Baixar dados filtrados em formato CSV (planilha)"
+            className="inline-flex items-center gap-1.5 rounded-campo border border-borda-suave bg-surface px-3 py-1.5 text-xs font-semibold text-texto hover:border-titulo hover:text-titulo focus-visible:outline-2 focus-visible:outline-titulo"
+          >
+            <span aria-hidden="true">↓</span>
+            <span>Exportar CSV ({encontrados.length})</span>
+          </button>
+        </div>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-cartao border border-borda-suave shadow-cartao">
+      {/* ---------------------------------------------------------------- */}
+      {/*  TABELA DATA-GRID                                                */}
+      {/* ---------------------------------------------------------------- */}
+      <div className="overflow-hidden rounded-cartao border border-borda-suave shadow-cartao bg-fundo">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <caption className="sr-only">
@@ -434,16 +662,25 @@ export function TabelaDoRanking({
           </table>
         </div>
 
-        {/*
-          "Nenhum parlamentar corresponde à busca" — e não "nenhum gasto encontrado". A
-          segunda frase afirmaria algo sobre o dado que a busca não mediu.
-        */}
+        {/* Mensagem quando nada é encontrado */}
         {encontrados.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-texto-suave">
-            Nenhum parlamentar corresponde a <strong className="text-texto">{busca.trim()}</strong>.
-          </p>
+          <div className="px-4 py-12 text-center text-sm text-texto-suave">
+            <p className="font-semibold text-titulo">Nenhum parlamentar encontrado</p>
+            <p className="mt-1 text-xs">
+              Nenhum registro corresponde aos filtros selecionados. Tente ajustar os termos de busca
+              ou limpar os filtros.
+            </p>
+            <button
+              type="button"
+              onClick={limparTodosFiltros}
+              className="mt-3 inline-block rounded-campo border border-borda-suave bg-surface px-3 py-1.5 text-xs font-semibold text-titulo hover:border-titulo"
+            >
+              Restaurar listagem completa
+            </button>
+          </div>
         ) : null}
 
+        {/* Navegação de Paginação */}
         {totalDePaginas > 1 ? (
           <nav
             aria-label="Páginas do ranking"
