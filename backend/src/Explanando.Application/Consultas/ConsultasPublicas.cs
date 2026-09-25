@@ -69,6 +69,14 @@ public interface IConsultasPublicas
         int quantos,
         CancellationToken cancelamento = default);
 
+    /// <summary>
+    /// Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar — a
+    /// Fase 5. Nulo se o parlamentar não existe.
+    /// </summary>
+    Task<QuemBeneficiaQuem?> ObterSociosEmComumAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default);
+
     /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
     Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,

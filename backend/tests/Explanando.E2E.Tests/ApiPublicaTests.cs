@@ -402,6 +402,31 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task Socios_em_comum_responde_com_a_ressalva_mesmo_sem_cadeia()
+    {
+        // A semente não tem quadro societário: a resposta é vazia, e ainda assim carrega os
+        // cortes e a ressalva — quem integra a API lê o critério junto do dado.
+        var resultado = await LerAsync<QuemBeneficiaQuem>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}/socios-em-comum"));
+
+        resultado.Cadeias.ShouldBeEmpty();
+        resultado.TotalDeCadeias.ShouldBe(0);
+
+        var corpo = await Cliente.GetStringAsync(
+            $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/socios-em-comum");
+        corpo.ShouldContain("não é irregularidade");
+        corpo.ShouldContain("\"valorMinimoPorPonta\":50000");
+    }
+
+    [Fact]
+    public async Task Socios_em_comum_de_parlamentar_inexistente_e_404()
+    {
+        var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.CreateVersion7()}/socios-em-comum");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Parlamentar_inexistente_devolve_404()
     {
         var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");

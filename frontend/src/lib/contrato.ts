@@ -202,6 +202,36 @@ export interface PagamentosPorFornecedor {
   totalDeFornecedores: number;
 }
 
+/** Uma empresa numa cadeia de sócio, e quanto o parlamentar daquela ponta pagou a ela. */
+export interface EmpresaNaCadeia {
+  documento: string;
+  razaoSocial: string;
+  valor: number;
+}
+
+/**
+ * Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar.
+ *
+ * O sócio **não tem nome** no contrato: é pessoa privada, e publicá-lo está em decisão (LGPD).
+ * A ligação se confere pelos dois CNPJs.
+ */
+export interface CadeiaDeSocio {
+  fornecedor: EmpresaNaCadeia;
+  outraEmpresa: EmpresaNaCadeia;
+  sociosEmComum: number;
+  qualificacoes: string[];
+  outrosParlamentares: { parlamentar: ParlamentarDaDespesa; valor: number }[];
+}
+
+/** A Fase 5 para um parlamentar. */
+export interface QuemBeneficiaQuem {
+  cadeias: CadeiaDeSocio[];
+  totalDeCadeias: number;
+  parlamentaresMaximosPorSocio: number;
+  valorMinimoPorPonta: number;
+  ressalva: string;
+}
+
 /** A parte do índice que vem de uma regra. */
 export interface ParcelaDoIndice {
   codigo: string;

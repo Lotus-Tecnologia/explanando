@@ -56,6 +56,17 @@ public static class EndpointsPublicos
                 + "Fornecedor que não recebeu nos dois não tem variação — tem começo ou fim. "
                 + "`quantos` vai de 1 a 30; o padrão é 10.");
 
+        grupo.MapGet("/parlamentares/{id:guid}/socios-em-comum", ObterSociosEmComumAsync)
+            .WithName("ObterSociosEmComum")
+            .WithSummary("Fornecedores dele com sócio em comum com fornecedores de outros parlamentares.")
+            .WithDescription(
+                "Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar. "
+                + "O sócio casa por nome e CPF mascarado, literalmente; nome que aparece com mais "
+                + "de um CPF fica de fora. Sócio que alcança mais de 5 parlamentares é "
+                + "infraestrutura e não liga ninguém. Cada ponta precisa de R$ 50 mil, e filial "
+                + "não é outra empresa. O nome do sócio não é publicado — a ligação se confere "
+                + "pelos dois CNPJs. Ter sócio em comum não é irregularidade.");
+
         grupo.MapGet("/achados-recentes", ListarAchadosRecentesAsync)
             .WithName("ListarAchadosRecentes")
             .WithSummary("As despesas com achado que entraram na base por último.")
@@ -83,6 +94,16 @@ public static class EndpointsPublicos
             .ConfigureAwait(false);
 
         return escada is null ? Results.NotFound() : Results.Ok(escada);
+    }
+
+    private static async Task<IResult> ObterSociosEmComumAsync(
+        IConsultasPublicas consultas,
+        Guid id,
+        CancellationToken cancelamento)
+    {
+        var resultado = await consultas.ObterSociosEmComumAsync(id, cancelamento).ConfigureAwait(false);
+
+        return resultado is null ? Results.NotFound() : Results.Ok(resultado);
     }
 
     private static async Task<IResult> ListarAchadosRecentesAsync(

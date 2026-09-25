@@ -13,6 +13,7 @@ import type {
   Pagina,
   PagamentosPorFornecedor,
   PerfilDoParlamentar,
+  QuemBeneficiaQuem,
 } from "./contrato";
 
 const BASE =
@@ -231,6 +232,11 @@ export async function listarDespesas(
   return buscar<Pagina<ItemDeDespesa>>(
     `/api/v1/parlamentares/${id}/despesas?${consulta.toString()}`,
   );
+}
+
+/** Fornecedores dele com sócio em comum com fornecedores de outros. Nulo se ele não existe. */
+export function obterSociosEmComum(parlamentarId: string): Promise<QuemBeneficiaQuem | null> {
+  return buscar<QuemBeneficiaQuem>(`/api/v1/parlamentares/${parlamentarId}/socios-em-comum`);
 }
 
 /** Os maiores fornecedores do parlamentar, ano a ano. Nulo se o parlamentar não existe. */

@@ -374,6 +374,103 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         return EscadaDePagamentos.Montar(pagamentos, Math.Clamp(quantos, 1, 30));
     }
 
+    public async Task<QuemBeneficiaQuem?> ObterSociosEmComumAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default)
+    {
+        if (!await contexto.Parlamentares.AnyAsync(p => p.Id == parlamentarId, cancelamento)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        // 1. Os fornecedores dele que passam do piso. Só eles podem abrir uma cadeia.
+        var fornecedoresDoParlamentar = await contexto.Despesas
+            .AsNoTracking()
+            .Where(d => d.ParlamentarId == parlamentarId && d.FornecedorId != null)
+            .GroupBy(d => d.FornecedorId!.Value)
+            .Select(g => new { FornecedorId = g.Key, Valor = g.Sum(d => d.ValorLiquido) })
+            .Where(g => g.Valor >= Domain.Rede.CriteriosDaRede.ValorMinimoDaLigacao)
+            .Select(g => g.FornecedorId)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        if (fornecedoresDoParlamentar.Count == 0)
+        {
+            return new QuemBeneficiaQuem();
+        }
+
+        // 2. Os sócios deles, e TODAS as empresas de quem tem o mesmo nome — inclusive os
+        //    homônimos, que é como a ambiguidade aparece e é descartada.
+        var nomes = await contexto.Sociedades
+            .AsNoTracking()
+            .Where(s => fornecedoresDoParlamentar.Contains(s.FornecedorId))
+            .Select(s => s.NomeSocio)
+            .Distinct()
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var sociedades = await contexto.Sociedades
+            .AsNoTracking()
+            .Where(s => nomes.Contains(s.NomeSocio))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var vinculos = sociedades
+            .Select(s => new VinculoDeSocio(s.FornecedorId, s.NomeSocio, s.Cpf.Mascarado, s.Qualificacao))
+            .Distinct()
+            .ToList();
+
+        var ambiguos = vinculos
+            .GroupBy(v => v.Nome, StringComparer.Ordinal)
+            .Where(g => g.Select(v => v.CpfMascarado).Distinct(StringComparer.Ordinal).Count() > 1)
+            .Select(g => g.Key)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var empresaIds = vinculos.Select(v => v.FornecedorId).Distinct().ToList();
+
+        // 3. Quem pagou a cada uma dessas empresas. Com todos os valores, e não só os acima do
+        //    piso: o alcance do sócio conta qualquer parlamentar que as contratou.
+        var pagamentos = await contexto.Despesas
+            .AsNoTracking()
+            .Where(d => d.FornecedorId != null && empresaIds.Contains(d.FornecedorId!.Value))
+            .GroupBy(d => new { d.ParlamentarId, FornecedorId = d.FornecedorId!.Value })
+            .Select(g => new PagamentoAgregado(g.Key.ParlamentarId, g.Key.FornecedorId, g.Sum(d => d.ValorLiquido)))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var empresas = (await contexto.Fornecedores
+            .AsNoTracking()
+            .Where(f => empresaIds.Contains(f.Id))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false))
+            .ToDictionary(
+                f => f.Id,
+                f => new EmpresaDaCadeia(f.Id, f.Documento.Numero, f.Documento.Formatado, f.RazaoSocial));
+
+        var parlamentarIds = pagamentos.Select(p => p.ParlamentarId).Distinct().ToList();
+
+        var parlamentares = (await contexto.Parlamentares
+            .AsNoTracking()
+            .Where(p => parlamentarIds.Contains(p.Id))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false))
+            .ToDictionary(
+                p => p.Id,
+                p => new ParlamentarDaDespesa
+                {
+                    Id = p.Id,
+                    NomeParlamentar = p.NomeParlamentar,
+                    SiglaPartido = p.SiglaPartido,
+                    Uf = p.Uf,
+                    Casa = NomeDaCasa(p.Tipo),
+                    FotoUrl = p.FotoUrl,
+                });
+
+        return CadeiasDeSocios.Montar(
+            parlamentarId, pagamentos, vinculos, ambiguos, empresas, parlamentares);
+    }
+
     /// <summary>Teto do feed. Leitor de RSS guarda o que já viu; cem itens cobrem meses.</summary>
     public const int MaximoDeAchadosRecentes = 100;
 

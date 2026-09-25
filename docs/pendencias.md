@@ -83,6 +83,16 @@ A [Etapa 11](registro/etapa-11-grafo-do-estado.md) fechou a metade das **estrutu
 | Agendar `coletar-estado` | Depende do deploy (§1). Cabe no mesmo Cloud Run Job do `ciclo-mensal`; a varredura leva ~9 min e é sequencial por natureza da fonte |
 | Ligar o grafo às despesas | O Senado tem 5 unidades no SIORG e 118 senadores na nossa base. São cadastros diferentes; a ponte é pelo órgão, não por pessoa, e ainda não existe |
 
+## 5b. Decisão sua, aberta pela Fase 5
+
+**Mostrar o nome do sócio em comum?** Hoje a tela mostra só a existência do sócio, a
+qualificação dele nas duas empresas e os dois CNPJs. Mostrar o nome deixa a ligação
+verificável num clique, e expõe mais um particular ao lado de um político. Recomendação
+minha: mostrar — o dado é público no QSA, e o produto já publica nome de pessoa física
+quando o fornecedor é MEI, porque a razão social do MEI é o nome do dono. Mas hoje nenhuma
+página publica nome de **sócio**, e esta seria a primeira: fica com a sua palavra, porque é
+decisão com peso de LGPD.
+
 ## 6. Bloqueadas em conta de terceiro
 
 Favoritar, contestar, pagar, Camada 2 (LLM) e a API B2B dependem de Mercado Pago, Google AI
