@@ -99,7 +99,7 @@ A ordem que eu proporia, agora que o grafo fechou a metade das estruturas:
 
 ---
 
-## 6. A fonte de notícia por órgão — medida em 2026-09-21, e nenhuma serve
+## 7. A fonte de notícia por órgão — medida em 2026-09-21, e nenhuma serve
 
 A barra lateral do mapa do Estado já traz *o que mudou nesta unidade*, que é apuração
 nossa. Faltava o segundo feed, de **notícia de verdade** sobre o órgão. Quatro rotas foram
