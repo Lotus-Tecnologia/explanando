@@ -14,7 +14,7 @@ escritos de memória — errar um faz o serviço subir e não funcionar.
 | Serviço | Para quê | Plano | Observação |
 |---|---|---|---|
 | **Registro.br** | O domínio `explanando.com.br` | ~R$ 40/ano | Hoje **não resolve em DNS**, e ele já está nos canônicos e no `sitemap.xml`. Exige CPF ou CNPJ brasileiro |
-| **Neon** | PostgreSQL | Gratuito (512 MB) | A base ocupa **317 MB** — cabe com 38% de folga. Aperta quando a legislatura 57 fechar, em jan/2027 |
+| ~~**Neon**~~ | PostgreSQL | ~~Gratuito (512 MB)~~ | ⚠️ **Substituído pelo [ADR-0019](decisoes/ADR-0019-tudo-numa-vps.md).** Os 317 MB registrados aqui são de antes das Etapas 11, 12 e 14: medido em 2026-09-24, a base local já ocupa **364 MB só com a Câmara**. O banco passa a rodar na VPS |
 | **Google Cloud** | Cloud Run (API), Cloud Run Jobs (worker), Artifact Registry (imagens), Cloud Scheduler | Gratuito na faixa de uso | Exige cartão cadastrado mesmo dentro da cota gratuita |
 | **Cloudflare** | DNS, CDN e WAF | Gratuito | É ela que absorve o pico viral (ADR-0001). Sem ela, a premissa de custo não se sustenta |
 | **Cloudflare Workers** | Frontend Next.js, via `@opennextjs/cloudflare` | Gratuito | Mesma conta do DNS. Permite uso comercial e não se importa com quem é dono do repositório — ver [ADR-0015](decisoes/ADR-0015-frontend-no-cloudflare.md) |
