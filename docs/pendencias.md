@@ -6,6 +6,9 @@ Em 18/09/2026 o foco mudou para o **grafo do Estado** (a adaptação do
 [CivLab](https://graph.civlab.org/us) ao Brasil). Tudo abaixo estava em andamento ou
 decidido e **não foi abandonado** — está esperando.
 
+> **O que vem a seguir está em [`plano-de-execucao.md`](plano-de-execucao.md)** — as
+> ideias de 22/09/2026, em fases. Este arquivo continua sendo o do que está *esperando*.
+
 > **Por que este arquivo existe.** O `estado_atual_projeto.md` descreve onde o projeto está;
 > este descreve o que foi deliberadamente deixado de lado, para que retomar não dependa de
 > alguém lembrar. Item que sai daqui vai para uma etapa em [`registro/`](registro/README.md).

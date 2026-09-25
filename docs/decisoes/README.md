@@ -27,6 +27,8 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0017](ADR-0017-mapa-de-fornecedores.md) | O mapa de pessoas usa a aresta que temos, não a que a referência usa | 2026-09-19 | Aceita |
 | [0018](ADR-0018-cadeiras-de-comando.md) | Nome de pessoa no banco, uma vez, com endereço de origem | 2026-09-21 | Aceita |
 | [0019](ADR-0019-tudo-numa-vps.md) | Tudo numa VPS, e o banco deixa de caber em 512 MB | 2026-09-24 | Aceita |
+| [0020](ADR-0020-participacao-publica-adiada.md) | Discussão pública e notas da comunidade esperam audiência e parecer jurídico | 2026-09-24 | **Adiada** |
+| [0021](ADR-0021-ia-espera-receita.md) | A narrativa por IA espera a receita pagar por ela | 2026-09-24 | **Adiada** |
 
 ## Questões abertas
 
