@@ -209,17 +209,18 @@ export interface EmpresaNaCadeia {
   valor: number;
 }
 
-/**
- * Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar.
- *
- * O sócio **não tem nome** no contrato: é pessoa privada, e publicá-lo está em decisão (LGPD).
- * A ligação se confere pelos dois CNPJs.
- */
+/** Uma pessoa sócia das duas empresas. O nome é o do QSA; o CPF não vem, nem mascarado. */
+export interface SocioEmComum {
+  nome: string;
+  qualificacao: string;
+}
+
+/** Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar. */
 export interface CadeiaDeSocio {
   fornecedor: EmpresaNaCadeia;
   outraEmpresa: EmpresaNaCadeia;
   sociosEmComum: number;
-  qualificacoes: string[];
+  socios: SocioEmComum[];
   outrosParlamentares: { parlamentar: ParlamentarDaDespesa; valor: number }[];
 }
 

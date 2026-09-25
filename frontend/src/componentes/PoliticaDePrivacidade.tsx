@@ -67,6 +67,12 @@ export function PoliticaDePrivacidade() {
           existe.
         </p>
         <p>
+          <strong>O nome do sócio é publicado</strong> em um único lugar: quando a mesma pessoa é
+          sócia de duas empresas pagas pela cota de parlamentares diferentes, no bloco “Sócios em
+          comum” do perfil. Aparece o nome e a qualificação, como a Receita os publica, ao lado
+          dos dois CNPJs em que podem ser conferidos. O CPF não é publicado, nem mascarado.
+        </p>
+        <p>
           O CPF do sócio chega <strong>mascarado da própria fonte</strong> — a Receita expõe
           apenas seis dos onze dígitos, e o número completo nunca entra neste sistema.
         </p>

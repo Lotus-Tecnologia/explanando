@@ -15,7 +15,7 @@ const RESULTADO: QuemBeneficiaQuem = {
       fornecedor: { documento: "43.783.350/0001-84", razaoSocial: "INSTITUTO A", valor: 519_700 },
       outraEmpresa: { documento: "55.292.471/0001-02", razaoSocial: "AGENCIA B", valor: 259_000 },
       sociosEmComum: 1,
-      qualificacoes: ["Sócio-Administrador nas duas"],
+      socios: [{ nome: "FULANO DE TAL", qualificacao: "Sócio-Administrador nas duas" }],
       outrosParlamentares: [
         {
           parlamentar: {
@@ -40,6 +40,8 @@ describe("SociosEmComum", () => {
     expect(screen.getByText("INSTITUTO A")).toBeInTheDocument();
     expect(screen.getByText("43.783.350/0001-84")).toBeInTheDocument();
     expect(screen.getByText("1 sócio em comum")).toBeInTheDocument();
+    expect(screen.getByText("FULANO DE TAL")).toBeInTheDocument();
+    expect(screen.getByText("Sócio-Administrador nas duas")).toBeInTheDocument();
     expect(screen.getByText("AGENCIA B")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Carlos Jordy" })).toHaveAttribute("href", "/parlamentares/b");
   });

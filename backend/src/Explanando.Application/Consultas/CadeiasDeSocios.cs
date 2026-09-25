@@ -29,14 +29,24 @@ public sealed record OutroParlamentar
     public decimal Valor { get; init; }
 }
 
+/// <summary>Uma pessoa sócia das duas empresas, e o papel dela em cada uma.</summary>
+public sealed record SocioEmComum
+{
+    /// <summary>
+    /// O nome como o quadro societário da Receita o publica.
+    ///
+    /// <para><b>Publicado por decisão do Gustavo em 2026-09-25</b> (plano de execução, Fase 5).
+    /// É dado público no QSA, e é o que deixa a ligação verificável num clique. O CPF — mesmo
+    /// mascarado — continua de fora: ele serve para casar, não para mostrar.</para>
+    /// </summary>
+    public required string Nome { get; init; }
+
+    /// <summary>"Sócio-Administrador nas duas", ou uma qualificação em cada.</summary>
+    public required string Qualificacao { get; init; }
+}
+
 /// <summary>
 /// Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar.
-///
-/// <para><b>O sócio não tem nome aqui</b>, e é de propósito. Sócio é pessoa privada: o nome
-/// dele é público no quadro societário da Receita, mas pôr um particular num desenho ao lado
-/// de um político é outra coisa. Mostrar o nome é decisão com peso de LGPD, e está com o dono
-/// do produto (plano de execução, Fase 5). Até lá, a ligação se confere pelos dois CNPJs — o
-/// quadro de cada empresa é consulta pública.</para>
 /// </summary>
 public sealed record CadeiaDeSocio
 {
@@ -47,8 +57,8 @@ public sealed record CadeiaDeSocio
     /// <summary>Quantas pessoas são sócias das duas empresas ao mesmo tempo.</summary>
     public int SociosEmComum { get; init; }
 
-    /// <summary>A qualificação de cada sócio em comum nas duas empresas — "Sócio-Administrador".</summary>
-    public IReadOnlyList<string> Qualificacoes { get; init; } = [];
+    /// <summary>Quem é sócio das duas, e em que papel.</summary>
+    public IReadOnlyList<SocioEmComum> Socios { get; init; } = [];
 
     public IReadOnlyList<OutroParlamentar> OutrosParlamentares { get; init; } = [];
 }
@@ -195,9 +205,13 @@ public static class CadeiasDeSocios
                         Valor = grupo.GroupBy(l => l.Q).Sum(q => q.First().VQ),
                     },
                     SociosEmComum = sociosEmComum.Count,
-                    Qualificacoes = [.. sociosEmComum
-                        .Select(q => QualificacaoLegivel(q.QualF, q.QualG))
-                        .Distinct(StringComparer.Ordinal)],
+                    Socios = [.. sociosEmComum
+                        .Select(l => new SocioEmComum
+                        {
+                            Nome = l.Socio.Item1,
+                            Qualificacao = QualificacaoLegivel(l.QualF, l.QualG),
+                        })
+                        .OrderBy(s => s.Nome, StringComparer.Ordinal)],
                     OutrosParlamentares = [.. grupo
                         .GroupBy(l => l.Q)
                         .Where(q => parlamentares.ContainsKey(q.Key))

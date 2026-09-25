@@ -10,8 +10,9 @@ import { formatarMoedaCompacta, formatarNumero, formatarReais } from "@/lib/form
  * desenhada da esquerda para a direita, e em pé no celular, sempre na mesma ordem: é uma
  * sequência de fato, e a ordem é o conteúdo.
  *
- * **O sócio não tem nome.** É pessoa privada, e mostrar o nome está em decisão (LGPD). A
- * ligação se confere pelos dois CNPJs, cujo quadro societário é consulta pública.
+ * **O sócio aparece pelo nome**, como o quadro societário da Receita o publica — decisão de
+ * 2026-09-25, para a ligação ser verificável num clique. É pessoa privada, e por isso o nome
+ * vem sem adjetivo e sem CPF, ao lado dos dois CNPJs em que ele pode ser conferido.
  */
 export function SociosEmComum({
   resultado,
@@ -89,8 +90,11 @@ function Cadeia({
           ↕
         </span>
         <span className="mt-1 font-semibold text-titulo">{socios}</span>
-        {cadeia.qualificacoes.map((qualificacao) => (
-          <span key={qualificacao}>{qualificacao}</span>
+        {cadeia.socios.map((socio) => (
+          <span key={socio.nome} className="mt-1">
+            <span className="block font-semibold text-texto">{socio.nome}</span>
+            {socio.qualificacao}
+          </span>
         ))}
       </div>
 

@@ -63,3 +63,7 @@ ref/
 # ---------- Ferramentas locais ----------
 # Configuracao do preview do Claude Code nesta maquina (porta, comando).
 .claude/launch.json
+
+# ---------- Dados brutos baixados de fontes publicas ----------
+# Lotes anuais (TSE) de centenas de MB: moram fora do git e se rebaixam pelo script.
+dados/

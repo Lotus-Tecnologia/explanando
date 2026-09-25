@@ -67,17 +67,22 @@ public class CadeiasDeSociosTests
         cadeia.Fornecedor.Valor.ShouldBe(80_000m);
         cadeia.OutraEmpresa.RazaoSocial.ShouldBe("AGENCIA B LTDA");
         cadeia.SociosEmComum.ShouldBe(1);
-        cadeia.Qualificacoes.ShouldBe(["Sócio-Administrador nas duas"]);
+        var socio = cadeia.Socios.ShouldHaveSingleItem();
+        socio.Nome.ShouldBe("FULANO DE TAL");
+        socio.Qualificacao.ShouldBe("Sócio-Administrador nas duas");
         cadeia.OutrosParlamentares.ShouldHaveSingleItem().Parlamentar.Id.ShouldBe(Outro);
     }
 
     [Fact]
-    public void O_nome_do_socio_nao_sai_na_resposta()
+    public void O_nome_sai_e_o_cpf_nao()
     {
-        // A decisão de mostrar o nome é do dono do produto (LGPD). Até lá, nenhum campo o leva.
-        var resultado = Montar(Basico, SocioNasDuas("BELTRANO SECRETO"));
+        // Decisão de 2026-09-25: o nome do QSA é publicado, para a ligação ser verificável.
+        // O CPF mascarado serve para casar, e não vai para a resposta.
+        var resultado = Montar(Basico, SocioNasDuas("BELTRANO DE TAL", "***987654**"));
 
-        System.Text.Json.JsonSerializer.Serialize(resultado).ShouldNotContain("BELTRANO");
+        var json = System.Text.Json.JsonSerializer.Serialize(resultado);
+        json.ShouldContain("BELTRANO DE TAL");
+        json.ShouldNotContain("987654");
     }
 
     [Fact]

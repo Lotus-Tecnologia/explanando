@@ -172,12 +172,11 @@ ganha seta de crescimento.
 
 ---
 
-## Fase 5 — Quem beneficia quem · **M** · ✅ entregue em 2026-09-25, **sem o nome do sócio**
+## Fase 5 — Quem beneficia quem · **M** · ✅ entregue em 2026-09-25
 
-> **Entregue na saída conservadora, à espera da sua decisão.** A tela mostra "1 sócio em
-> comum · Sócio-Administrador nas duas" e os dois CNPJs — o quadro societário de cada um é
-> consulta pública na Receita, e a ligação se confere por ali. O nome do sócio não sai nem no
-> JSON (há teste garantindo). Se a decisão for mostrar, é um campo a mais em `CadeiaDeSocio`.
+> **O nome do sócio aparece desde 2026-09-25, por decisão do Gustavo.** Primeiro saiu sem
+> ele, à espera da decisão; agora sai o nome e a qualificação como o QSA os publica, e o CPF
+> continua de fora, nem mascarado.
 >
 > **Medido na base local:** sem corte, 18.327 pares de empresas ligados, com até 271 por
 > deputado — quase tudo nota isolada. Com R$ 50 mil em cada ponta e sócio de alcance 2 a 5,

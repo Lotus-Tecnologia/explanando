@@ -64,8 +64,8 @@ public static class EndpointsPublicos
                 + "O sócio casa por nome e CPF mascarado, literalmente; nome que aparece com mais "
                 + "de um CPF fica de fora. Sócio que alcança mais de 5 parlamentares é "
                 + "infraestrutura e não liga ninguém. Cada ponta precisa de R$ 50 mil, e filial "
-                + "não é outra empresa. O nome do sócio não é publicado — a ligação se confere "
-                + "pelos dois CNPJs. Ter sócio em comum não é irregularidade.");
+                + "não é outra empresa. O nome do sócio sai como o quadro societário da Receita o "
+                + "publica; o CPF, nem mascarado. Ter sócio em comum não é irregularidade.");
 
         grupo.MapGet("/achados-recentes", ListarAchadosRecentesAsync)
             .WithName("ListarAchadosRecentes")
