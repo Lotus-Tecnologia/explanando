@@ -60,6 +60,15 @@ public interface IConsultasPublicas
         int itens,
         CancellationToken cancelamento = default);
 
+    /// <summary>
+    /// Os maiores fornecedores do parlamentar, ano a ano — a escada da Fase 4. Nulo se o
+    /// parlamentar não existe.
+    /// </summary>
+    Task<PagamentosPorFornecedor?> ObterPagamentosPorFornecedorAsync(
+        Guid parlamentarId,
+        int quantos,
+        CancellationToken cancelamento = default);
+
     /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
     Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,

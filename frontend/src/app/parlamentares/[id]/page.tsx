@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import {
   coletarIdsParaPreRender,
   listarDespesas,
+  obterPagamentosPorFornecedor,
   obterPerfil,
   ranquearTudo,
 } from "@/lib/api";
@@ -14,6 +15,7 @@ import { CASAS } from "@/lib/casas";
 import { BlocoDeCobertura } from "@/componentes/Abstencao";
 import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
 import { CompararCom } from "@/componentes/CompararCom";
+import { EscadaDeFornecedores } from "@/componentes/EscadaDeFornecedores";
 import { retratoSeguro } from "@/lib/fotos";
 import { ListaDeDespesas } from "@/componentes/ListaDeDespesas";
 import { SerieMensal } from "@/componentes/SerieMensal";
@@ -111,10 +113,10 @@ export default async function Perfil({
     notFound();
   }
 
-  const despesas = await listarDespesas(id, {
-    comFlag: true,
-    itens: ACHADOS_EM_DESTAQUE,
-  });
+  const [despesas, escada] = await Promise.all([
+    listarDespesas(id, { comFlag: true, itens: ACHADOS_EM_DESTAQUE }),
+    obterPagamentosPorFornecedor(id),
+  ]);
 
   const casaDoPerfil = CASAS.find((candidata) => candidata.nomeOficial === perfil.casa);
 
@@ -249,6 +251,12 @@ export default async function Perfil({
       <div className="mt-8">
         <SerieMensal serie={perfil.serieMensal} idDoParlamentar={perfil.id} />
       </div>
+
+      {escada ? (
+        <div className="mt-8">
+          <EscadaDeFornecedores escada={escada} />
+        </div>
+      ) : null}
 
       <section aria-labelledby="titulo-despesas" className="mt-8">
         <div className="flex flex-wrap items-end justify-between gap-3">

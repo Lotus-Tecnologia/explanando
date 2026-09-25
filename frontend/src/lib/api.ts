@@ -11,6 +11,7 @@ import type {
   ItemDoRanking,
   OrdenacaoDoRanking,
   Pagina,
+  PagamentosPorFornecedor,
   PerfilDoParlamentar,
 } from "./contrato";
 
@@ -230,6 +231,13 @@ export async function listarDespesas(
   return buscar<Pagina<ItemDeDespesa>>(
     `/api/v1/parlamentares/${id}/despesas?${consulta.toString()}`,
   );
+}
+
+/** Os maiores fornecedores do parlamentar, ano a ano. Nulo se o parlamentar não existe. */
+export function obterPagamentosPorFornecedor(
+  parlamentarId: string,
+): Promise<PagamentosPorFornecedor | null> {
+  return buscar<PagamentosPorFornecedor>(`/api/v1/parlamentares/${parlamentarId}/fornecedores`);
 }
 
 /**

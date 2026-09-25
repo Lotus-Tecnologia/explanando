@@ -47,6 +47,15 @@ public static class EndpointsPublicos
             .WithName("ListarDespesas")
             .WithSummary("Despesas do parlamentar, com os achados de cada uma.");
 
+        grupo.MapGet("/parlamentares/{id:guid}/fornecedores", ObterPagamentosPorFornecedorAsync)
+            .WithName("ObterPagamentosPorFornecedor")
+            .WithSummary("Os maiores fornecedores do parlamentar, ano a ano.")
+            .WithDescription(
+                "Cada ano diz em quantos meses houve despesa; o que não tem os doze é parcial, "
+                + "e a variação só é medida entre os dois últimos anos completos seguidos. "
+                + "Fornecedor que não recebeu nos dois não tem variação — tem começo ou fim. "
+                + "`quantos` vai de 1 a 30; o padrão é 10.");
+
         grupo.MapGet("/achados-recentes", ListarAchadosRecentesAsync)
             .WithName("ListarAchadosRecentes")
             .WithSummary("As despesas com achado que entraram na base por último.")
@@ -60,6 +69,20 @@ public static class EndpointsPublicos
             .WithSummary("Uma despesa e seus achados.");
 
         return rotas;
+    }
+
+    private static async Task<IResult> ObterPagamentosPorFornecedorAsync(
+        IConsultasPublicas consultas,
+        Guid id,
+        int? quantos,
+        CancellationToken cancelamento)
+    {
+        var escada = await consultas
+            .ObterPagamentosPorFornecedorAsync(
+                id, quantos ?? EscadaDePagamentos.FornecedoresPadrao, cancelamento)
+            .ConfigureAwait(false);
+
+        return escada is null ? Results.NotFound() : Results.Ok(escada);
     }
 
     private static async Task<IResult> ListarAchadosRecentesAsync(

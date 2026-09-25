@@ -164,6 +164,44 @@ export interface PerfilDoParlamentar {
   fornecedoresDistintos: number;
 }
 
+/** Um ano da escada de fornecedores. Parcial é o que não tem os doze meses com despesa. */
+export interface AnoDaEscada {
+  ano: number;
+  mesesComDespesa: number;
+  parcial: boolean;
+}
+
+export interface ValorNoAno {
+  ano: number;
+  valor: number;
+  despesas: number;
+}
+
+export interface FornecedorNaEscada {
+  documento: string;
+  nome: string;
+  total: number;
+  despesas: number;
+
+  /** Um valor por ano da escada, na ordem dos anos — zero onde não houve pagamento. */
+  porAno: ValorNoAno[];
+
+  /**
+   * De um ano completo para o seguinte (1 = +100%). Nula quando não há os dois anos, ou quando
+   * o fornecedor não recebeu nos dois: um ano só não tem crescimento, tem começo.
+   */
+  variacao: number | null;
+}
+
+/** Os maiores fornecedores de um parlamentar, ano a ano — a Fase 4. */
+export interface PagamentosPorFornecedor {
+  anos: AnoDaEscada[];
+  anoBaseDaVariacao: number | null;
+  anoDaVariacao: number | null;
+  fornecedores: FornecedorNaEscada[];
+  totalDeFornecedores: number;
+}
+
 /** A parte do índice que vem de uma regra. */
 export interface ParcelaDoIndice {
   codigo: string;

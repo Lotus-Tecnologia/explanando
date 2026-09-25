@@ -145,7 +145,13 @@ novo — e não um item dizendo "nada encontrado".
 
 ---
 
-## Fase 4 — Timeline de pagamentos · **P**
+## Fase 4 — Timeline de pagamentos · **P** · ✅ entregue em 2026-09-25
+
+> **O que a medição mudou.** O plano dizia que o primeiro ano começa em fevereiro de 2023.
+> Na base, 2023 tem os doze meses — há deputados com despesa em janeiro, da legislatura
+> anterior. Por isso "parcial" ficou **por parlamentar**: o ano em que *ele* não teve despesa
+> nos doze meses. Cobre o primeiro ano do mandato, o ano corrente, o suplente que assumiu no
+> meio e a licença — com a mesma regra.
 
 **Objetivo.** A escada do exemplo: *2022 — 50 mil · 2023 — 200 mil · 2024 — 800 mil*, por
 fornecedor, dentro do perfil do parlamentar.

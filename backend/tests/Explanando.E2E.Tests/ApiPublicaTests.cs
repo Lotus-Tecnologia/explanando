@@ -377,6 +377,31 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task A_escada_de_fornecedores_marca_os_anos_parciais()
+    {
+        // A semente espalha as despesas por seis meses de 2026: um ano só, e parcial.
+        var escada = await LerAsync<PagamentosPorFornecedor>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}/fornecedores"));
+
+        escada.Anos.ShouldNotBeEmpty();
+        escada.Anos.ShouldAllBe(ano => ano.Parcial);
+        escada.AnoDaVariacao.ShouldBeNull();
+
+        var fornecedor = escada.Fornecedores.ShouldHaveSingleItem();
+        fornecedor.Documento.ShouldBe("36.826.246/0001-64", "formatado, como a despesa o publica");
+        fornecedor.Variacao.ShouldBeNull();
+        fornecedor.PorAno.Sum(valor => valor.Valor).ShouldBe(fornecedor.Total);
+    }
+
+    [Fact]
+    public async Task A_escada_de_parlamentar_inexistente_e_404()
+    {
+        var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.CreateVersion7()}/fornecedores");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Parlamentar_inexistente_devolve_404()
     {
         var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");

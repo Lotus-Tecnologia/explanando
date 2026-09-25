@@ -333,6 +333,47 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         };
     }
 
+    public async Task<PagamentosPorFornecedor?> ObterPagamentosPorFornecedorAsync(
+        Guid parlamentarId,
+        int quantos,
+        CancellationToken cancelamento = default)
+    {
+        if (!await contexto.Parlamentares.AnyAsync(p => p.Id == parlamentarId, cancelamento)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        // Em memória, e não agrupado no banco: a competência é objeto de valor com conversor
+        // para AAAAMM, e o LINQ não enxerga o ano dentro dela. São alguns milhares de linhas
+        // por parlamentar, recortadas pelo índice dele.
+        var linhas = await contexto.Despesas
+            .AsNoTracking()
+            .Where(despesa => despesa.ParlamentarId == parlamentarId)
+            .Select(despesa => new
+            {
+                despesa.DocumentoFornecedor,
+                despesa.NomeFornecedor,
+                despesa.Competencia,
+                despesa.ValorLiquido,
+                despesa.DataDocumento,
+            })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var pagamentos = linhas
+            .Select(linha => new PagamentoBruto(
+                linha.DocumentoFornecedor.Formatado,
+                linha.NomeFornecedor,
+                linha.Competencia.Ano,
+                linha.Competencia.Mes,
+                linha.ValorLiquido,
+                linha.DataDocumento))
+            .ToList();
+
+        return EscadaDePagamentos.Montar(pagamentos, Math.Clamp(quantos, 1, 30));
+    }
+
     /// <summary>Teto do feed. Leitor de RSS guarda o que já viu; cem itens cobrem meses.</summary>
     public const int MaximoDeAchadosRecentes = 100;
 
