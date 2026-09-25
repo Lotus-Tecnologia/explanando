@@ -10,7 +10,7 @@ import {
   obterMapaDoEstado,
   obterSerieDePessoal,
 } from "@/lib/api";
-import { formatarNumero } from "@/lib/formato";
+import { formatarMomento, formatarNumero } from "@/lib/formato";
 import { corDaEscala, corDoPoder } from "@/lib/grafo";
 
 /* Ver a nota em camara/page.tsx: precisa ser literal. */
@@ -95,7 +95,7 @@ export default async function Pagina() {
             <p className="mt-3 text-sm text-texto-suave">
               Consultado em{" "}
               <time dateTime={mapa.ultimaColeta}>
-                {new Date(mapa.ultimaColeta).toLocaleDateString("pt-BR")}
+                {formatarMomento(mapa.ultimaColeta)}
               </time>{" "}
               no SIORG, o cadastro oficial da estrutura organizacional.
             </p>

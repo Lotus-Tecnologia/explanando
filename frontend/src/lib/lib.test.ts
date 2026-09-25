@@ -5,6 +5,7 @@ import {
   ranquearTudo,
 } from "./api";
 import { metadadosDoParlamentar } from "./metadados";
+import { formatarDataDoDocumento, formatarMomento } from "./formato";
 import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { CASAS } from "./casas";
 import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "./ordenacoes";
@@ -720,5 +721,20 @@ describe("as unidades do Estado no sitemap", () => {
 
     expect(enderecos).toContain(`${URL_BASE}/estado`);
     expect(enderecos).toContain(`${URL_BASE}/parlamentares/a1`);
+  });
+});
+
+// ── Datas: dia de documento e instante ──────────────────────────────────────────────────
+
+describe("formatarDataDoDocumento e formatarMomento", () => {
+  it("a data do documento é o dia da nota, e não o dia anterior no fuso de Brasília", () => {
+    // Meia-noite UTC é 21h do dia anterior em Brasília. O perfil mostrava 26/07 para uma
+    // nota de 27/07.
+    expect(formatarDataDoDocumento("2026-07-27T00:00:00+00:00")).toBe("27/07/2026");
+  });
+
+  it("um instante sai no horário de Brasília, seja qual for o fuso do servidor", () => {
+    // 01h UTC do dia 22 ainda é dia 21 em Brasília.
+    expect(formatarMomento("2026-08-22T01:30:00+00:00")).toBe("21/08/2026");
   });
 });

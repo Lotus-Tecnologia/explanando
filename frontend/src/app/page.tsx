@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   description:
     "Quanto deputados e senadores consumiram da cota parlamentar, e os indicadores de um "
     + "motor de regras determinístico. Descreve inconsistências; não imputa conduta.",
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    types: { "application/rss+xml": "/feed.xml" },
+  },
 };
 
 /**

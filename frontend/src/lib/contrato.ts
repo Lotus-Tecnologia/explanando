@@ -258,6 +258,38 @@ export interface ParlamentarDaDespesa {
   fotoUrl: string | null;
 }
 
+/**
+ * Uma despesa com achado, como o feed de alertas a publica.
+ *
+ * `registradaEm` é a data do alerta — quando a despesa entrou na base —, e não a da flag, que
+ * a varredura recria a cada passada. É o que impede o feed de "renovar" toda despesa antiga a
+ * cada ciclo.
+ */
+export interface AchadoRecente {
+  despesaId: string;
+  registradaEm: string | null;
+  parlamentar: ParlamentarDaDespesa;
+  tipoDespesa: string;
+  nomeFornecedor: string | null;
+  documentoFornecedor: string;
+  valorLiquido: number;
+  dataDocumento: string;
+  ano: number;
+  mes: number;
+  regras: RegraDoAchado[];
+}
+
+export interface RegraDoAchado {
+  codigo: string;
+  gravidade: Gravidade;
+
+  /** O que a regra procura, na redação de leitor do catálogo. */
+  descricaoDaRegra: string | null;
+
+  /** A frase do achado sobre esta despesa. */
+  detalhe: string;
+}
+
 /** Uma despesa com o parlamentar a que ela pertence. É o que o endereço público dela devolve. */
 export interface DespesaDetalhada {
   despesa: ItemDeDespesa;

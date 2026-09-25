@@ -1,5 +1,5 @@
 import type { ContagemDoEstado, MudancaDoEstado } from "@/lib/contrato";
-import { formatarNumero } from "@/lib/formato";
+import { formatarMomento, formatarNumero } from "@/lib/formato";
 
 /**
  * Os números do grafo, em barra empilhada.
@@ -151,9 +151,9 @@ export function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
             "Detectada em", e não "aconteceu em". A fonte não data a mudança — nós a
             deduzimos comparando duas coletas, então o que sabemos é quando VIMOS.
           */
-          title={`Detectada em ${new Date(mudanca.detectadaEm).toLocaleDateString("pt-BR")}`}
+          title={`Detectada em ${formatarMomento(mudanca.detectadaEm)}`}
         >
-          detectada em {new Date(mudanca.detectadaEm).toLocaleDateString("pt-BR")}
+          detectada em {formatarMomento(mudanca.detectadaEm)}
         </time>
       </div>
 

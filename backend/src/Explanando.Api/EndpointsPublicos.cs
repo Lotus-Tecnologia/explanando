@@ -47,11 +47,32 @@ public static class EndpointsPublicos
             .WithName("ListarDespesas")
             .WithSummary("Despesas do parlamentar, com os achados de cada uma.");
 
+        grupo.MapGet("/achados-recentes", ListarAchadosRecentesAsync)
+            .WithName("ListarAchadosRecentes")
+            .WithSummary("As despesas com achado que entraram na base por último.")
+            .WithDescription(
+                "É o que o feed de alertas publica. `parlamentar` recorta para um só; sem ele, "
+                + "vêm as de todos. A ordem é a de entrada na base, e `registradaEm` é a data do "
+                + "alerta — não a da flag, que a varredura recria a cada passada. Até 100 itens.");
+
         grupo.MapGet("/despesas/{id:guid}", ObterDespesaAsync)
             .WithName("ObterDespesa")
             .WithSummary("Uma despesa e seus achados.");
 
         return rotas;
+    }
+
+    private static async Task<IResult> ListarAchadosRecentesAsync(
+        IConsultasPublicas consultas,
+        Guid? parlamentar,
+        int? itens,
+        CancellationToken cancelamento)
+    {
+        var achados = await consultas
+            .ListarAchadosRecentesAsync(parlamentar, itens ?? 50, cancelamento)
+            .ConfigureAwait(false);
+
+        return achados is null ? Results.NotFound() : Results.Ok(achados);
     }
 
     private static async Task<IResult> RanquearAsync(

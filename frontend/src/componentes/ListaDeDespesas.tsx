@@ -3,6 +3,7 @@ import { Comprovante, ValoresDaDespesa } from "./Comprovante";
 import { RespostasDoGabinete } from "./RespostasDoGabinete";
 import { TagDeGravidade } from "./TagDeGravidade";
 import type { ItemDeDespesa } from "@/lib/contrato";
+import { formatarDataDoDocumento } from "@/lib/formato";
 
 /**
  * A lista de despesas, compartilhada pelo perfil e pela listagem completa.
@@ -23,7 +24,7 @@ function LinhaDaDespesa({ despesa, casa }: { despesa: ItemDeDespesa; casa?: stri
             <span className="numeros"> · {despesa.documentoFornecedor}</span>
           </p>
           <p className="numeros mt-0.5 text-xs text-texto-suave">
-            {new Date(despesa.dataDocumento).toLocaleDateString("pt-BR")} · competência{" "}
+            {formatarDataDoDocumento(despesa.dataDocumento)} · competência{" "}
             {String(despesa.mes).padStart(2, "0")}/{despesa.ano}
           </p>
         </div>

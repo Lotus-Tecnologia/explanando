@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CadeiraDoMapa, CamadaDoMapa, MapaDePoder as Mapa } from "@/lib/contrato";
 import { iniciais, retratoSeguro } from "@/lib/fotos";
 import { corDoPoder } from "@/lib/grafo";
+import { formatarMomento } from "@/lib/formato";
 
 /**
  * O mapa de poder de um poder: quem ocupa as cadeiras de comando, em camadas.
@@ -201,7 +202,7 @@ export function ProcedenciaDoMapa({ mapa, ressalva }: { mapa: Mapa; ressalva: st
           <>
             Verificado desde{" "}
             <time dateTime={mapa.verificadoDesde} className="numeros">
-              {new Date(mapa.verificadoDesde).toLocaleDateString("pt-BR")}
+              {formatarMomento(mapa.verificadoDesde)}
             </time>
             {" — é a leitura mais antiga do conjunto, não a mais recente."}
           </>

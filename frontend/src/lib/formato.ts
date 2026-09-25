@@ -88,3 +88,26 @@ export function porcentagensInteiras(fatias: number[]): number[] {
 
   return inteiras;
 }
+
+/**
+ * A data de um documento: dia do calendário, sem hora.
+ *
+ * A API entrega `2026-07-27T00:00:00+00:00` — meia-noite em UTC, que é como uma data sem hora
+ * chega em JSON. Formatar isso no fuso de Brasília dá **26/07**: a meia-noite UTC ainda é dia
+ * 26 às 21h aqui. Era o que o perfil exibia — um dia antes da nota fiscal. Lida em UTC, a
+ * data é a do documento.
+ */
+export function formatarDataDoDocumento(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
+
+/**
+ * Um instante — uma varredura, uma coleta, uma resposta enviada —, no horário de Brasília.
+ *
+ * O fuso é explícito porque quem renderiza não está no Brasil: o servidor roda em UTC, e uma
+ * varredura às 22h de Brasília viraria "amanhã" na página. Explícito também evita que o
+ * servidor e o navegador escrevam datas diferentes na mesma tela.
+ */
+export function formatarMomento(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}

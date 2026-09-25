@@ -49,6 +49,10 @@ export function Rodape() {
           className="numeros text-titulo underline underline-offset-2"
         >
           {ENCARREGADO.email}
+        </a>{" "}
+        ·{" "}
+        <a href="/feed.xml" className="font-semibold text-titulo underline underline-offset-2">
+          Novos indicadores por RSS
         </a>
       </p>
     </footer>

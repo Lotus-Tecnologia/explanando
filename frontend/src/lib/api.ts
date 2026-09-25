@@ -1,5 +1,6 @@
 import { CASAS, type Casa } from "./casas";
 import type {
+  AchadoRecente,
   DespesaDetalhada,
   MapaDePoderCompleto,
   MapaDoEstado,
@@ -229,6 +230,25 @@ export async function listarDespesas(
   return buscar<Pagina<ItemDeDespesa>>(
     `/api/v1/parlamentares/${id}/despesas?${consulta.toString()}`,
   );
+}
+
+/**
+ * As despesas com achado que entraram na base por último — o conteúdo do feed de alertas.
+ *
+ * Nulo quando o parlamentar não existe: a API responde 404 em vez de lista vazia, porque
+ * lista vazia diria que ele existe e não teve achado novo.
+ */
+export function listarAchadosRecentes(
+  parlamentarId?: string,
+  itens = 50,
+): Promise<AchadoRecente[] | null> {
+  const consulta = new URLSearchParams({ itens: String(itens) });
+
+  if (parlamentarId) {
+    consulta.set("parlamentar", parlamentarId);
+  }
+
+  return buscar<AchadoRecente[]>(`/api/v1/achados-recentes?${consulta.toString()}`);
 }
 
 /** Uma despesa e o parlamentar dela. É o endereço que um link compartilhado abre. */

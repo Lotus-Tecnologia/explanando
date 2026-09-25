@@ -48,6 +48,18 @@ public interface IConsultasPublicas
         FiltroDeDespesas filtro,
         CancellationToken cancelamento = default);
 
+    /// <summary>
+    /// As despesas com achado que entraram na base por último — o que o feed de alertas
+    /// publica. Com <paramref name="parlamentarId"/>, só as dele; sem, as de todos.
+    ///
+    /// <para>Nulo quando o parlamentar pedido não existe: lista vazia diria que ele existe e
+    /// não teve achado novo.</para>
+    /// </summary>
+    Task<IReadOnlyList<AchadoRecente>?> ListarAchadosRecentesAsync(
+        Guid? parlamentarId,
+        int itens,
+        CancellationToken cancelamento = default);
+
     /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
     Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,

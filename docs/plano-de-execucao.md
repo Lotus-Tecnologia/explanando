@@ -117,7 +117,7 @@ canônica.
 
 ---
 
-## Fase 3 — Alertas por RSS · **P**
+## Fase 3 — Alertas por RSS · **P** · ✅ entregue em 2026-09-24
 
 **Objetivo.** O primeiro degrau da recorrência: quem quiser acompanhar um parlamentar,
 acompanha — sem cadastro, sem e-mail, sem dado pessoal nosso.

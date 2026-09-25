@@ -347,6 +347,56 @@ public sealed record DespesaDetalhada
     public required ParlamentarDaDespesa Parlamentar { get; init; }
 }
 
+/// <summary>
+/// Uma despesa com achado, como o feed de alertas a publica.
+///
+/// <para><b>A data do alerta é <see cref="RegistradaEm"/></b> — quando a despesa entrou na
+/// base —, e não a da flag. A varredura recria as flags a cada passada; datar o alerta por
+/// elas faria toda despesa antiga "virar notícia" de novo a cada ciclo. Datado pela entrada,
+/// o achado de uma regra alterada sobre despesa antiga fica com a data antiga, lá embaixo, e
+/// o que sobe é despesa nova — a única que é notícia sobre o parlamentar.</para>
+/// </summary>
+public sealed record AchadoRecente
+{
+    public required Guid DespesaId { get; init; }
+
+    /// <summary>Quando a despesa entrou na base, lido do UUID v7. Nulo se o id não for v7.</summary>
+    public DateTimeOffset? RegistradaEm { get; init; }
+
+    public required ParlamentarDaDespesa Parlamentar { get; init; }
+
+    public required string TipoDespesa { get; init; }
+
+    public string? NomeFornecedor { get; init; }
+
+    public required string DocumentoFornecedor { get; init; }
+
+    public decimal ValorLiquido { get; init; }
+
+    public required DateTimeOffset DataDocumento { get; init; }
+
+    public required int Ano { get; init; }
+
+    public required int Mes { get; init; }
+
+    /// <summary>Os achados da despesa, do mais relevante para o menos.</summary>
+    public IReadOnlyList<RegraDoAchado> Regras { get; init; } = [];
+}
+
+/// <summary>Um achado dentro do alerta: a regra dita para leitor, e o detalhe do caso.</summary>
+public sealed record RegraDoAchado
+{
+    public required string Codigo { get; init; }
+
+    public required Gravidade Gravidade { get; init; }
+
+    /// <summary>O que a regra procura, na redação do <see cref="CatalogoDeRegras"/>.</summary>
+    public string? DescricaoDaRegra { get; init; }
+
+    /// <summary>A frase do achado sobre esta despesa, como a varredura a escreveu.</summary>
+    public required string Detalhe { get; init; }
+}
+
 /// <summary>Filtros da listagem de despesas.</summary>
 public sealed record FiltroDeDespesas
 {

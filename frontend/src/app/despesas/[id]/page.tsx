@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { obterDespesa } from "@/lib/api";
-import { formatarReais } from "@/lib/formato";
+import { formatarDataDoDocumento, formatarReais } from "@/lib/formato";
 import { Comprovante, ValoresDaDespesa } from "@/componentes/Comprovante";
 import { RespostasDoGabinete, SemRespostaDoGabinete } from "@/componentes/RespostasDoGabinete";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
@@ -94,7 +94,7 @@ export default async function Despesa({ params }: Parametros) {
         <div className="border border-borda-suave p-4">
           <dt className="text-xs font-semibold text-texto-suave">Data e competência</dt>
           <dd className="numeros mt-1 text-sm font-semibold text-titulo">
-            {new Date(despesa.dataDocumento).toLocaleDateString("pt-BR")}
+            {formatarDataDoDocumento(despesa.dataDocumento)}
           </dd>
           <dd className="numeros mt-0.5 text-xs text-texto-suave">
             competência {String(despesa.mes).padStart(2, "0")}/{despesa.ano}

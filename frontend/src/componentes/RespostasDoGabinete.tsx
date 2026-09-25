@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { RespostaDoGabinete } from "@/lib/contrato";
+import { formatarMomento } from "@/lib/formato";
 
 /**
  * A resposta oficial do gabinete, ao lado do achado a que ela responde.
@@ -34,7 +35,7 @@ export function RespostasDoGabinete({
           <p className="text-xs font-semibold text-titulo">
             Resposta do gabinete{" "}
             <span className="numeros font-normal text-texto-suave">
-              · enviada em {new Date(resposta.enviadaEm).toLocaleDateString("pt-BR")}
+              · enviada em {formatarMomento(resposta.enviadaEm)}
             </span>
           </p>
           <p

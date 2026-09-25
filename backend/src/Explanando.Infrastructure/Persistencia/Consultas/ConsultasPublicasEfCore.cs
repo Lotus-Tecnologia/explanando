@@ -333,6 +333,96 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         };
     }
 
+    /// <summary>Teto do feed. Leitor de RSS guarda o que já viu; cem itens cobrem meses.</summary>
+    public const int MaximoDeAchadosRecentes = 100;
+
+    public async Task<IReadOnlyList<AchadoRecente>?> ListarAchadosRecentesAsync(
+        Guid? parlamentarId,
+        int itens,
+        CancellationToken cancelamento = default)
+    {
+        var tamanho = Math.Clamp(itens, 1, MaximoDeAchadosRecentes);
+
+        if (parlamentarId is { } pedido
+            && !await contexto.Parlamentares.AnyAsync(p => p.Id == pedido, cancelamento)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        var consulta = contexto.Despesas
+            .AsNoTracking()
+            .Where(despesa => contexto.FlagsAnomalias.Any(flag => flag.DespesaId == despesa.Id));
+
+        if (parlamentarId is { } id)
+        {
+            consulta = consulta.Where(despesa => despesa.ParlamentarId == id);
+        }
+
+        // Pelo id, e não pela data do documento: o id é UUID v7, ordenado pelo momento em que
+        // a despesa entrou na base — que é o que "recente" quer dizer num alerta. Pela data do
+        // documento, uma nota antiga que a Câmara só publicou agora ficaria lá embaixo, e ela é
+        // tão novidade quanto a de ontem.
+        var despesas = await consulta
+            .OrderByDescending(despesa => despesa.Id)
+            .Take(tamanho)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var ids = despesas.Select(despesa => despesa.Id).ToList();
+        var donos = despesas.Select(despesa => despesa.ParlamentarId).Distinct().ToList();
+
+        var flags = (await contexto.FlagsAnomalias
+            .AsNoTracking()
+            .Where(flag => ids.Contains(flag.DespesaId))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false))
+            .ToLookup(flag => flag.DespesaId);
+
+        var parlamentares = await contexto.Parlamentares
+            .AsNoTracking()
+            .Where(parlamentar => donos.Contains(parlamentar.Id))
+            .ToDictionaryAsync(parlamentar => parlamentar.Id, cancelamento)
+            .ConfigureAwait(false);
+
+        return [.. despesas.Select(despesa =>
+        {
+            var autor = parlamentares[despesa.ParlamentarId];
+
+            return new AchadoRecente
+            {
+                DespesaId = despesa.Id,
+                RegistradaEm = Domain.Comum.Entidade.MomentoDaCriacao(despesa.Id),
+                Parlamentar = new ParlamentarDaDespesa
+                {
+                    Id = autor.Id,
+                    NomeParlamentar = autor.NomeParlamentar,
+                    SiglaPartido = autor.SiglaPartido,
+                    Uf = autor.Uf,
+                    Casa = NomeDaCasa(autor.Tipo),
+                    FotoUrl = autor.FotoUrl,
+                },
+                TipoDespesa = despesa.TipoDespesa,
+                NomeFornecedor = despesa.NomeFornecedor,
+                DocumentoFornecedor = despesa.DocumentoFornecedor.Formatado,
+                ValorLiquido = despesa.ValorLiquido,
+                DataDocumento = despesa.DataDocumento,
+                Ano = despesa.Competencia.Ano,
+                Mes = despesa.Competencia.Mes,
+                Regras = [.. flags[despesa.Id]
+                    .OrderByDescending(flag => flag.Gravidade)
+                    .ThenBy(flag => flag.CodigoRegra, StringComparer.Ordinal)
+                    .Select(flag => new RegraDoAchado
+                    {
+                        Codigo = flag.CodigoRegra,
+                        Gravidade = flag.Gravidade,
+                        DescricaoDaRegra = CatalogoDeRegras.DescricaoDe(flag.CodigoRegra),
+                        Detalhe = flag.Descricao,
+                    })],
+            };
+        })];
+    }
+
     public async Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,
         CancellationToken cancelamento = default)

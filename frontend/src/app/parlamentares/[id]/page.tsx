@@ -9,7 +9,7 @@ import {
   ranquearTudo,
 } from "@/lib/api";
 import { metadadosDoParlamentar } from "@/lib/metadados";
-import { formatarDensidade, formatarNumero, formatarReais } from "@/lib/formato";
+import { formatarDensidade, formatarMomento, formatarNumero, formatarReais } from "@/lib/formato";
 import { CASAS } from "@/lib/casas";
 import { BlocoDeCobertura } from "@/componentes/Abstencao";
 import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
@@ -72,7 +72,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/parlamentares/${id}` },
+    alternates: {
+      canonical: `/parlamentares/${id}`,
+      // O leitor de RSS e o navegador descobrem o feed sozinhos por esta tag.
+      types: { "application/rss+xml": `/parlamentares/${id}/feed.xml` },
+    },
     openGraph: { title, description, type: "profile" },
   };
 }
@@ -164,7 +168,7 @@ export default async function Perfil({
           {perfil.dataUltimaVarredura ? (
             <p className="numeros mt-1 text-xs text-texto-suave">
               Última varredura em{" "}
-              {new Date(perfil.dataUltimaVarredura).toLocaleDateString("pt-BR")} · motor
+              {formatarMomento(perfil.dataUltimaVarredura)} · motor
               versão {perfil.versaoDoMotor}
             </p>
           ) : (
@@ -256,12 +260,29 @@ export default async function Perfil({
             O caminho para o gasto inteiro fica à vista. Um portal que só mostra o que ele
             mesmo apontou publica a própria leitura, não a prestação de contas.
           */}
-          <Link
-            href={`/parlamentares/${id}/despesas`}
-            className="text-sm font-semibold text-titulo underline-offset-2 hover:underline"
-          >
-            Ver todas as {formatarNumero(perfil.despesasAvaliadas)} despesas →
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {/*
+              Acompanhar sem cadastro: o feed não pede e-mail nem guarda nada de quem assina.
+              É o primeiro degrau da recorrência (Fase 3), antes de existir alerta por e-mail.
+            */}
+            <a
+              href={`/parlamentares/${id}/feed.xml`}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-titulo underline-offset-2 hover:underline"
+            >
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="currentColor">
+                <circle cx="3" cy="13" r="2" />
+                <path d="M1 7.5a7.5 7.5 0 0 1 7.5 7.5h-2A5.5 5.5 0 0 0 1 9.5z" />
+                <path d="M1 2a13 13 0 0 1 13 13h-2A11 11 0 0 0 1 4z" />
+              </svg>
+              Acompanhar por RSS
+            </a>
+            <Link
+              href={`/parlamentares/${id}/despesas`}
+              className="text-sm font-semibold text-titulo underline-offset-2 hover:underline"
+            >
+              Ver todas as {formatarNumero(perfil.despesasAvaliadas)} despesas →
+            </Link>
+          </div>
         </div>
 
         {despesas && despesas.total > 0 ? (

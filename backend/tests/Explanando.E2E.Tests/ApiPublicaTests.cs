@@ -339,6 +339,44 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task Achados_recentes_vem_do_mais_novo_para_o_mais_antigo_na_base()
+    {
+        var achados = await LerAsync<List<AchadoRecente>>(
+            await Cliente.GetAsync($"/api/v1/achados-recentes?parlamentar={api.ParlamentarRanqueado}&itens=100"));
+
+        achados.ShouldNotBeEmpty();
+        achados.ShouldAllBe(achado => achado.Parlamentar.Id == api.ParlamentarRanqueado);
+        achados.ShouldAllBe(achado => achado.Regras.Count > 0);
+        achados.ShouldAllBe(achado => achado.RegistradaEm != null);
+
+        achados.Select(achado => achado.RegistradaEm!.Value)
+            .ShouldBeInOrder(SortDirection.Descending);
+
+        achados.SelectMany(achado => achado.Regras)
+            .ShouldAllBe(regra => !string.IsNullOrWhiteSpace(regra.DescricaoDaRegra));
+    }
+
+    [Fact]
+    public async Task Achados_recentes_de_parlamentar_inexistente_e_404_e_nao_lista_vazia()
+    {
+        // Lista vazia diria que ele existe e não teve achado novo.
+        var resposta = await Cliente.GetAsync(
+            $"/api/v1/achados-recentes?parlamentar={Guid.CreateVersion7()}");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Achados_recentes_sem_parlamentar_trazem_todos_com_teto()
+    {
+        var achados = await LerAsync<List<AchadoRecente>>(
+            await Cliente.GetAsync("/api/v1/achados-recentes?itens=5000"));
+
+        achados.Count.ShouldBeLessThanOrEqualTo(100);
+        achados.ShouldNotBeEmpty();
+    }
+
+    [Fact]
     public async Task Parlamentar_inexistente_devolve_404()
     {
         var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");

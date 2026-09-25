@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { formatarNumero } from "@/lib/formato";
+import { formatarDataDoDocumento, formatarNumero } from "@/lib/formato";
 import { TagDeGravidade } from "./TagDeGravidade";
 import { Comprovante, ValoresDaDespesa } from "./Comprovante";
 import type { Gravidade, ItemDeDespesa } from "@/lib/contrato";
@@ -144,7 +144,7 @@ export function DespesasComIndicadores({
                       {despesa.tipoDespesa}
                     </span>
                     <span className="numeros text-xs text-texto-suave">
-                      {new Date(despesa.dataDocumento).toLocaleDateString("pt-BR")} · competência{" "}
+                      {formatarDataDoDocumento(despesa.dataDocumento)} · competência{" "}
                       {String(despesa.mes).padStart(2, "0")}/{despesa.ano}
                     </span>
                   </div>
