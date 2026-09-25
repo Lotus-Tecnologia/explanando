@@ -218,7 +218,7 @@ persistido.
 | `REG_KYB_003` Empresa recém-nascida | ✅ | `data_inicio_atividade` |
 | `REG_KYB_004` MEI acima do teto | ⚠️ | Campos existem, mas vieram `null` no CNPJ da amostra (não é MEI). Validar contra um MEI real |
 | `REG_KYB_005` Nota inicial | ✅ | `numDocumento`, 100% preenchido |
-| `REG_NET_001` Doação cruzada | ⚠️ | Só com 6 dígitos + nome. Probabilístico, e depende de carga do TSE — que entrou no escopo pelo [ADR-0011](../decisoes/ADR-0011-v1-e-o-plano-inteiro.md) mas ainda não tem spike de contrato |
+| `REG_NET_001` Doação cruzada | ✅ | **Implementada em 2026-09-25**, com a carga do TSE de 2022 ([tse.md](tse.md)). Nome idêntico + os 6 dígitos do CPF: compatibilidade, confiança 0,85, uma flag por fornecedor. 73 achados em 40 deputados |
 | `REG_NET_002` Vínculo de gabinete | ❌ | Sem fonte: não há endpoint de secretários |
 | `REG_NET_003` Mesmo endereço | ⚠️ | Endereço do fornecedor é estruturado; falta o do escritório de apoio. Possível inferir pelo fornecedor do tipo de despesa 1 |
 | `REG_NET_004` Concentração partidária | ✅ | `siglaPartido` + base completa. Regra agregada, roda ao fim da ingestão. **Implementada em 2026-08-20**, com piso de 100 parlamentares na base |

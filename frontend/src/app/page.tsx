@@ -175,14 +175,14 @@ export default async function Home() {
               numero="1"
               tag="Fonte Primária"
               titulo="Coleta Automatizada"
-              texto="Os dados vêm diretamente das APIs abertas da Câmara, do Senado e da Receita Federal (via BrasilAPI). Nada é digitado à mão ou manipulado."
+              texto="Os dados vêm diretamente das bases abertas da Câmara, do Senado, da Receita Federal (via BrasilAPI) e do TSE. Nada é digitado à mão ou manipulado."
               icone="coleta"
             />
             <PassoPipeline
               numero="2"
               tag="Algoritmos Fixos"
-              titulo="Cruzamento de 12 Regras"
-              texto="Regras determinísticas verificam atividade econômica (CNAE), quadro societário, datas atípicas em recessos e padrões repetidos de valores."
+              titulo="Cruzamento de 13 Regras"
+              texto="Regras determinísticas verificam atividade econômica (CNAE), quadro societário, doações de campanha, datas atípicas em recessos e padrões repetidos de valores."
               icone="cruzamento"
             />
             <PassoPipeline

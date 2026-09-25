@@ -31,6 +31,7 @@ internal sealed class CenarioDeAvaliacao
     private readonly List<Despesa> _despesas = [];
     private readonly List<Fornecedor> _fornecedores = [];
     private readonly List<LimiteCota> _limites = [];
+    private List<Eleicoes.DoacaoEleitoral>? _doacoes;
 
     public Parlamentar Parlamentar { get; private set; } = Parlamentar.Criar(new NovoParlamentar
     {
@@ -165,8 +166,33 @@ internal sealed class CenarioDeAvaliacao
         return this;
     }
 
+    /// <summary>Sócio no último fornecedor acrescentado.</summary>
+    public CenarioDeAvaliacao ComSocio(string nome, string cpfMascarado, string qualificacao = "Sócio-Administrador")
+    {
+        _fornecedores[^1].RegistrarSocio(nome, cpfMascarado, qualificacao);
+        return this;
+    }
+
+    /// <summary>A campanha do parlamentar existe na base do TSE, com ou sem doações.</summary>
+    public CenarioDeAvaliacao ComCampanha()
+    {
+        _doacoes ??= [];
+        return this;
+    }
+
+    /// <summary>Uma doação de pessoa física à campanha deste parlamentar.</summary>
+    public CenarioDeAvaliacao ComDoacao(string nomeDoDoador, string cpfCompleto, decimal valor, int ano = 2022)
+    {
+        ComCampanha();
+        _doacoes!.Add(Eleicoes.DoacaoEleitoral.Criar(
+            ano, _doacoes.Count + 1, Eleicoes.DestinoDaDoacao.Candidato, 1, Parlamentar.Id,
+            nomeDoDoador, cpfCompleto, "ACACIO DA SILVA FAVACHO NETO", "MDB", Parlamentar.Uf,
+            "Deputado Federal", new DateOnly(ano, 9, 15), valor));
+        return this;
+    }
+
     public ContextoDeAvaliacao Construir() =>
-        new(Parlamentar, _despesas, _fornecedores, _limites, Parametros);
+        new(Parlamentar, _despesas, _fornecedores, _limites, Parametros, _doacoes);
 
     /// <summary>Roda uma regra isolada e devolve o que ela emitiu.</summary>
     public IReadOnlyList<FlagAnomalia> Rodar(IRegraAnomalia regra) =>

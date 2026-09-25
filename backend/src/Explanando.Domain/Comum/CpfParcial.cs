@@ -58,6 +58,28 @@ public sealed record CpfParcial
     }
 
     /// <summary>
+    /// Mascara um CPF completo na mesma posicao em que a Receita mascara o do socio:
+    /// <c>***NNNNNN**</c>, os digitos 4 a 9.
+    ///
+    /// <para>Existe para a carga do TSE, que publica o CPF do doador <b>inteiro</b>. O
+    /// completo nao passa daqui: a entidade guarda so' o resultado, e o dado que o sistema
+    /// nunca teve nao tem como vazar. Documento que nao tem 11 digitos devolve mascara vazia —
+    /// e mascara vazia nao casa com ninguem.</para>
+    /// </summary>
+    public static CpfParcial DeCpfCompleto(string? cpfCompleto)
+    {
+        var digitos = SomenteDigitos(cpfCompleto ?? string.Empty);
+
+        if (digitos.Length != TamanhoDeCpf)
+        {
+            return new CpfParcial(string.Empty, string.Empty);
+        }
+
+        var visiveis = digitos.Substring(PrimeiroIndiceVisivel, DigitosRevelados);
+        return new CpfParcial(visiveis, $"***{visiveis}**");
+    }
+
+    /// <summary>
     /// Se um CPF completo — tipicamente da base de doadores do TSE — bate nos digitos
     /// que conhecemos. Verdadeiro significa <b>compativel</b>, e nada alem disso.
     /// </summary>

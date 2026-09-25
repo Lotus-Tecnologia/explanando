@@ -94,6 +94,22 @@ function Cadeia({
           <span key={socio.nome} className="mt-1">
             <span className="block font-semibold text-texto">{socio.nome}</span>
             {socio.qualificacao}
+            {socio.doacoes.length > 0 ? (
+              <span className="mt-1 block text-texto">
+                {/*
+                  "Compatível", e não "é": nome idêntico e seis dígitos de CPF batem, mas cinco
+                  dígitos seguem ocultos dos dois lados.
+                */}
+                Doador compatível na eleição de {socio.doacoes[0].ano}:{" "}
+                {socio.doacoes
+                  .map(
+                    (doacao) =>
+                      `${formatarMoedaCompacta(doacao.valor)} a ${doacao.destinatario}` +
+                      (doacao.cargo ? ` (${doacao.siglaPartido}-${doacao.uf})` : ""),
+                  )
+                  .join("; ")}
+              </span>
+            ) : null}
           </span>
         ))}
       </div>

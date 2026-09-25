@@ -88,6 +88,11 @@ public sealed class ConsultasComCache(IConsultasPublicas interna, HybridCache ca
         CancellationToken cancelamento = default) =>
         interna.ObterSociosEmComumAsync(parlamentarId, cancelamento);
 
+    public Task<VotacaoDoParlamentar?> ObterVotacaoAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default) =>
+        interna.ObterVotacaoAsync(parlamentarId, cancelamento);
+
     public Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,
         CancellationToken cancelamento = default) =>

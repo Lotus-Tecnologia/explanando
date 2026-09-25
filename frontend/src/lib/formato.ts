@@ -149,3 +149,21 @@ export function formatarCompetenciaCurta(competencia: string): string {
   const casamento = /^(\d{4})-(\d{2})$/.exec(competencia);
   return casamento ? `${casamento[2]}/${casamento[1]}` : competencia;
 }
+
+const PARTICULAS = new Set(["da", "das", "de", "do", "dos", "e"]);
+
+/**
+ * "CAXIAS DO SUL" como se escreve: "Caxias do Sul". O TSE publica o município em maiúsculas; a
+ * partícula fica em minúscula, menos no começo ("Dois Irmãos", mas "Barra do Garças").
+ */
+export function formatarNomeDeLugar(nome: string): string {
+  return nome
+    .toLocaleLowerCase("pt-BR")
+    .split(/(\s+|-)/)
+    .map((parte, indice) =>
+      indice > 0 && PARTICULAS.has(parte)
+        ? parte
+        : parte.charAt(0).toLocaleUpperCase("pt-BR") + parte.slice(1),
+    )
+    .join("");
+}

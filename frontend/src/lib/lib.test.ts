@@ -5,7 +5,7 @@ import {
   ranquearTudo,
 } from "./api";
 import { metadadosDoParlamentar } from "./metadados";
-import { formatarCompetencia, formatarDataDoDocumento, formatarMomento } from "./formato";
+import { formatarCompetencia, formatarDataDoDocumento, formatarMomento, formatarNomeDeLugar } from "./formato";
 import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { CASAS } from "./casas";
 import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "./ordenacoes";
@@ -748,5 +748,15 @@ describe("formatarCompetencia", () => {
     expect(formatarCompetencia("07/2026")).toBe("07/2026");
     expect(formatarCompetencia("2026-13")).toBe("2026-13");
     expect(formatarCompetencia(null)).toBe("");
+  });
+});
+
+describe("formatarNomeDeLugar", () => {
+  it("deixa a particula em minuscula, menos no comeco", () => {
+    expect(formatarNomeDeLugar("CAXIAS DO SUL")).toBe("Caxias do Sul");
+    expect(formatarNomeDeLugar("NÃO-ME-TOQUE")).toBe("Não-Me-Toque");
+    expect(formatarNomeDeLugar("BARRA DO GARÇAS")).toBe("Barra do Garças");
+    expect(formatarNomeDeLugar("DOIS IRMÃOS")).toBe("Dois Irmãos");
+    expect(formatarNomeDeLugar("DE LOURDES")).toBe("De Lourdes");
   });
 });

@@ -282,6 +282,56 @@ switch (comando)
             return resumoDasCadeiras.Falhas > 0 ? 1 : 0;
         }
 
+    case "importar-tse":
+        {
+            // A eleicao, a partir dos arquivos do TSE numa pasta local. O CDN do TSE recusa
+            // cliente automatizado; os arquivos se baixam com ferramentas/baixar-tse.mjs.
+            var anoDaEleicao = LerInteiro("--ano") ?? 2022;
+            var indiceDaPasta = Array.IndexOf(args, "--pasta");
+            var pastaDoTse = indiceDaPasta >= 0 && indiceDaPasta + 1 < args.Length
+                ? args[indiceDaPasta + 1]
+                : Path.Combine("..", "dados", "tse");
+
+            Console.WriteLine($"Importando a eleicao de {anoDaEleicao} de {Path.GetFullPath(pastaDoTse)}...");
+            Console.WriteLine("A votacao sao ~4 GB descompactados; a leitura leva alguns minutos.");
+
+            var importacao = new Explanando.Application.Eleicoes.ServicoDeImportacaoDoTse(
+                new Explanando.Infrastructure.Integracoes.Tse.LeitorDoTse(pastaDoTse),
+                servicos.GetRequiredService<Explanando.Application.Eleicoes.IRepositorioDoTse>(),
+                servicos.GetRequiredService<IFonteDeParlamentares>());
+
+            var cronometroDoTse = System.Diagnostics.Stopwatch.StartNew();
+            var resultadoDoTse = await importacao.ImportarAsync(anoDaEleicao).ConfigureAwait(false);
+
+            Console.WriteLine();
+            Console.WriteLine($"Parlamentares na base         : {resultadoDoTse.Parlamentares}");
+            Console.WriteLine($"Nomes civis completados       : {resultadoDoTse.NomesCivisCompletados}");
+            Console.WriteLine($"Candidaturas ligadas          : {resultadoDoTse.CandidaturasLigadas}");
+            Console.WriteLine($"Ambiguos (ficaram de fora)    : {resultadoDoTse.Ambiguos}");
+            Console.WriteLine($"Municipios com voto gravados  : {resultadoDoTse.MunicipiosComVoto}");
+            Console.WriteLine($"Receitas de pessoa fisica     : {resultadoDoTse.ReceitasDePessoaFisicaLidas}");
+            Console.WriteLine($"  doacoes a parlamentares     : {resultadoDoTse.DoacoesParaParlamentares}");
+            Console.WriteLine($"  doacoes de socios           : {resultadoDoTse.DoacoesDeSocios}");
+            Console.WriteLine($"Tempo                         : {cronometroDoTse.Elapsed.TotalMinutes:F1} min");
+
+            if (resultadoDoTse.SemCandidatura.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine(
+                    $"--- {resultadoDoTse.SemCandidatura.Count} sem candidatura ligada em {anoDaEleicao} ---");
+
+                foreach (var nome in resultadoDoTse.SemCandidatura)
+                {
+                    Console.WriteLine($"  {nome}");
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Rode `varrer` em seguida: REG_NET_001 so' aparece na proxima varredura.");
+
+            return 0;
+        }
+
     case "coletar-estado":
         {
             // O grafo do Estado — a adaptacao do CivLab ao Brasil. Nao tem legislatura nem
@@ -757,6 +807,9 @@ switch (comando)
                                                           quem ocupa os cargos de comando;
                                                           --se-vencido rele' so' as fontes
                                                           paradas ha mais de uma semana
+              dotnet run -- importar-tse [--ano 2022] [--pasta ../dados/tse]
+                                                          candidaturas, votos por municipio
+                                                          e doacoes, dos arquivos do TSE
               dotnet run -- coletar-pessoal --ano 2026 --mes 7 [--meses N]
                                                           o quadro de pessoal; --meses N
                                                           recolhe tambem os anteriores

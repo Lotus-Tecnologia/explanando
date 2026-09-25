@@ -20,7 +20,8 @@ export function Rodape() {
     <footer className="mx-auto max-w-7xl border-t border-borda-suave px-4 py-6 text-xs text-texto-suave">
       <p>
         Dados obtidos das APIs de dados abertos da Câmara dos Deputados, do Senado Federal,
-        da Receita Federal (via BrasilAPI) e do SIORG, a estrutura organizacional do Estado.
+        da Receita Federal (via BrasilAPI), do TSE e do SIORG, a estrutura organizacional do
+        Estado.
         Os indicadores são produzidos por um motor de regras determinístico, que diz o que
         procurou em cada achado, e{" "}
         <strong>não caracterizam, por si, irregularidade</strong>. A conclusão é de quem lê.

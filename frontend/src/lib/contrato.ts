@@ -209,10 +209,50 @@ export interface EmpresaNaCadeia {
   valor: number;
 }
 
+/** Uma doação de campanha do sócio, somada por destinatário. */
+export interface DoacaoDoSocio {
+  ano: number;
+  destinatario: string;
+  siglaPartido: string;
+  uf: string;
+  cargo: string | null;
+  valor: number;
+}
+
 /** Uma pessoa sócia das duas empresas. O nome é o do QSA; o CPF não vem, nem mascarado. */
 export interface SocioEmComum {
   nome: string;
   qualificacao: string;
+
+  /** Doações de quem tem nome idêntico e CPF compatível — compatibilidade, não identidade. */
+  doacoes: DoacaoDoSocio[];
+}
+
+/** Um município da votação, com a fatia dos votos do parlamentar que veio dele. */
+export interface MunicipioDaVotacao {
+  nome: string;
+  uf: string;
+  votos: number;
+  fatia: number;
+}
+
+/**
+ * De onde vieram os votos da última eleição, e quanto da cota foi para fornecedores sediados
+ * na base eleitoral — os municípios que somam metade dos votos.
+ */
+export interface VotacaoDoParlamentar {
+  temCandidatura: boolean;
+  ano: number | null;
+  nomeDeUrna: string | null;
+  cargo: string | null;
+  siglaPartido: string | null;
+  situacao: string | null;
+  totalDeVotos: number;
+  municipiosComVoto: number;
+  principais: MunicipioDaVotacao[];
+  municipiosDaMetadeDosVotos: number;
+  pagoAFornecedoresDaBase: number;
+  pagoAFornecedoresComEndereco: number;
 }
 
 /** Parlamentar → fornecedor → sócio em comum → outra empresa → outro parlamentar. */

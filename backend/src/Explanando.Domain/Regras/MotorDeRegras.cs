@@ -87,12 +87,15 @@ public sealed class MotorDeRegras(
     /// tanque cheio.</item>
     /// </list>
     /// </summary>
-    public const int VersaoAtual = 4;
+    public const int VersaoAtual = 5;
 
     /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
     public int Versao { get; } = versao;
 
-    /// <summary>As 11 regras que o dado disponivel sustenta no V1.</summary>
+    /// <summary>
+    /// As 12 regras que o dado disponivel sustenta. A 12a, REG_NET_001, entrou na versao 5 do
+    /// motor, com a carga do TSE de 2022.
+    /// </summary>
     public static MotorDeRegras Padrao() => new(
     [
         new RegraCnaeDivergente(),
@@ -106,6 +109,7 @@ public sealed class MotorDeRegras(
         new RegraPicoDeConsumo(),
         new RegraGastoForaDaBaseEleitoral(),
         new RegraGastoEmRecesso(),
+        new RegraDoacaoCruzada(),
     ]);
 
     public IReadOnlyList<IRegraAnomalia> Regras => regras;

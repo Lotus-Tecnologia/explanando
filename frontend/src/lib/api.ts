@@ -14,6 +14,7 @@ import type {
   PagamentosPorFornecedor,
   PerfilDoParlamentar,
   QuemBeneficiaQuem,
+  VotacaoDoParlamentar,
 } from "./contrato";
 
 const BASE =
@@ -232,6 +233,11 @@ export async function listarDespesas(
   return buscar<Pagina<ItemDeDespesa>>(
     `/api/v1/parlamentares/${id}/despesas?${consulta.toString()}`,
   );
+}
+
+/** De onde vieram os votos da última eleição. Nulo se o parlamentar não existe. */
+export function obterVotacao(parlamentarId: string): Promise<VotacaoDoParlamentar | null> {
+  return buscar<VotacaoDoParlamentar>(`/api/v1/parlamentares/${parlamentarId}/votacao`);
 }
 
 /** Fornecedores dele com sócio em comum com fornecedores de outros. Nulo se ele não existe. */

@@ -102,13 +102,39 @@ UF — normalizando caixa e acento, mas sem distância de edição.
 **Resultado da investigação: a Fase 7 pode começar**, com um passo antes que não é meu —
 baixar os arquivos.
 
-## O que ficou aberto, e de quem é
+## O que ficou aberto — e como se fechou em 2026-09-25
 
-1. **Baixar os lotes** `prestacao_de_contas_eleitorais_candidatos_2022.zip`,
-   `prestacao_de_contas_eleitorais_orgaos_partidarios_2022.zip` e
-   `votacao_candidato_munzona_2022.zip`, do `cdn.tse.jus.br`. O tamanho não pôde ser medido: o
-   CDN recusa até o `HEAD`. **É download de arquivo, e pede a sua autorização**; feito à mão num
-   navegador, sai do bloqueio da Akamai.
-2. **Conferir no `leiame` de cada `.zip`** se o lote traz o CPF inteiro, como a API — é o que se
-   espera, mas a pergunta 2 foi respondida pela API, não pelo lote.
-3. **Correspondência de município TSE↔IBGE**, para o alerta de reduto.
+1. **Os lotes foram baixados**, com autorização do Gustavo. O CDN recusa curl, PowerShell,
+   Python e o `HttpClient` do .NET; **o `fetch` do Node passa**, e é por ele que
+   `ferramentas/baixar-tse.mjs` baixa. Tamanhos: candidatos 367 MB, órgãos partidários 18,5 MB,
+   votação por município e zona 578 MB (8,6 GB descompactada). Moram em `dados/tse/`, fora do git.
+2. **O lote confirma a API:** `NR_CPF_CNPJ_DOADOR` vem com os onze dígitos em 544.538 das 674.944
+   receitas de candidatos; as outras são CNPJ (partido, campanha) e marcadores de "sem doador".
+3. **Município:** o cruzamento com a sede do fornecedor é por **nome normalizado + UF**, e não
+   por código — o do TSE não é o do IBGE.
+
+## A carga — `importar-tse`
+
+| | |
+|---|---|
+| Parlamentares ligados à candidatura de 2022 | **510 de 513** |
+| Ambíguos (homônimo na mesma UF) | 0 |
+| Votos por município gravados | 152.859 |
+| Receitas de pessoa física lidas | 533.254 |
+| Doações a parlamentares da base | 12.845 |
+| Doações de quem é sócio de fornecedor | 2.767 |
+| Tempo | 1,3 minuto |
+
+**A chave de ligação é o nome civil**, e ele não estava na base: a lista da Câmara traz o nome
+parlamentar nos dois campos, e o de urna raramente é igual a ele ("GLEISI", "FRAGA",
+"CAPITÃO DERRITE"). A carga busca o civil no detalhe de cada deputado na API da Câmara — 499
+completados — e liga por nome civil + UF + cargo, normalizados e comparados por igualdade. Os três
+que não ligaram (Emanuel Pinheiro Neto, Guilherme Uchoa, Paulo Folletto) têm nome civil diferente
+no TSE, e ficam de fora em vez de ligados no palpite.
+
+**Duas medições que mudaram o modelo:**
+- `SQ_RECEITA` **não é único**: 189 receitas de pessoa física repetem o sequencial com valores
+  diferentes — a mesma receita declarada em partes. O índice não é único, e a carga é
+  idempotente por apagar o ano antes de gravar.
+- Com `InvariantGlobalization`, `string.Normalize` não tira acento. "JOSÉ" continuava "JOSÉ", e
+  o nome acentuado nunca casava. `NomeNormalizado` usa uma tabela própria.

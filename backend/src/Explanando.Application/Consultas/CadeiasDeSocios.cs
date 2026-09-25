@@ -29,6 +29,17 @@ public sealed record OutroParlamentar
     public decimal Valor { get; init; }
 }
 
+/// <summary>Uma doação de campanha que o sócio fez, somada por destinatário.</summary>
+public sealed record DoacaoDoSocio
+{
+    public required int Ano { get; init; }
+    public required string Destinatario { get; init; }
+    public required string SiglaPartido { get; init; }
+    public required string Uf { get; init; }
+    public string? Cargo { get; init; }
+    public decimal Valor { get; init; }
+}
+
 /// <summary>Uma pessoa sócia das duas empresas, e o papel dela em cada uma.</summary>
 public sealed record SocioEmComum
 {
@@ -43,6 +54,12 @@ public sealed record SocioEmComum
 
     /// <summary>"Sócio-Administrador nas duas", ou uma qualificação em cada.</summary>
     public required string Qualificacao { get; init; }
+
+    /// <summary>
+    /// Doações de campanha de quem tem nome idêntico e CPF compatível — o último salto do
+    /// "quem beneficia quem". Compatibilidade, não identidade: ver <c>CpfParcial</c>.
+    /// </summary>
+    public IReadOnlyList<DoacaoDoSocio> Doacoes { get; init; } = [];
 }
 
 /// <summary>
@@ -111,7 +128,8 @@ public static class CadeiasDeSocios
         IReadOnlySet<string> nomesAmbiguos,
         IReadOnlyDictionary<Guid, EmpresaDaCadeia> empresas,
         IReadOnlyDictionary<Guid, ParlamentarDaDespesa> parlamentares,
-        int quantas = CadeiasPadrao)
+        int quantas = CadeiasPadrao,
+        IReadOnlyDictionary<(string Nome, string Cpf), IReadOnlyList<DoacaoDoSocio>>? doacoesPorSocio = null)
     {
         ArgumentNullException.ThrowIfNull(pagamentos);
         ArgumentNullException.ThrowIfNull(vinculos);
@@ -210,6 +228,12 @@ public static class CadeiasDeSocios
                         {
                             Nome = l.Socio.Item1,
                             Qualificacao = QualificacaoLegivel(l.QualF, l.QualG),
+                            Doacoes = doacoesPorSocio is not null
+                                && doacoesPorSocio.TryGetValue(
+                                    (Domain.Comum.NomeNormalizado.De(l.Socio.Item1), Digitos(l.Socio.Item2)),
+                                    out var doacoes)
+                                ? doacoes
+                                : [],
                         })
                         .OrderBy(s => s.Nome, StringComparer.Ordinal)],
                     OutrosParlamentares = [.. grupo
@@ -235,6 +259,10 @@ public static class CadeiasDeSocios
             TotalDeCadeias = cadeias.Count,
         };
     }
+
+    /// <summary>Os seis dígitos de uma máscara como "***456789**".</summary>
+    public static string Digitos(string mascara) =>
+        new([.. (mascara ?? string.Empty).Where(char.IsAsciiDigit)]);
 
     private static bool MesmaRaiz(IReadOnlyDictionary<Guid, EmpresaDaCadeia> empresas, Guid a, Guid b) =>
         empresas.TryGetValue(a, out var primeira)

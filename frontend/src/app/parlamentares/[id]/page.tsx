@@ -8,6 +8,7 @@ import {
   obterPagamentosPorFornecedor,
   obterPerfil,
   obterSociosEmComum,
+  obterVotacao,
   ranquearTudo,
 } from "@/lib/api";
 import { metadadosDoParlamentar } from "@/lib/metadados";
@@ -18,6 +19,7 @@ import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
 import { CompararCom } from "@/componentes/CompararCom";
 import { EscadaDeFornecedores } from "@/componentes/EscadaDeFornecedores";
 import { SociosEmComum } from "@/componentes/SociosEmComum";
+import { VotacaoDoParlamentar } from "@/componentes/VotacaoDoParlamentar";
 import { retratoSeguro } from "@/lib/fotos";
 import { ListaDeDespesas } from "@/componentes/ListaDeDespesas";
 import { SerieMensal } from "@/componentes/SerieMensal";
@@ -115,10 +117,11 @@ export default async function Perfil({
     notFound();
   }
 
-  const [despesas, escada, socios] = await Promise.all([
+  const [despesas, escada, socios, votacao] = await Promise.all([
     listarDespesas(id, { comFlag: true, itens: ACHADOS_EM_DESTAQUE }),
     obterPagamentosPorFornecedor(id),
     obterSociosEmComum(id),
+    obterVotacao(id),
   ]);
 
   const casaDoPerfil = CASAS.find((candidata) => candidata.nomeOficial === perfil.casa);
@@ -258,6 +261,12 @@ export default async function Perfil({
       {escada ? (
         <div className="mt-8">
           <EscadaDeFornecedores escada={escada} />
+        </div>
+      ) : null}
+
+      {votacao ? (
+        <div className="mt-8">
+          <VotacaoDoParlamentar votacao={votacao} />
         </div>
       ) : null}
 

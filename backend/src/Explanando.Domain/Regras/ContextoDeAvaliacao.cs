@@ -27,7 +27,8 @@ public sealed class ContextoDeAvaliacao
         IReadOnlyList<Despesa> despesas,
         IEnumerable<Fornecedor> fornecedores,
         IEnumerable<LimiteCota> limites,
-        ParametrosDoMotor? parametros = null)
+        ParametrosDoMotor? parametros = null,
+        IEnumerable<Eleicoes.DoacaoEleitoral>? doacoesDaCampanha = null)
     {
         ArgumentNullException.ThrowIfNull(parlamentar);
         ArgumentNullException.ThrowIfNull(despesas);
@@ -43,7 +44,19 @@ public sealed class ContextoDeAvaliacao
             StringComparer.Ordinal);
 
         _limites = [.. limites];
+
+        DoacoesDaCampanha = doacoesDaCampanha is null ? null : [.. doacoesDaCampanha];
     }
+
+    /// <summary>
+    /// As doações de pessoa física à campanha do parlamentar.
+    ///
+    /// <para><b>Nulo e vazio são coisas diferentes</b> (ADR-0009). Nulo: não há campanha ligada a
+    /// este parlamentar na base do TSE, e a regra de doação não tem como avaliar. Vazio: a
+    /// campanha existe e não recebeu doação de pessoa física — avaliou, e não há o que
+    /// cruzar.</para>
+    /// </summary>
+    public IReadOnlyList<Eleicoes.DoacaoEleitoral>? DoacoesDaCampanha { get; }
 
     public Parlamentar Parlamentar { get; }
 

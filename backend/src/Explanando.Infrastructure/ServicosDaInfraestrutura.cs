@@ -73,6 +73,10 @@ public static class ServicosDaInfraestrutura
         servicos.AddSingleton<IRelogio, RelogioDoSistema>();
 
         servicos.AddScoped<IRepositorioDeVarredura, RepositorioDeVarredura>();
+
+        // A eleição, do TSE. A fonte são arquivos numa pasta, e quem a aponta é o comando
+        // `importar-tse` — por isso só o repositório entra aqui.
+        servicos.AddScoped<Application.Eleicoes.IRepositorioDoTse, RepositorioDoTse>();
         servicos.AddScoped<IRepositorioDeRede, RepositorioDeRede>();
         servicos.AddScoped<IRepositorioDeRetencao, RepositorioDeRetencao>();
         servicos.AddSingleton<IRelogioDaRetencao, RelogioDaRetencaoDoSistema>();

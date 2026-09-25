@@ -47,6 +47,12 @@ public enum DadoExigido
 
     /// <summary>O tipo de despesa está na tabela curada de CNAE.</summary>
     TipoNaTabelaCurada = 128,
+
+    /// <summary>O fornecedor tem quadro societário com CPF (mascarado) para cruzar.</summary>
+    QuadroSocietarioDoFornecedor = 256,
+
+    /// <summary>O parlamentar tem campanha ligada na base do TSE.</summary>
+    CampanhaDoParlamentar = 512,
 }
 
 /// <summary>O que aconteceu com uma regra numa passada.</summary>
@@ -198,6 +204,11 @@ internal static class DisponibilidadeDeDados
             disponivel |= DadoExigido.TetoDaCota;
         }
 
+        if (contexto.DoacoesDaCampanha is not null)
+        {
+            disponivel |= DadoExigido.CampanhaDoParlamentar;
+        }
+
         if (contexto.FornecedorDe(despesa) is not { } fornecedor)
         {
             return disponivel;
@@ -230,6 +241,11 @@ internal static class DisponibilidadeDeDados
         if (fornecedor.Endereco.Uf is { Length: 2 })
         {
             disponivel |= DadoExigido.EnderecoDoFornecedor;
+        }
+
+        if (fornecedor.QuadroSocietario.Any(socio => socio.Cpf.TemDigitos))
+        {
+            disponivel |= DadoExigido.QuadroSocietarioDoFornecedor;
         }
 
         return disponivel;

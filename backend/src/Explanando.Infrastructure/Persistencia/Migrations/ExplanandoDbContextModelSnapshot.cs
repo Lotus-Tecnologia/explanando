@@ -564,6 +564,216 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.ToTable("despesas", (string)null);
                 });
 
+            modelBuilder.Entity("Explanando.Domain.Eleicoes.CandidaturaDoParlamentar", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AnoDaEleicao")
+                        .HasColumnType("integer")
+                        .HasColumnName("ano_da_eleicao");
+
+                    b.Property<string>("Cargo")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("cargo");
+
+                    b.Property<string>("NomeDeUrna")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nome_de_urna");
+
+                    b.Property<int>("NumeroNaUrna")
+                        .HasColumnType("integer")
+                        .HasColumnName("numero_na_urna");
+
+                    b.Property<Guid>("ParlamentarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parlamentar_id");
+
+                    b.Property<long>("SequencialNoTse")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequencial_no_tse");
+
+                    b.Property<string>("SiglaPartido")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("sigla_partido");
+
+                    b.Property<string>("Situacao")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("situacao");
+
+                    b.Property<long>("TotalDeVotos")
+                        .HasColumnType("bigint")
+                        .HasColumnName("total_de_votos");
+
+                    b.Property<string>("Uf")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("uf");
+
+                    b.HasKey("Id")
+                        .HasName("pk_candidaturas");
+
+                    b.HasIndex("AnoDaEleicao", "SequencialNoTse")
+                        .IsUnique()
+                        .HasDatabaseName("ix_candidaturas_ano_sequencial");
+
+                    b.HasIndex("ParlamentarId", "AnoDaEleicao")
+                        .IsUnique()
+                        .HasDatabaseName("ix_candidaturas_parlamentar_ano");
+
+                    b.ToTable("candidaturas", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Eleicoes.DoacaoEleitoral", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AnoDaEleicao")
+                        .HasColumnType("integer")
+                        .HasColumnName("ano_da_eleicao");
+
+                    b.Property<string>("CargoDoDestinatario")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("cargo_do_destinatario");
+
+                    b.Property<string>("CpfDoDoador")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("cpf_mascarado_do_doador");
+
+                    b.Property<DateOnly>("Data")
+                        .HasColumnType("date")
+                        .HasColumnName("data");
+
+                    b.Property<int>("Destino")
+                        .HasColumnType("integer")
+                        .HasColumnName("destino");
+
+                    b.Property<string>("NomeDoDestinatario")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome_do_destinatario");
+
+                    b.Property<string>("NomeDoDoador")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome_do_doador");
+
+                    b.Property<string>("NomeDoDoadorNormalizado")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nome_do_doador_normalizado");
+
+                    b.Property<Guid?>("ParlamentarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parlamentar_id");
+
+                    b.Property<long>("SequencialDaReceita")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequencial_da_receita");
+
+                    b.Property<long?>("SequencialDoCandidato")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequencial_do_candidato");
+
+                    b.Property<string>("SiglaPartidoDoDestinatario")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("sigla_partido_do_destinatario");
+
+                    b.Property<string>("UfDoDestinatario")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("uf_do_destinatario");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("valor");
+
+                    b.HasKey("Id")
+                        .HasName("pk_doacoes_eleitorais");
+
+                    b.HasIndex("NomeDoDoadorNormalizado")
+                        .HasDatabaseName("ix_doacoes_nome_do_doador");
+
+                    b.HasIndex("ParlamentarId")
+                        .HasDatabaseName("ix_doacoes_parlamentar");
+
+                    b.HasIndex("AnoDaEleicao", "Destino", "SequencialDaReceita")
+                        .HasDatabaseName("ix_doacoes_ano_destino_sequencial");
+
+                    b.ToTable("doacoes_eleitorais", (string)null);
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Eleicoes.VotosNoMunicipio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CandidaturaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("candidatura_id");
+
+                    b.Property<int>("CodigoDoMunicipioNoTse")
+                        .HasColumnType("integer")
+                        .HasColumnName("codigo_do_municipio_no_tse");
+
+                    b.Property<string>("NomeDoMunicipio")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nome_do_municipio");
+
+                    b.Property<Guid>("ParlamentarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parlamentar_id");
+
+                    b.Property<string>("Uf")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("uf");
+
+                    b.Property<long>("Votos")
+                        .HasColumnType("bigint")
+                        .HasColumnName("votos");
+
+                    b.HasKey("Id")
+                        .HasName("pk_votos_por_municipio");
+
+                    b.HasIndex("CandidaturaId")
+                        .HasDatabaseName("ix_votos_por_municipio_candidatura_id");
+
+                    b.HasIndex("ParlamentarId")
+                        .HasDatabaseName("ix_votos_por_municipio_parlamentar");
+
+                    b.ToTable("votos_por_municipio", (string)null);
+                });
+
             modelBuilder.Entity("Explanando.Domain.Estado.ContagemPorFuncao", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1289,6 +1499,26 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasForeignKey("FornecedorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_despesas_fornecedores_fornecedor_id");
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Eleicoes.CandidaturaDoParlamentar", b =>
+                {
+                    b.HasOne("Explanando.Domain.Parlamentares.Parlamentar", null)
+                        .WithMany()
+                        .HasForeignKey("ParlamentarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_candidaturas_parlamentares_parlamentar_id");
+                });
+
+            modelBuilder.Entity("Explanando.Domain.Eleicoes.VotosNoMunicipio", b =>
+                {
+                    b.HasOne("Explanando.Domain.Eleicoes.CandidaturaDoParlamentar", null)
+                        .WithMany()
+                        .HasForeignKey("CandidaturaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_votos_por_municipio_candidaturas_candidatura_id");
                 });
 
             modelBuilder.Entity("Explanando.Domain.Estado.ContagemPorFuncao", b =>

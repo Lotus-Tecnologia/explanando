@@ -15,7 +15,7 @@ const RESULTADO: QuemBeneficiaQuem = {
       fornecedor: { documento: "43.783.350/0001-84", razaoSocial: "INSTITUTO A", valor: 519_700 },
       outraEmpresa: { documento: "55.292.471/0001-02", razaoSocial: "AGENCIA B", valor: 259_000 },
       sociosEmComum: 1,
-      socios: [{ nome: "FULANO DE TAL", qualificacao: "Sócio-Administrador nas duas" }],
+      socios: [{ nome: "FULANO DE TAL", qualificacao: "Sócio-Administrador nas duas", doacoes: [] }],
       outrosParlamentares: [
         {
           parlamentar: {

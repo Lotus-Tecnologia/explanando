@@ -77,6 +77,14 @@ public interface IConsultasPublicas
         Guid parlamentarId,
         CancellationToken cancelamento = default);
 
+    /// <summary>
+    /// De onde vieram os votos da última eleição, e quanto da cota foi para fornecedores
+    /// sediados na base eleitoral. Nulo se o parlamentar não existe.
+    /// </summary>
+    Task<VotacaoDoParlamentar?> ObterVotacaoAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default);
+
     /// <summary>Uma despesa, com seus achados. Nulo se não existe.</summary>
     Task<DespesaDetalhada?> ObterDespesaAsync(
         Guid despesaId,

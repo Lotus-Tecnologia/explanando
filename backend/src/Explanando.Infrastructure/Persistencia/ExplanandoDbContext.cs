@@ -85,6 +85,21 @@ public sealed class ExplanandoDbContext(DbContextOptions<ExplanandoDbContext> op
     /// </summary>
     public DbSet<CadeiraDeComando> CadeirasDeComando => Set<CadeiraDeComando>();
 
+    /// <summary>
+    /// A eleição de 2022, do TSE: a candidatura de cada parlamentar, os votos dele por
+    /// município e as doações de pessoa física que o cruzamento usa. Só entra doação para um
+    /// parlamentar da base ou de quem é sócio de um fornecedor — o resto da prestação de contas
+    /// não alimenta regra nenhuma, e não é guardado.
+    /// </summary>
+    public DbSet<Domain.Eleicoes.CandidaturaDoParlamentar> Candidaturas =>
+        Set<Domain.Eleicoes.CandidaturaDoParlamentar>();
+
+    public DbSet<Domain.Eleicoes.VotosNoMunicipio> VotosPorMunicipio =>
+        Set<Domain.Eleicoes.VotosNoMunicipio>();
+
+    public DbSet<Domain.Eleicoes.DoacaoEleitoral> DoacoesEleitorais =>
+        Set<Domain.Eleicoes.DoacaoEleitoral>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);

@@ -8,16 +8,17 @@ namespace Explanando.Domain.Tests.Regras;
 public sealed class MotorDeRegrasTests
 {
     [Fact]
-    public void Motor_padrao_carrega_as_onze_regras_do_v1()
+    public void Motor_padrao_carrega_as_doze_regras()
     {
         var motor = MotorDeRegras.Padrao();
 
-        motor.Regras.Count.ShouldBe(11);
+        motor.Regras.Count.ShouldBe(12);
         motor.Regras.Select(regra => regra.Codigo).ShouldBe(
             [
                 "REG_KYB_001", "REG_KYB_002", "REG_KYB_003", "REG_KYB_004", "REG_KYB_005",
                 "REG_TX_001", "REG_TX_002", "REG_TX_003", "REG_TX_004",
                 "REG_GEO_002", "REG_GEO_003",
+                "REG_NET_001",
             ],
             ignoreOrder: true);
     }
@@ -62,7 +63,7 @@ public sealed class MotorDeRegrasTests
 
         resultado.Flags.ShouldBeEmpty();
         resultado.Falhas.ShouldBeEmpty();
-        resultado.RegrasSilenciosas.Count.ShouldBe(11);
+        resultado.RegrasSilenciosas.Count.ShouldBe(12);
         resultado.TaxaDeDespesasSinalizadas.ShouldBe(0m);
     }
 
@@ -120,8 +121,8 @@ public sealed class MotorDeRegrasTests
     [Fact]
     public void Toda_flag_e_deterministica_no_v1()
     {
-        // Nenhuma das 11 regras do V1 é probabilística — REG_NET_001, que seria, depende
-        // do TSE e está fora do escopo.
+        // Sem campanha no contexto, nenhuma regra probabilística dispara: REG_NET_001, a
+        // única que é (CPF de seis dígitos), precisa das doações do TSE.
         var contexto = new CenarioDeAvaliacao()
             .ComFornecedor(cnaePrincipal: "4723700")
             .ComDespesa(9_000m, tipo: CenarioDeAvaliacao.Consultoria)

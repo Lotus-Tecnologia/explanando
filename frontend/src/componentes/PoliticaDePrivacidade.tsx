@@ -76,6 +76,20 @@ export function PoliticaDePrivacidade() {
           O CPF do sócio chega <strong>mascarado da própria fonte</strong> — a Receita expõe
           apenas seis dos onze dígitos, e o número completo nunca entra neste sistema.
         </p>
+        <p>
+          <strong>De doadores de campanha (TSE, eleição de 2022):</strong> nome, valor, data e
+          destinatário da doação. Só entram as doações de pessoa física feitas a um parlamentar
+          da base, ou feitas por quem é sócio de uma empresa paga pela cota — as outras não
+          alimentam regra nenhuma e não são guardadas. O TSE publica o CPF do doador inteiro;{" "}
+          <strong>aqui ele é mascarado na leitura</strong>, na mesma posição da Receita, e o
+          número completo não é gravado.
+        </p>
+        <p>
+          O nome de um doador só aparece numa página quando ele também é sócio de uma empresa paga
+          pela cota do mesmo parlamentar — e a página diz que a ligação é de{" "}
+          <strong>compatibilidade</strong> (nome idêntico e os seis dígitos do CPF), não de
+          identidade comprovada.
+        </p>
       </Secao>
 
       <Secao titulo="O que não é coletado">

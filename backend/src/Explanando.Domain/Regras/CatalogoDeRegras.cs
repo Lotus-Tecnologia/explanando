@@ -61,6 +61,10 @@ public static class CatalogoDeRegras
         ["REG_GEO_003"] =
             "Gasto expressivo com alimentação ou hospedagem durante o recesso parlamentar.",
 
+        ["REG_NET_001"] =
+            "Um sócio da empresa paga pela cota tem nome idêntico e CPF compatível com o de um "
+            + "doador da campanha do parlamentar.",
+
         ["REG_NET_004"] =
             "Uma mesma empresa, recém-aberta, concentrou pagamentos de vários parlamentares "
             + "do mesmo partido.",

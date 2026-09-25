@@ -236,7 +236,7 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
             resultado.IndiceDeRisco.ShouldBe(0m);
             resultado.AmostraSuficiente.ShouldBeFalse();
             resultado.TaxaDeDespesasSinalizadas.ShouldBe(0m);
-            resultado.RegrasSilenciosas.Count.ShouldBe(11);
+            resultado.RegrasSilenciosas.Count.ShouldBe(12);
         }
     }
 
@@ -354,7 +354,7 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
             .Where(c => c.ParlamentarId == parlamentarId)
             .ToListAsync();
 
-        coberturas.Count.ShouldBe(11, "uma medicao por regra do motor padrao");
+        coberturas.Count.ShouldBe(12, "uma medicao por regra do motor padrao");
         coberturas.ShouldAllBe(c => c.VersaoDoMotor == MotorDeRegras.VersaoAtual);
     }
 
@@ -413,7 +413,7 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
         await using var leitura = banco.CriarContexto();
 
         (await leitura.CoberturasDeRegra.CountAsync(c => c.ParlamentarId == parlamentarId))
-            .ShouldBe(11);
+            .ShouldBe(12);
     }
 
     // ------------------------------------------------------------------
@@ -432,7 +432,7 @@ public sealed class VarreduraPontaAPontaTests(BancoDeTestes banco)
         {
             var resultado = await servico.VarrerAsync(parlamentarId);
 
-            resultado.Cobertura.PorRegra.Count.ShouldBe(11);
+            resultado.Cobertura.PorRegra.Count.ShouldBe(12);
             resultado.Cobertura.DespesasAvaliadas.ShouldBe(resultado.DespesasAvaliadas);
             resultado.Cobertura.SemDado.ShouldNotBeEmpty();
             resultado.Cobertura.VersaoDoMotor.ShouldBe(MotorDeRegras.VersaoAtual);

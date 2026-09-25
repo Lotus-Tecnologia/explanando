@@ -157,7 +157,7 @@ public sealed class ClienteDoPortalDaTransparencia(HttpClient http) : IFonteDePe
     /// </summary>
     private static (int Codigo, int Nome, int Funcao) Posicoes(string cabecalho)
     {
-        var nomes = Separar(cabecalho)
+        var nomes = CsvComAspas.Separar(cabecalho, Separador)
             .Select(c => c.Trim().ToUpperInvariant())
             .ToList();
 
@@ -177,7 +177,7 @@ public sealed class ClienteDoPortalDaTransparencia(HttpClient http) : IFonteDePe
 
     private static VinculoDaFonte? Converter(string linha, (int Codigo, int Nome, int Funcao) onde)
     {
-        var campos = Separar(linha);
+        var campos = CsvComAspas.Separar(linha, Separador);
 
         if (campos.Count <= onde.Nome)
         {
@@ -208,51 +208,5 @@ public sealed class ClienteDoPortalDaTransparencia(HttpClient http) : IFonteDePe
             // evita criar uma string para 638 mil linhas que nao tem funcao nenhuma.
             SiglaDaFuncao = string.IsNullOrWhiteSpace(funcao) || funcao == "-1" ? null : funcao,
         };
-    }
-
-    /// <summary>
-    /// Separa uma linha respeitando as aspas.
-    ///
-    /// <para>Um <c>Split(';')</c> bastaria hoje, e é justamente por isso que ele não serve:
-    /// o dia em que um nome de órgão trouxer um ponto e vírgula, ele deslocaria todas as
-    /// colunas daquela linha sem erro nenhum.</para>
-    /// </summary>
-    private static List<string> Separar(string linha)
-    {
-        var campos = new List<string>(48);
-        var atual = new StringBuilder(64);
-        var dentroDeAspas = false;
-
-        for (var i = 0; i < linha.Length; i++)
-        {
-            var c = linha[i];
-
-            if (c == '"')
-            {
-                // Aspas duplicadas dentro de campo entre aspas representam uma aspa.
-                if (dentroDeAspas && i + 1 < linha.Length && linha[i + 1] == '"')
-                {
-                    atual.Append('"');
-                    i++;
-                    continue;
-                }
-
-                dentroDeAspas = !dentroDeAspas;
-                continue;
-            }
-
-            if (c == Separador && !dentroDeAspas)
-            {
-                campos.Add(atual.ToString());
-                atual.Clear();
-                continue;
-            }
-
-            atual.Append(c);
-        }
-
-        campos.Add(atual.ToString());
-
-        return campos;
     }
 }

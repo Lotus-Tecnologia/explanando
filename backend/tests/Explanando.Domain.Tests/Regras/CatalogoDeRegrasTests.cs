@@ -18,7 +18,7 @@ namespace Explanando.Domain.Tests.Regras;
 /// </summary>
 public sealed class CatalogoDeRegrasTests
 {
-    /// <summary>As 11 do motor por parlamentar mais a passada de rede.</summary>
+    /// <summary>As 12 do motor por parlamentar mais a passada de rede.</summary>
     private static IReadOnlyList<string> CodigosQueOMotorConhece() =>
     [
         .. MotorDeRegras.Padrao().Regras.Select(regra => regra.Codigo),

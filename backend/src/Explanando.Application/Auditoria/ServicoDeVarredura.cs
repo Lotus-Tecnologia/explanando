@@ -24,6 +24,14 @@ public interface IRepositorioDeVarredura
     Task<ScoreRiscoParlamentar?> ObterScoreAsync(Guid parlamentarId, CancellationToken cancelamento = default);
 
     /// <summary>
+    /// As doações de pessoa física à campanha do parlamentar. <b>Nulo</b> quando não há
+    /// campanha ligada a ele na base do TSE — e nulo é diferente de lista vazia (ADR-0009).
+    /// </summary>
+    Task<IReadOnlyList<Domain.Eleicoes.DoacaoEleitoral>?> ObterDoacoesDaCampanhaAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
     /// O ponto do historico daquele dia, se ja existir. A varredura roda mais de uma vez
     /// no mesmo dia — cada solicitacao paga dispara uma — e o indice e' unico por
     /// (parlamentar, data).
@@ -148,7 +156,11 @@ public sealed class ServicoDeVarredura(
         var limites = await repositorio.ObterLimitesAsync(parlamentar.Uf, cancelamento)
             .ConfigureAwait(false);
 
-        var contexto = new ContextoDeAvaliacao(parlamentar, despesas, fornecedores, limites);
+        var doacoes = await repositorio.ObterDoacoesDaCampanhaAsync(parlamentarId, cancelamento)
+            .ConfigureAwait(false);
+
+        var contexto = new ContextoDeAvaliacao(
+            parlamentar, despesas, fornecedores, limites, _parametros, doacoes);
         var avaliacao = motor.Avaliar(contexto);
 
         // Recalcula do zero: apaga o que a passada anterior escreveu antes de gravar — mas

@@ -177,4 +177,31 @@ public class CadeiasDeSociosTests
         resultado.Cadeias.ShouldBeEmpty();
         resultado.TotalDeCadeias.ShouldBe(1);
     }
+
+    [Fact]
+    public void O_socio_leva_as_doacoes_de_campanha_compativeis()
+    {
+        var doacoes = new Dictionary<(string Nome, string Cpf), IReadOnlyList<DoacaoDoSocio>>
+        {
+            [("FULANO DE TAL", "123456")] =
+            [
+                new DoacaoDoSocio { Ano = 2022, Destinatario = "CANDIDATA X", SiglaPartido = "XYZ", Uf = "SP", Valor = 5_000m },
+            ],
+        };
+
+        var resultado = CadeiasDeSocios.Montar(
+            Eu, Basico, SocioNasDuas(), new HashSet<string>(), Empresas, Parlamentares(Eu, Outro),
+            doacoesPorSocio: doacoes);
+
+        var socio = resultado.Cadeias.Single().Socios.Single();
+        socio.Doacoes.ShouldHaveSingleItem().Destinatario.ShouldBe("CANDIDATA X");
+    }
+
+    [Fact]
+    public void Sem_doacao_compativel_a_lista_vem_vazia()
+    {
+        var resultado = Montar(Basico, SocioNasDuas());
+
+        resultado.Cadeias.Single().Socios.Single().Doacoes.ShouldBeEmpty();
+    }
 }

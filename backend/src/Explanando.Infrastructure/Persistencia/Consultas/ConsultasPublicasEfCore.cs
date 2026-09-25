@@ -1,5 +1,6 @@
 using Explanando.Application.Consultas;
 using Explanando.Domain.Auditoria;
+using Explanando.Domain.Comum;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Parlamentares;
 using Explanando.Domain.Regras;
@@ -467,8 +468,116 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                     FotoUrl = p.FotoUrl,
                 });
 
+        var doacoesPorSocio = await DoacoesDosSociosAsync(vinculos, ambiguos, cancelamento)
+            .ConfigureAwait(false);
+
         return CadeiasDeSocios.Montar(
-            parlamentarId, pagamentos, vinculos, ambiguos, empresas, parlamentares);
+            parlamentarId, pagamentos, vinculos, ambiguos, empresas, parlamentares,
+            doacoesPorSocio: doacoesPorSocio);
+    }
+
+    /// <summary>
+    /// As doações de campanha de cada sócio, pelo nome normalizado e pelos seis dígitos do CPF.
+    /// A consulta busca pelo nome, que é indexado; o CPF filtra em memória.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<(string Nome, string Cpf), IReadOnlyList<DoacaoDoSocio>>>
+        DoacoesDosSociosAsync(
+            IReadOnlyCollection<VinculoDeSocio> vinculos,
+            HashSet<string> ambiguos,
+            CancellationToken cancelamento)
+    {
+        var chaves = vinculos
+            .Where(v => !ambiguos.Contains(v.Nome))
+            .Select(v => (Nome: NomeNormalizado.De(v.Nome), Cpf: CadeiasDeSocios.Digitos(v.CpfMascarado)))
+            .Where(c => c.Cpf.Length == 6)
+            .ToHashSet();
+
+        var nomes = chaves.Select(c => c.Nome).Distinct().ToList();
+
+        if (nomes.Count == 0)
+        {
+            return new Dictionary<(string, string), IReadOnlyList<DoacaoDoSocio>>();
+        }
+
+        var doacoes = await contexto.DoacoesEleitorais
+            .AsNoTracking()
+            .Where(d => nomes.Contains(d.NomeDoDoadorNormalizado))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        return doacoes
+            .Select(d => (Chave: (d.NomeDoDoadorNormalizado, d.CpfDoDoador.DigitosVisiveis), Doacao: d))
+            .Where(par => chaves.Contains(par.Chave))
+            .GroupBy(par => par.Chave)
+            .ToDictionary(
+                grupo => grupo.Key,
+                grupo => (IReadOnlyList<DoacaoDoSocio>)[.. grupo
+                    .GroupBy(par => (par.Doacao.AnoDaEleicao, par.Doacao.NomeDoDestinatario, par.Doacao.SiglaPartidoDoDestinatario, par.Doacao.UfDoDestinatario, par.Doacao.CargoDoDestinatario))
+                    .Select(porDestino => new DoacaoDoSocio
+                    {
+                        Ano = porDestino.Key.AnoDaEleicao,
+                        Destinatario = porDestino.Key.NomeDoDestinatario,
+                        SiglaPartido = porDestino.Key.SiglaPartidoDoDestinatario,
+                        Uf = porDestino.Key.UfDoDestinatario,
+                        Cargo = porDestino.Key.CargoDoDestinatario,
+                        Valor = porDestino.Sum(par => par.Doacao.Valor),
+                    })
+                    .OrderByDescending(d => d.Valor)]);
+    }
+
+    public async Task<VotacaoDoParlamentar?> ObterVotacaoAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default)
+    {
+        if (!await contexto.Parlamentares.AnyAsync(p => p.Id == parlamentarId, cancelamento)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        var candidatura = await contexto.Candidaturas
+            .AsNoTracking()
+            .Where(c => c.ParlamentarId == parlamentarId)
+            .OrderByDescending(c => c.AnoDaEleicao)
+            .FirstOrDefaultAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        if (candidatura is null)
+        {
+            return new VotacaoDoParlamentar { TemCandidatura = false };
+        }
+
+        var votos = await contexto.VotosPorMunicipio
+            .AsNoTracking()
+            .Where(v => v.CandidaturaId == candidatura.Id)
+            .Select(v => new { v.NomeDoMunicipio, v.Uf, v.Votos })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var pagoPorFornecedor = await contexto.Despesas
+            .AsNoTracking()
+            .Where(d => d.ParlamentarId == parlamentarId && d.FornecedorId != null)
+            .GroupBy(d => d.FornecedorId!.Value)
+            .Select(g => new { FornecedorId = g.Key, Valor = g.Sum(d => d.ValorLiquido) })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        var ids = pagoPorFornecedor.Select(p => p.FornecedorId).ToList();
+
+        var sedes = (await contexto.Fornecedores
+            .AsNoTracking()
+            .Where(f => ids.Contains(f.Id))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false))
+            .ToDictionary(f => f.Id, f => (f.Endereco.Municipio, f.Endereco.Uf));
+
+        return MontagemDaVotacao.Montar(
+            (candidatura.AnoDaEleicao, candidatura.NomeDeUrna, candidatura.Cargo, candidatura.SiglaPartido,
+                candidatura.Situacao, candidatura.TotalDeVotos),
+            [.. votos.Select(v => (v.NomeDoMunicipio, v.Uf, v.Votos))],
+            [.. pagoPorFornecedor.Select(p => sedes.TryGetValue(p.FornecedorId, out var sede)
+                ? (sede.Municipio, sede.Uf, p.Valor)
+                : ((string?)null, (string?)null, p.Valor))]);
     }
 
     /// <summary>Teto do feed. Leitor de RSS guarda o que já viu; cem itens cobrem meses.</summary>
@@ -793,6 +902,16 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         if (cobertura.DadoAusente.HasFlag(DadoExigido.EnderecoDoFornecedor))
         {
             faltando.Add("o endereço do fornecedor é desconhecido");
+        }
+
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.CampanhaDoParlamentar))
+        {
+            faltando.Add("não há campanha deste parlamentar ligada à base do TSE de 2022");
+        }
+
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.QuadroSocietarioDoFornecedor))
+        {
+            faltando.Add("o quadro societário do fornecedor não traz sócio pessoa física");
         }
 
         if (cobertura.DadoAusente.HasFlag(DadoExigido.SituacaoDoFornecedor))

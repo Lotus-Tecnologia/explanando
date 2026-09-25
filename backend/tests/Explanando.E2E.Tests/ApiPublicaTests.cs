@@ -184,7 +184,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
         var perfil = await LerAsync<PerfilDoParlamentar>(
             await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
 
-        perfil.Cobertura.Count.ShouldBe(11);
+        perfil.Cobertura.Count.ShouldBe(12);
         perfil.RegrasConclusivas.ShouldBeGreaterThan(0);
     }
 
@@ -422,6 +422,26 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     public async Task Socios_em_comum_de_parlamentar_inexistente_e_404()
     {
         var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.CreateVersion7()}/socios-em-comum");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Votacao_sem_candidatura_ligada_diz_que_nao_ha_e_nao_zero()
+    {
+        // A semente não tem base do TSE: a resposta diz que não há candidatura, em vez de
+        // devolver zero voto — zero diria que a eleição foi olhada e ninguém votou.
+        var votacao = await LerAsync<VotacaoDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}/votacao"));
+
+        votacao.TemCandidatura.ShouldBeFalse();
+        votacao.Principais.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Votacao_de_parlamentar_inexistente_e_404()
+    {
+        var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.CreateVersion7()}/votacao");
 
         resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }

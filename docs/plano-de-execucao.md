@@ -238,7 +238,23 @@ acabar sem resposta, isso também é resposta.
 
 ---
 
-## Fase 7 — Timeline com doação e mapa expandido · **M a G, conforme a Fase 6** · ⏸ espera os lotes do TSE
+## Fase 7 — Timeline com doação e mapa expandido · **M a G, conforme a Fase 6** · ✅ entregue em 2026-09-25
+
+> **O que entrou.** A carga do TSE de 2022 (`importar-tse`, ver
+> [contratos/tse.md](contratos/tse.md)) e três usos dela:
+>
+> - **REG_NET_001 no motor** — a regra que a especificação tinha desde o começo: sócio do
+>   fornecedor com nome idêntico e CPF compatível com doador da campanha do parlamentar. É o
+>   degrau "torna-se doador" da timeline, e entrou no índice, na decomposição, na cobertura e no
+>   RSS de uma vez. Medido: **73 achados em 40 deputados**, uma flag por fornecedor, confiança
+>   0,85.
+> - **"De onde vieram os votos"** no perfil, com o quanto da cota foi para fornecedores sediados
+>   nos municípios que somam metade dos votos.
+> - **As doações do sócio** no "quem beneficia quem" — o salto da doação para candidato ou
+>   partido.
+>
+> **O que não entrou:** o alerta de "gasto em reduto eleitoral" (Fase 3). O dado existe agora;
+> falta decidir se isso é notícia sobre alguém — pagar fornecedor da própria base não é achado.
 
 **Só começa se a Fase 6 disser sim.**
 

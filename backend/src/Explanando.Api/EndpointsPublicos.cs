@@ -67,6 +67,16 @@ public static class EndpointsPublicos
                 + "não é outra empresa. O nome do sócio sai como o quadro societário da Receita o "
                 + "publica; o CPF, nem mascarado. Ter sócio em comum não é irregularidade.");
 
+        grupo.MapGet("/parlamentares/{id:guid}/votacao", ObterVotacaoAsync)
+            .WithName("ObterVotacao")
+            .WithSummary("De onde vieram os votos, e quanto da cota foi para fornecedores sediados ali.")
+            .WithDescription(
+                "Da última eleição com candidatura ligada ao parlamentar na base do TSE. A base "
+                + "eleitoral é aritmética: os municípios que, do maior para o menor, somam metade "
+                + "dos votos. A sede do fornecedor é o endereço na Receita, não onde o serviço foi "
+                + "prestado. `temCandidatura` falso quando não há ligação — senador eleito em 2018, "
+                + "ou candidatura que o TSE registra com outro nome.");
+
         grupo.MapGet("/achados-recentes", ListarAchadosRecentesAsync)
             .WithName("ListarAchadosRecentes")
             .WithSummary("As despesas com achado que entraram na base por último.")
@@ -104,6 +114,16 @@ public static class EndpointsPublicos
         var resultado = await consultas.ObterSociosEmComumAsync(id, cancelamento).ConfigureAwait(false);
 
         return resultado is null ? Results.NotFound() : Results.Ok(resultado);
+    }
+
+    private static async Task<IResult> ObterVotacaoAsync(
+        IConsultasPublicas consultas,
+        Guid id,
+        CancellationToken cancelamento)
+    {
+        var votacao = await consultas.ObterVotacaoAsync(id, cancelamento).ConfigureAwait(false);
+
+        return votacao is null ? Results.NotFound() : Results.Ok(votacao);
     }
 
     private static async Task<IResult> ListarAchadosRecentesAsync(

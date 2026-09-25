@@ -189,6 +189,17 @@ public sealed class Fornecedor : Entidade
 
     internal void AdicionarSocio(Sociedade socio) => _quadroSocietario.Add(socio);
 
+    /// <summary>
+    /// Acrescenta um sócio ao quadro desta empresa, como o QSA o publica. O CPF chega da fonte
+    /// já mascarado — ver <see cref="Comum.CpfParcial"/>.
+    /// </summary>
+    public Sociedade RegistrarSocio(string nome, string? cpfMascarado, string? qualificacao = null, DateOnly? entrada = null)
+    {
+        var socio = Sociedade.Criar(Id, nome, cpfMascarado, qualificacao, entrada);
+        _quadroSocietario.Add(socio);
+        return socio;
+    }
+
     private static EnderecoFornecedor NormalizarEndereco(EnderecoFornecedor endereco) =>
         endereco with
         {

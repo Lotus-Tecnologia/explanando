@@ -37,8 +37,10 @@ public sealed class RepositorioDeVarredura(ExplanandoDbContext contexto) : IRepo
 
         // Uma consulta so' para todos os fornecedores da passada: carregar um a um seria
         // N+1 sobre as ~1.200 despesas de um deputado.
+        // Com o quadro societário: REG_NET_001 cruza os sócios com os doadores da campanha.
         return await contexto.Fornecedores
             .AsNoTracking()
+            .Include(fornecedor => fornecedor.QuadroSocietario)
             .Where(fornecedor => fornecedorIds.Contains(fornecedor.Id))
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
@@ -52,6 +54,26 @@ public sealed class RepositorioDeVarredura(ExplanandoDbContext contexto) : IRepo
             .Where(limite => limite.Uf == uf)
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<Domain.Eleicoes.DoacaoEleitoral>?> ObterDoacoesDaCampanhaAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default)
+    {
+        var temCampanha = await contexto.Candidaturas
+            .AnyAsync(candidatura => candidatura.ParlamentarId == parlamentarId, cancelamento)
+            .ConfigureAwait(false);
+
+        if (!temCampanha)
+        {
+            return null;
+        }
+
+        return await contexto.DoacoesEleitorais
+            .AsNoTracking()
+            .Where(doacao => doacao.ParlamentarId == parlamentarId)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
 
     public Task<ScoreRiscoParlamentar?> ObterScoreAsync(
         Guid parlamentarId,

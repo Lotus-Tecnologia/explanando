@@ -917,7 +917,15 @@ describe("PoliticaDePrivacidade", () => {
   it("avisa que o CPF do socio chega mascarado da propria fonte", () => {
     render(<PoliticaDePrivacidade />);
 
-    expect(screen.getByText(/mascarad/i)).toBeInTheDocument();
+    expect(screen.getByText(/chega/i, { selector: "p" })).toHaveTextContent(/mascarado da própria fonte/);
+  });
+
+  it("avisa que o CPF inteiro do doador do TSE e mascarado na leitura e nao e gravado", () => {
+    render(<PoliticaDePrivacidade />);
+
+    expect(screen.getByText(/doadores de campanha/i, { selector: "strong" }).closest("p")).toHaveTextContent(
+      /mascarado na leitura.*não é gravado/,
+    );
   });
 });
 

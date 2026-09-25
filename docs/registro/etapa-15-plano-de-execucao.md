@@ -92,3 +92,19 @@ para leitor de tela.
 
 1. **Mostrar o nome do sócio em comum** (Fase 5) — ver [pendências §5b](../pendencias.md).
 2. **Baixar os lotes do TSE** (Fase 7) — ver [contratos/tse.md](../contratos/tse.md).
+
+## 8. Depois do relatório: o nome do sócio e a carga do TSE (2026-09-25)
+
+As duas decisões da seção 7 foram tomadas no mesmo dia: **mostrar o nome do sócio** e
+**baixar os arquivos do TSE**.
+
+- O nome do sócio sai no bloco "Sócios em comum", como o QSA o publica; o CPF, nem mascarado.
+- Os três lotes do TSE (quase 1 GB) foram baixados pelo `fetch` do Node — o único cliente que
+  o CDN aceita — e carregados por `importar-tse`: **510 de 513** deputados ligados à candidatura
+  de 2022, 152.859 municípios com voto, 12.845 doações a parlamentares e 2.767 de sócios de
+  fornecedor. O CPF do doador é mascarado na leitura, e o completo não é gravado.
+- **REG_NET_001 entrou no motor** (versão 5): 73 achados em 40 deputados.
+- O perfil ganhou "De onde vieram os votos", e as cadeias de sócio ganharam as doações.
+
+Os números e as duas medições que mudaram o modelo estão em
+[contratos/tse.md](../contratos/tse.md).

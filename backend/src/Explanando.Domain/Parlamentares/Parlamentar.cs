@@ -105,6 +105,21 @@ public sealed class Parlamentar : Entidade
     }
 
     /// <summary>
+    /// Troca o nome civil pelo que o detalhe da casa publica.
+    ///
+    /// <para>A lista de deputados da Camara traz so' o nome parlamentar, e a ingestao o
+    /// gravava nos dois campos. O civil de verdade esta' no detalhe de cada um — e e' a unica
+    /// chave que liga o parlamentar a candidatura no TSE, onde o nome de urna costuma ser
+    /// outro ("GLEISI", "FRAGA", "CAPITAO DERRITE").</para>
+    /// </summary>
+    public void CompletarNomeCivil(string nomeCivil)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(nomeCivil);
+
+        NomeCivil = nomeCivil.Trim();
+    }
+
+    /// <summary>
     /// Idempotente: a ingestao roda repetidas vezes sobre os mesmos dados e nao pode
     /// acumular mandatos duplicados.
     /// </summary>
