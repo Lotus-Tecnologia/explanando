@@ -198,6 +198,12 @@ public sealed record PerfilDoParlamentar
     /// </summary>
     public IReadOnlyList<ParcelaDoIndice> Composicao { get; init; } = [];
 
+    /// <summary>
+    /// Quantos fornecedores distintos, pelo documento — CNPJ ou CPF. É a medida de
+    /// concentração mais simples que existe, e a que o comparador põe lado a lado.
+    /// </summary>
+    public int FornecedoresDistintos { get; init; }
+
     /// <summary>Quantas regras produziram resultado interpretável.</summary>
     public int RegrasConclusivas => Cobertura.Count(regra => regra.SilencioEhConclusivo);
 

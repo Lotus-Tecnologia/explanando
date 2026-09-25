@@ -6,12 +6,15 @@ import {
   coletarIdsParaPreRender,
   listarDespesas,
   obterPerfil,
+  ranquearTudo,
 } from "@/lib/api";
 import { metadadosDoParlamentar } from "@/lib/metadados";
 import { formatarDensidade, formatarNumero, formatarReais } from "@/lib/formato";
 import { CASAS } from "@/lib/casas";
 import { BlocoDeCobertura } from "@/componentes/Abstencao";
 import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
+import { CompararCom } from "@/componentes/CompararCom";
+import { retratoSeguro } from "@/lib/fotos";
 import { ListaDeDespesas } from "@/componentes/ListaDeDespesas";
 import { SerieMensal } from "@/componentes/SerieMensal";
 
@@ -109,9 +112,16 @@ export default async function Perfil({
     itens: ACHADOS_EM_DESTAQUE,
   });
 
+  const casaDoPerfil = CASAS.find((candidata) => candidata.nomeOficial === perfil.casa);
+
+  // Os colegas de casa, para o comparador. O Next deduplica: é a mesma busca que o ranking
+  // faz, e as 513 páginas de perfil a dividem.
+  const colegas = casaDoPerfil ? await ranquearTudo(casaDoPerfil, "volume") : null;
+  const retrato = retratoSeguro(perfil.fotoUrl);
+
   // Volta para o ranking da casa dele, e não para a página inicial: é de lá que quem
   // clicou num nome veio, e as duas casas nunca dividem um ranking.
-  const casa = CASAS.find((candidata) => candidata.nomeOficial === perfil.casa);
+  const casa = casaDoPerfil;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -128,9 +138,9 @@ export default async function Perfil({
           o conteúdo da página, e disputar banda com o texto no celular seria trocar o que
           importa pelo enfeite.
         */}
-        {perfil.fotoUrl ? (
+        {retrato ? (
           <Image
-            src={perfil.fotoUrl}
+            src={retrato}
             alt=""
             width={72}
             height={96}
@@ -195,6 +205,17 @@ export default async function Perfil({
           nota="Indicadores de peso intermediário e baixo."
         />
       </dl>
+
+      {colegas && colegas.length > 1 && casa ? (
+        <div className="mt-4">
+          <CompararCom
+            id={perfil.id}
+            nome={perfil.nomeParlamentar}
+            colegas={colegas}
+            integrante={casa.integrante}
+          />
+        </div>
+      ) : null}
 
       {/*
         Logo abaixo dos números, porque é a pergunta que o número provoca: de onde vem isso?

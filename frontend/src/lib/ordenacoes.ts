@@ -50,7 +50,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
     rotulo: "Volume gasto",
     titulo: "Gastos da cota parlamentar — ranking por volume",
     descricao:
-      "Quanto cada parlamentar consumiu da cota, em reais, com estornos abatidos. Dados públicos da Câmara dos Deputados.",
+      "Quanto cada parlamentar consumiu da cota, em reais, com estornos abatidos. Dados públicos da própria casa legislativa.",
     explicacao:
       "Soma em reais, com estornos abatidos. Inclui todos os parlamentares — gasto não depende de amostra.",
     resumo: "Quanto se gastou, em reais.",
@@ -61,10 +61,10 @@ export const ORDENACOES: readonly Ordenacao[] = [
     rotulo: "Densidade de indicadores",
     titulo: "Densidade de indicadores por 100 despesas — ranking",
     descricao:
-      "Indicadores de um motor de regras determinístico, medidos por 100 despesas analisadas. Descreve inconsistências; não imputa conduta.",
+      "Indicadores de um motor de regras determinístico, pesados pela relevância e medidos a cada 100 despesas analisadas. Descreve inconsistências; não imputa conduta.",
     explicacao:
-      "Indicadores por 100 despesas. Exclui quem tem menos de 100 despesas analisadas, onde a densidade seria ruído — essas pessoas continuam no ranking de volume.",
-    resumo: "Achados por 100 despesas analisadas.",
+      "Peso dos achados a cada 100 despesas — alta pesa 3, média 2, baixa 1. Exclui quem tem menos de 100 despesas analisadas, onde a densidade seria ruído — essas pessoas continuam no ranking de volume.",
+    resumo: "Peso dos achados a cada 100 despesas.",
   },
   {
     chave: "gravidade",

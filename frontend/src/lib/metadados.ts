@@ -29,7 +29,7 @@ export function metadadosDoParlamentar(perfil: PerfilDoParlamentar): {
     `${formatarReais(perfil.volumeTotalGasto)} declarados em ${formatarNumero(perfil.despesasAvaliadas)} despesas da cota parlamentar.`,
     perfil.indiceDeRisco === null
       ? "Menos de 100 despesas: a densidade de indicadores não é publicável."
-      : `Densidade de ${formatarDensidade(perfil.indiceDeRisco)} indicadores por 100 despesas.`,
+      : `Índice de ${formatarDensidade(perfil.indiceDeRisco)}: peso dos indicadores a cada 100 despesas.`,
   ];
 
   if (perfil.regrasSemDado > 0) {

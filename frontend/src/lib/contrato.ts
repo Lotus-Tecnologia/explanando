@@ -159,6 +159,9 @@ export interface PerfilDoParlamentar {
    * Vem mesmo sem amostra suficiente: os achados existem, o que falta é o índice.
    */
   composicao: ParcelaDoIndice[];
+
+  /** Fornecedores distintos, pelo documento. A medida de concentração mais simples. */
+  fornecedoresDistintos: number;
 }
 
 /** A parte do índice que vem de uma regra. */

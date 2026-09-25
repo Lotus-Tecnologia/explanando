@@ -91,7 +91,7 @@ mostra caixa vazia — mostra o caminho para o gabinete contestar.
 
 ---
 
-## Fase 2 — Comparador de políticos · **P**
+## Fase 2 — Comparador de políticos · **P** · ✅ entregue em 2026-09-24
 
 **Objetivo.** "João × Maria", lado a lado, nas métricas que já calculamos.
 

@@ -19,9 +19,35 @@ function normalizar(texto: string): string {
 
 interface BuscaRapidaHomeProps {
   parlamentares: readonly ItemDoRanking[];
+
+  /**
+   * Para onde a escolha leva. Na home, o perfil; no perfil, a comparação com quem já está na
+   * página. A busca é a mesma — o que muda é o destino.
+   */
+  caminhoDe?: (parlamentar: ItemDoRanking) => string;
+
+  placeholder?: string;
+
+  /** Quem não deve aparecer na lista — no comparador, o próprio parlamentar da página. */
+  excluirId?: string;
+
+  /** O nome acessível do campo, quando não há um `<label>` apontando para ele. */
+  rotulo?: string;
+
+  /** O `id` do campo, para um `<label htmlFor>` de fora apontar para ele. */
+  idDoCampo?: string;
 }
 
-export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
+const PARA_O_PERFIL = (parlamentar: ItemDoRanking) => `/parlamentares/${parlamentar.id}`;
+
+export function BuscaRapidaHome({
+  parlamentares,
+  caminhoDe = PARA_O_PERFIL,
+  placeholder = "Buscar por nome, partido ou UF (ex: Tabata, SP, PL, Romário)...",
+  excluirId,
+  rotulo,
+  idDoCampo,
+}: BuscaRapidaHomeProps) {
   const [consulta, setConsulta] = useState("");
   const [aberto, setAberto] = useState(false);
   const [indiceFoco, setIndiceFoco] = useState(-1);
@@ -38,6 +64,7 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
     const termos = termoNormalizado.split(/\s+/).filter(Boolean);
 
     return parlamentares
+      .filter((p) => p.id !== excluirId)
       .filter((p) => {
         const nome = normalizar(p.nomeParlamentar);
         const partido = normalizar(p.siglaPartido);
@@ -55,7 +82,7 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
         );
       })
       .slice(0, 7);
-  }, [parlamentares, termoNormalizado]);
+  }, [parlamentares, termoNormalizado, excluirId]);
 
   // Fecha o menu ao clicar fora
   useEffect(() => {
@@ -85,10 +112,14 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
       e.preventDefault();
       setIndiceFoco((antigo) => (antigo <= 0 ? resultados.length - 1 : antigo - 1));
     } else if (e.key === "Enter") {
-      if (indiceFoco >= 0 && indiceFoco < resultados.length) {
+      // Sem item destacado, Enter leva ao primeiro — é o que o rodapé do menu promete, e o
+      // que quem digitou um nome e apertou Enter espera.
+      const alvo = indiceFoco >= 0 && indiceFoco < resultados.length ? indiceFoco : 0;
+
+      if (resultados[alvo]) {
         e.preventDefault();
-        const escolhido = resultados[indiceFoco];
-        router.push(`/parlamentares/${escolhido.id}`);
+        const escolhido = resultados[alvo];
+        router.push(caminhoDe(escolhido));
         setAberto(false);
       }
     } else if (e.key === "Escape") {
@@ -133,6 +164,7 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
 
         <input
           ref={inputRef}
+          id={idDoCampo}
           type="search"
           role="combobox"
           aria-expanded={aberto && (temResultados || mostrarMensagemVazia)}
@@ -153,8 +185,9 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
             if (termoNormalizado.length >= 2) setAberto(true);
           }}
           onKeyDown={aoTeclar}
-          placeholder="Buscar por nome, partido ou UF (ex: Tabata, SP, PL, Romário)..."
-          className="w-full rounded-campo border-2 border-borda-suave bg-fundo py-3.5 pr-11 pl-12 text-sm text-texto shadow-cartao transition-colors placeholder:text-texto-suave/70 hover:border-borda-estrutural focus:border-titulo focus:ring-2 focus:ring-acento/20 focus:outline-none"
+          placeholder={placeholder}
+          aria-label={rotulo}
+          className="w-full rounded-campo border-2 border-borda-suave bg-fundo py-3.5 pr-11 pl-12 [&::-webkit-search-cancel-button]:appearance-none text-sm text-texto shadow-cartao transition-colors placeholder:text-texto-suave/70 hover:border-borda-estrutural focus:border-titulo focus:ring-2 focus:ring-acento/20 focus:outline-none"
         />
 
         {consulta.length > 0 && (
@@ -194,7 +227,7 @@ export function BuscaRapidaHome({ parlamentares }: BuscaRapidaHomeProps) {
                     aria-selected={selecionado}
                   >
                     <Link
-                      href={`/parlamentares/${item.id}`}
+                      href={caminhoDe(item)}
                       onClick={() => setAberto(false)}
                       className={`flex items-center gap-3 rounded-campo px-3 py-2 text-left transition-colors ${
                         selecionado

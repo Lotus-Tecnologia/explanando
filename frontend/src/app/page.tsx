@@ -79,13 +79,12 @@ export default async function Home() {
           {/* Busca Rápida de Parlamentares */}
           <div className="mt-8">
             <label
-              htmlFor="busca-rapida-rotulo"
-              id="busca-rapida-rotulo"
+              htmlFor="busca-rapida"
               className="mb-2 block text-xs font-bold uppercase tracking-wider text-texto-suave"
             >
               Consulta Rápida de Parlamentares
             </label>
-            <BuscaRapidaHome parlamentares={tudo} />
+            <BuscaRapidaHome parlamentares={tudo} idDoCampo="busca-rapida" />
           </div>
 
           {/* Cards de Métricas Consolidadas (KPIs) */}

@@ -198,6 +198,14 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
+        var fornecedoresDistintos = await contexto.Despesas
+            .AsNoTracking()
+            .Where(despesa => despesa.ParlamentarId == parlamentarId)
+            .Select(despesa => despesa.DocumentoFornecedor)
+            .Distinct()
+            .CountAsync(cancelamento)
+            .ConfigureAwait(false);
+
         var score = cabecalho.score;
         var temAmostra = score is not null && score.AmostraSuficiente;
 
@@ -232,6 +240,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             Cobertura = [.. cobertura.Select(Traduzir)],
             TiposDeDespesa = tipos,
             Composicao = composicao,
+            FornecedoresDistintos = fornecedoresDistintos,
         };
     }
 

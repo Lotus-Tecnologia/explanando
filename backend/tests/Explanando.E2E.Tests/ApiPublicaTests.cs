@@ -276,6 +276,16 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task Perfil_conta_os_fornecedores_distintos()
+    {
+        // A semente usa um fornecedor só para todo mundo.
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
+
+        perfil.FornecedoresDistintos.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Sem_amostra_a_composicao_vem_mas_o_indice_nao()
     {
         // Os achados existem e a página os lista; o que falta é o índice. A borda explica a

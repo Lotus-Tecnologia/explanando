@@ -15,7 +15,7 @@ const VOLUME = ordenacaoPorChave("volume")!;
 
 export const metadata: Metadata = {
   title: `${VOLUME.titulo} — ${CASA.nomeOficial}`,
-  description: `${VOLUME.descricao} Cota ${CASA.cota}, 118 senadores em exercício.`,
+  description: `${VOLUME.descricao} Cota ${CASA.cota}, dos senadores que exerceram mandato na legislatura.`,
   alternates: { canonical: caminhoDoRanking(CASA, VOLUME) },
 };
 
