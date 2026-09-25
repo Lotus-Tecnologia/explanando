@@ -12,9 +12,31 @@ public sealed class CatalogoDeTiposDeDespesaTests
     [Fact]
     public void Conhece_os_tipos_das_duas_casas()
     {
-        // 16 da CEAP da Camara + 7 da CEAPS do Senado, todos com grafia verificada em dado
-        // real. As duas casas dividem o catalogo: o codigo e' so' um identificador.
-        CatalogoDeTiposDeDespesa.Quantidade.ShouldBe(23);
+        // 16 + 4 da CEAP da Camara e 7 da CEAPS do Senado, todos com grafia verificada em
+        // dado real. As duas casas dividem o catalogo: o codigo e' so' um identificador.
+        CatalogoDeTiposDeDespesa.Quantidade.ShouldBe(27);
+    }
+
+    [Theory]
+    [InlineData("SERVIÇO DE SEGURANÇA PRESTADO POR EMPRESA ESPECIALIZADA.")]
+    [InlineData("CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.")]
+    [InlineData("PARTICIPAÇÃO EM CURSO, PALESTRA OU EVENTO SIMILAR")]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE EMBARCAÇÕES")]
+    public void Conhece_os_quatro_que_a_coleta_de_2026_08_21_revelou(string nome)
+    {
+        // A grafia veio da origem, e nao de adivinhacao: repare que dois tem ponto final e
+        // dois nao tem. Era exatamente isso que impedia cataloga-los antes de ve-los.
+        CatalogoDeTiposDeDespesa.CodigoDe(nome).ShouldNotBe(CatalogoDeTiposDeDespesa.NaoCatalogado);
+    }
+
+    [Fact]
+    public void Os_codigos_antigos_NAO_se_moveram()
+    {
+        // Os indices estao persistidos em `despesas`. Inserir no meio, em vez de no fim,
+        // trocaria o tipo de todas as despesas ja' ingeridas — em silencio.
+        CatalogoDeTiposDeDespesa.CodigoDe("COMBUSTÍVEIS E LUBRIFICANTES.").ShouldBe((short)1);
+        CatalogoDeTiposDeDespesa.CodigoDe("SERVIÇOS POSTAIS").ShouldBe((short)16);
+        CatalogoDeTiposDeDespesa.CodigoDe("Serviços de Segurança Privada").ShouldBe((short)23);
     }
 
     [Theory]

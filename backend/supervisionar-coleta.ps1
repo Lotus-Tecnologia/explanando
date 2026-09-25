@@ -58,6 +58,37 @@ function Anotar($mensagem) {
     Write-Output $linha
 }
 
+function EsperarOLogAssentar($caminhoDoLog) {
+    <#
+        Espera o log parar de crescer antes de le-lo.
+
+        A CORRIDA QUE ISTO CONSERTA: WaitForExit volta quando o PROCESSO morre, nao quando o
+        que ele escreveu chegou ao disco. O Start-Process redireciona a saida, e o ultimo
+        bloco — justamente o "=== COLETA ===" que EstaInterrompida procura — pode ainda estar
+        no buffer. Ler nesse instante faz o supervisor julgar INCOMPLETA uma coleta que
+        terminou, e relancar sem necessidade.
+
+        Erra para o lado seguro (relanca de novo, e a coleta e' retomavel), mas gasta uma das
+        oito tentativas e uma janela de quinze minutos por engano.
+
+        Esperar o tamanho estabilizar, e nao dormir um tempo fixo: um Start-Sleep 3 seria
+        chute nos dois sentidos — demais numa coleta que ja' terminou, de menos num disco
+        lento. O teto existe porque log que nunca assenta nao pode travar o supervisor.
+    #>
+    $ultimo = -1
+
+    for ($i = 0; $i -lt 20; $i++) {
+        $tamanho = if (Test-Path $caminhoDoLog) { (Get-Item $caminhoDoLog).Length } else { 0 }
+
+        if ($tamanho -eq $ultimo -and $tamanho -gt 0) { return }
+
+        $ultimo = $tamanho
+        Start-Sleep -Milliseconds 500
+    }
+
+    Anotar "o log nao assentou em 10s; lendo assim mesmo"
+}
+
 function EstaInterrompida($caminhoDoLog) {
     if (-not (Test-Path $caminhoDoLog)) { return $true }
     $texto = Get-Content $caminhoDoLog -Raw
@@ -78,6 +109,7 @@ if ($PidAtual -gt 0) {
     if ($proc) {
         Anotar "aguardando a coleta em andamento (PID $PidAtual)"
         $proc.WaitForExit()
+        EsperarOLogAssentar $logAtual
         Anotar "a coleta em andamento terminou"
     }
 }
@@ -101,6 +133,7 @@ for ($tentativa = 1; $tentativa -le $MaximoDeTentativas; $tentativa++) {
         -WindowStyle Hidden -PassThru
 
     $p.WaitForExit()
+    EsperarOLogAssentar $logAtual
     Anotar "tentativa $tentativa terminou com codigo $($p.ExitCode)"
 }
 

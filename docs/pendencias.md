@@ -59,11 +59,11 @@ quem quer o detalhe abre.
 
 - **A casa na chave de `checkpoints_ingestao`.** Hoje é único por `(IdExternoParlamentar, Legislatura)`, sem o tipo. Protegido por guarda no comando `coletar-senado`, não por esquema — as faixas não se tocam (senadores até 6.381, deputados a partir de 62.881), mas "impossível na prática" envelhece sem avisar.
 - **Escritórios de apoio do Senado.** A fonte existe (`/adm-dadosabertos/api/v1/senadores/escritorios-apoio`, 83 escritórios) e destravaria a `REG_NET_003`.
-- **A corrida do supervisor.** Ele lê o log no instante em que o processo sai, antes de o buffer ser descarregado, e pode julgar "incompleta" uma coleta que terminou. Erra para o lado seguro; a correção é esperar um pouco depois do `WaitForExit`.
-- **Catalogar os 4 tipos de despesa** que ficaram fora do catálogo (grafia em mãos, Etapa 04c §3.5).
+- ~~**A corrida do supervisor.**~~ ✅ **Feito em 2026-09-24.** `EsperarOLogAssentar` espera o log parar de crescer — e não um `Start-Sleep` fixo, que seria chute demais numa coleta que já terminou e de menos num disco lento.
+- ~~**Catalogar os 4 tipos de despesa.**~~ ✅ **Feito em 2026-09-24.** Entraram nos códigos 24–27, no fim da lista: os índices estão persistidos em `despesas`, e inserir no meio trocaria o tipo de tudo que já foi ingerido — há teste guardando isso agora. Os outros quatro da CEAP seguem esperando aparecer numa coleta, porque só conhecemos a forma normalizada deles.
 - **As 62 despesas rejeitadas por glosa inconsistente** — investigar se é origem ou rigidez nossa.
 - **O card viral compartilhável.** Client-side, `html2canvas`, com o disclaimer na imagem e QR de volta. Não depende de backend, e é uma engrenagem de crescimento do Business Model Canvas.
-- **O lint e o `.open-next`.** Resolvido, mas fica o registro: a config achatada do ESLint **não lê o `.gitignore`**, e a lista dele substitui os padrões do `eslint-config-next` em vez de somar.
+- **O lint e o `.open-next`.** Já resolvido; fica só o registro, porque a armadilha volta a morder quem mexer na config: a config achatada do ESLint **não lê o `.gitignore`**, e a lista dele substitui os padrões do `eslint-config-next` em vez de somar.
 
 ## 5. O grafo do Estado — o que ficou de fora da Etapa 11
 

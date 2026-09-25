@@ -76,6 +76,22 @@ public static class CatalogoDeTiposDeDespesa
         "Divulgação da atividade parlamentar",
         "Aquisição de material de consumo para uso no escritório político, inclusive aquisição ou locação de software, despesas postais, aquisição de publicações, locação de móveis e de equipamentos.",
         "Serviços de Segurança Privada",
+
+        // --- CEAP da Camara, os quatro que faltavam (codigos 24 em diante) ---
+        //
+        // A nota da classe dizia que oito tipos da Camara eram conhecidos apenas na forma
+        // NORMALIZADA, pela tabela de CNAE, e que reconstruir a grafia original deles seria
+        // invencao. A coleta completa de 2026-08-21 trouxe QUATRO com a grafia exata da
+        // origem — inclusive os pontos finais, que nao teriam sido adivinhados. Ver a
+        // Etapa 04c §3.5, que registra as ocorrencias de cada um.
+        //
+        // Os outros quatro continuam esperando aparecer. Ate' la', seguem gravados por
+        // extenso em TipoDespesaNaoCatalogado, que e' o comportamento correto e nao uma
+        // falha.
+        "SERVIÇO DE SEGURANÇA PRESTADO POR EMPRESA ESPECIALIZADA.",
+        "CONSULTORIAS, PESQUISAS E TRABALHOS TÉCNICOS.",
+        "PARTICIPAÇÃO EM CURSO, PALESTRA OU EVENTO SIMILAR",
+        "LOCAÇÃO OU FRETAMENTO DE EMBARCAÇÕES",
     ];
 
     private static readonly FrozenDictionary<string, short> PorNome =
