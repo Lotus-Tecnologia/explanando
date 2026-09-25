@@ -111,3 +111,41 @@ export function formatarDataDoDocumento(iso: string): string {
 export function formatarMomento(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
+
+/** Uma fração de 0 a 1 como porcentagem com uma casa: `0.033` vira `3,3%`. */
+export function formatarPorcentagem(fracao: number): string {
+  return `${(fracao * 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+const MESES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+/**
+ * "2026-07" como leitor lê: "julho de 2026". A competência chega da API no formato do banco,
+ * e ele aparecia cru no cabeçalho do mapa do Estado. Formato inesperado volta como veio.
+ */
+export function formatarCompetencia(competencia: string | null): string {
+  if (!competencia) {
+    return "";
+  }
+
+  const casamento = /^(\d{4})-(\d{2})$/.exec(competencia);
+
+  if (!casamento) {
+    return competencia;
+  }
+
+  const mes = MESES[Number(casamento[2]) - 1];
+  return mes ? `${mes} de ${casamento[1]}` : competencia;
+}
+
+/** "2026-07" como "07/2026" — o formato curto que a tabela do perfil já usa, para eixo e tabela. */
+export function formatarCompetenciaCurta(competencia: string): string {
+  const casamento = /^(\d{4})-(\d{2})$/.exec(competencia);
+  return casamento ? `${casamento[2]}/${casamento[1]}` : competencia;
+}

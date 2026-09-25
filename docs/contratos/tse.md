@@ -49,8 +49,9 @@ num deputado federal eleito em 2022 (`/prestador/consulta/{eleicao}/{ano}/{uf}/{
 - `cnpj` da campanha, número do processo no PJe, histórico de entregas.
 
 A chave do candidato no TSE (`idCandidato`) **não é** a nossa. A ligação candidato ↔
-parlamentar sai de UF + número na urna + nome, ou do CPF do parlamentar que a Câmara publica —
-a decidir na ingestão.
+parlamentar sai de **UF + nome de urna + partido**, conferidos contra a lista de eleitos. **Não
+pelo CPF do parlamentar:** a política de privacidade promete que ele não é coletado, mesmo a
+Câmara entregando completo — e a promessa vale para o TSE também.
 
 ## Pergunta 2 — O CPF do doador vem mascarado como o nosso?
 

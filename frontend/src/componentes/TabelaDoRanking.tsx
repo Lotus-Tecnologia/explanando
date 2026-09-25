@@ -386,9 +386,9 @@ export function TabelaDoRanking({
       `"${item.siglaPartido}"`,
       `"${item.uf}"`,
       `"${item.casa}"`,
-      item.volumeTotalGasto.toFixed(2),
+      decimalBr(item.volumeTotalGasto),
       item.despesasAvaliadas,
-      item.indiceDeRisco !== null ? item.indiceDeRisco.toFixed(2) : "",
+      item.indiceDeRisco !== null ? decimalBr(item.indiceDeRisco) : "",
       item.flagsAltas,
       item.flagsMedias,
       item.flagsBaixas,
@@ -736,4 +736,14 @@ function BotaoDePagina({
       {children}
     </button>
   );
+}
+
+/**
+ * Decimal com vírgula, para o CSV abrir certo no Excel em português.
+ *
+ * O separador de campo já é o ponto e vírgula do Excel brasileiro; com ele, "2287735.08" é
+ * lido como texto — ou, pior, como 228.773.508. A vírgula é o que o mesmo Excel espera.
+ */
+function decimalBr(valor: number): string {
+  return valor.toFixed(2).replace(".", ",");
 }

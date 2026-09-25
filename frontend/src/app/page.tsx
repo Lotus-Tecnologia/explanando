@@ -91,23 +91,28 @@ export default async function Home() {
           </div>
 
           {/* Cards de Métricas Consolidadas (KPIs) */}
-          <dl className="mt-10 grid gap-4 sm:grid-cols-3">
+          <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:[&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
+            {/*
+              Sem número de reserva. Quando a API não responde, o cartão diz que não
+              respondeu: um "631" escrito à mão seria o produto publicando um dado que não
+              mediu — e envelheceria em silêncio no primeiro ciclo de coleta.
+            */}
             <CartaoMetrica
               rotulo="Parlamentares auditados"
-              valor={tudo.length > 0 ? formatarNumero(tudo.length) : "631"}
-              detalhe="Câmara dos Deputados e Senado Federal"
+              valor={tudo.length > 0 ? formatarNumero(tudo.length) : "—"}
+              detalhe={tudo.length > 0 ? casasComDado(casas) : "Indisponível agora"}
               icone="parlamentares"
             />
             <CartaoMetrica
               rotulo="Despesas analisadas"
-              valor={despesas > 0 ? formatarNumero(despesas) : "790.000+"}
-              detalhe="Notas fiscais, recibos e bilhetes aéreos"
+              valor={despesas > 0 ? formatarNumero(despesas) : "—"}
+              detalhe={despesas > 0 ? "Notas fiscais, recibos e bilhetes aéreos" : "Indisponível agora"}
               icone="despesas"
             />
             <CartaoMetrica
               rotulo="Volume financeiro"
-              valor={volume > 0 ? formatarReais(volume) : "R$ 800M+"}
-              detalhe="Cota parlamentar (CEAP e CEAPS)"
+              valor={volume > 0 ? formatarReais(volume) : "—"}
+              detalhe={volume > 0 ? "Cota parlamentar (CEAP e CEAPS)" : "Indisponível agora"}
               icone="volume"
             />
           </dl>
@@ -339,6 +344,16 @@ export default async function Home() {
 /*  SUBCOMPONENTES DA PÁGINA INICIAL                                        */
 /* ======================================================================== */
 
+/**
+ * Quais casas estão por trás do número. "Câmara e Senado" fixo mentia quando só uma
+ * respondeu — a base local, por exemplo, tem só a Câmara.
+ */
+function casasComDado(casas: { casa: Casa; itens: ItemDoRanking[] | null }[]): string {
+  const comDado = casas.filter(({ itens }) => itens && itens.length > 0).map(({ casa }) => casa.nomeOficial);
+
+  return comDado.length === casas.length ? "Câmara dos Deputados e Senado Federal" : comDado.join(" e ");
+}
+
 function CartaoMetrica({
   rotulo,
   valor,
@@ -378,7 +393,12 @@ function CartaoMetrica({
         </span>
       </div>
 
-      <dd className="numeros mt-3 font-display text-3xl font-bold tracking-tight text-titulo">
+      {/*
+        Número não quebra: "R$ 802.407.895,7" numa linha e "8" na outra é outro valor. Em três
+        colunas estreitas ele passava da borda; por isso a grade só vira três no desktop, e
+        até lá o volume ocupa a linha inteira.
+      */}
+      <dd className="numeros mt-3 font-display text-2xl font-bold tracking-tight whitespace-nowrap text-titulo lg:text-3xl">
         {valor}
       </dd>
       <p className="mt-1 text-xs text-texto-suave">{detalhe}</p>

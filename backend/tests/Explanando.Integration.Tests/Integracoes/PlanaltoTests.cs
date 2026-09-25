@@ -23,6 +23,43 @@ public class PlanaltoTests
 
     private static string QuemEQuem() => Fixtures.Ler("planalto-quem-e-quem.html");
 
+    private static string DaVice() => Fixtures.Ler("planalto-vice-quem-e-quem.html");
+
+    [Fact]
+    public void O_vice_sai_da_linha_antes_do_cargo__e_nao_um_assessor_dele()
+    {
+        // A página da Vice-Presidência põe o nome ANTES do cargo, e tem "ASSESSOR ESPECIAL
+        // DO VPR" logo abaixo. O extrator pega a linha exata "VICE-PRESIDENTE".
+        var vice = ClienteDoPlanalto.VicePresidente(DaVice()).ShouldNotBeNull();
+
+        vice.Camada.ShouldBe(CamadaDeComando.Chefia);
+        vice.Cargo.ShouldBe("Vice-Presidente da República");
+        vice.Ocupante.ShouldNotBeNullOrWhiteSpace();
+        vice.Ocupante!.ShouldNotContain("ASSESSOR", Case.Insensitive);
+        vice.Ocupante.Length.ShouldBeLessThan(60);
+        vice.Fonte.ShouldContain("vice-presidencia");
+    }
+
+    [Fact]
+    public void Vice_vago_entra_como_cadeira_vaga()
+    {
+        var html = "<main><p>VAGO</p><p>VICE-PRESIDENTE</p></main>";
+
+        var vice = ClienteDoPlanalto.VicePresidente(html).ShouldNotBeNull();
+
+        vice.Ocupante.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task A_chefia_tem_o_presidente_e_o_vice()
+    {
+        var coleta = await ClienteFalso(QuemEQuem(), Ministros()).LerAsync();
+
+        coleta.Cadeiras.Where(c => c.Camada == CamadaDeComando.Chefia)
+            .Select(c => c.Cargo)
+            .ShouldBe(["Presidente da República", "Vice-Presidente da República"], ignoreOrder: true);
+    }
+
     [Fact]
     public void A_pagina_de_ministros_rende_o_ministerio_inteiro()
     {
@@ -139,9 +176,11 @@ public class PlanaltoTests
         {
             var caminho = pedido.RequestUri!.AbsolutePath;
 
-            var corpo = caminho.Contains("quem-e-quem", StringComparison.Ordinal)
-                ? quemEQuem
-                : ministros;
+            var corpo = caminho.Contains("vice-presidencia", StringComparison.Ordinal)
+                ? DaVice()
+                : caminho.Contains("quem-e-quem", StringComparison.Ordinal)
+                    ? quemEQuem
+                    : ministros;
 
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {

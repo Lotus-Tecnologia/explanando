@@ -38,6 +38,14 @@ public sealed partial class ClienteDoPlanalto(HttpClient http) : IFonteDeCadeira
         + "principais-cargos-e-respectivos-ocupantes-201cquem-e-quem201d";
 
     /// <summary>
+    /// O "Quem é Quem" da Vice-Presidência. O da Presidência só tem o Vice num link de menu,
+    /// sem o nome — e a chefia do Executivo sem o Vice ficava pela metade.
+    /// </summary>
+    private const string CaminhoDoQuemEQuemDaVice =
+        "https://www.gov.br/planalto/pt-br/vice-presidencia/acesso-a-informacao/institucional/"
+        + "quem-e-quem";
+
+    /// <summary>
     /// O piso de sanidade da página de ministros.
     ///
     /// <para>Hoje são 38. Se a extração devolver menos que isto, alguma coisa mudou na
@@ -66,6 +74,24 @@ public sealed partial class ClienteDoPlanalto(HttpClient http) : IFonteDeCadeira
         if (LerPresidente(quemEQuem) is { } presidente)
         {
             cadeiras.Add(presidente);
+        }
+
+        var daVice = await BaixarAsync(CaminhoDoQuemEQuemDaVice, cancelamento).ConfigureAwait(false);
+
+        // Falha, e não coleta sem o Vice: a coleta substitui todas as cadeiras deste coletor,
+        // e seguir sem a página apagaria do mapa um Vice que estava certo até ontem.
+        if (daVice is null)
+        {
+            return new ColetaDeCadeiras
+            {
+                Fonte = Nome,
+                Falha = $"O portal da Presidência não respondeu em {CaminhoDoQuemEQuemDaVice}.",
+            };
+        }
+
+        if (LerVicePresidente(daVice) is { } vice)
+        {
+            cadeiras.Add(vice);
         }
 
         var pagina = await BaixarAsync(CaminhoDosMinistros, cancelamento).ConfigureAwait(false);
@@ -144,6 +170,50 @@ public sealed partial class ClienteDoPlanalto(HttpClient http) : IFonteDeCadeira
                 Ocupante = nome,
                 Orgao = "Presidência da República",
                 Fonte = CaminhoDoQuemEQuem,
+                Origem = OrigemDaCadeira.Automatica,
+            };
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// O Vice-Presidente da República, do "Quem é Quem" da Vice-Presidência.
+    ///
+    /// <para>A página inverte a ordem da da Presidência: o nome vem <b>antes</b> do cargo,
+    /// que é a linha "VICE-PRESIDENTE" sozinha. A igualdade é exata de propósito — a mesma
+    /// página tem "ASSESSOR ESPECIAL DO VPR" e "CHEFE DE GABINETE", e um "contém" pegaria o
+    /// nome errado.</para>
+    ///
+    /// <para>"VAGO" no lugar do nome é cadeira vaga, e entra como vaga — não some.</para>
+    /// </summary>
+    private static NovaCadeira? LerVicePresidente(string html)
+    {
+        var linhas = EmTexto(html);
+
+        for (var i = 1; i < linhas.Count; i++)
+        {
+            if (!string.Equals(linhas[i], "VICE-PRESIDENTE", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var nome = AteOParentese(linhas[i - 1]);
+            var vaga = string.Equals(nome, "VAGO", StringComparison.OrdinalIgnoreCase);
+
+            if (!vaga && !PareceNome(nome))
+            {
+                return null;
+            }
+
+            return new NovaCadeira
+            {
+                Poder = Poder.Executivo,
+                Camada = CamadaDeComando.Chefia,
+                Cargo = "Vice-Presidente da República",
+                Ocupante = vaga ? null : nome,
+                Orgao = "Vice-Presidência da República",
+                Fonte = CaminhoDoQuemEQuemDaVice,
                 Origem = OrigemDaCadeira.Automatica,
             };
         }
@@ -290,5 +360,9 @@ public sealed partial class ClienteDoPlanalto(HttpClient http) : IFonteDeCadeira
     /// <inheritdoc cref="ContarMinistros"/>
     public static string? NomeDoPresidente(string html) =>
         LerPresidente(html)?.Ocupante;
+
+    /// <inheritdoc cref="ContarMinistros"/>
+    public static NovaCadeira? VicePresidente(string html) =>
+        LerVicePresidente(html);
 
 }

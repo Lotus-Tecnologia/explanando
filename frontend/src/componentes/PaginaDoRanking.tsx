@@ -18,7 +18,12 @@ export async function PaginaDoRanking({
   casa: Casa;
   ordenacao: Ordenacao;
 }) {
-  const itens = await ranquearTudo(casa, ordenacao.chave);
+  // Os totais do painel são da casa inteira; a ordenação por densidade deixa quem não tem
+  // amostra de fora da lista, mas não do gasto. O Next deduplica a busca quando é a mesma.
+  const [itens, base] = await Promise.all([
+    ranquearTudo(casa, ordenacao.chave),
+    ranquearTudo(casa, "volume"),
+  ]);
   const ehCamara = casa.chave === "camara";
 
   return (
@@ -113,7 +118,7 @@ export async function PaginaDoRanking({
         </div>
       ) : (
         <>
-          <ExploradorDaCasa casa={casa} itens={itens} ordenacao={ordenacao} />
+          <ExploradorDaCasa casa={casa} itens={itens} base={base ?? undefined} ordenacao={ordenacao} />
 
           {/* Nota técnica de rodapé */}
           <footer className="mt-8 border-t border-borda-suave pt-4 text-xs text-texto-suave">

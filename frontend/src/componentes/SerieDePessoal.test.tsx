@@ -86,8 +86,10 @@ describe("SerieDePessoal", () => {
     // consultar a pagina toda encontraria aquelas em vez destas.
     const tabela = within(screen.getByRole("table"));
 
+    // No formato de leitor, "01/2025", e não o do banco — o mesmo da tabela do perfil.
     for (const p of comVao) {
-      expect(tabela.getByText(p.competencia)).toBeInTheDocument();
+      const [ano, mes] = p.competencia.split("-");
+      expect(tabela.getByText(`${mes}/${ano}`)).toBeInTheDocument();
     }
   });
 

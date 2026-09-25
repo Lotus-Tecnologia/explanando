@@ -5,7 +5,7 @@ import {
   ranquearTudo,
 } from "./api";
 import { metadadosDoParlamentar } from "./metadados";
-import { formatarDataDoDocumento, formatarMomento } from "./formato";
+import { formatarCompetencia, formatarDataDoDocumento, formatarMomento } from "./formato";
 import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { CASAS } from "./casas";
 import { ORDENACOES, caminhoDoRanking, ordenacaoPorChave } from "./ordenacoes";
@@ -736,5 +736,17 @@ describe("formatarDataDoDocumento e formatarMomento", () => {
   it("um instante sai no horário de Brasília, seja qual for o fuso do servidor", () => {
     // 01h UTC do dia 22 ainda é dia 21 em Brasília.
     expect(formatarMomento("2026-08-22T01:30:00+00:00")).toBe("21/08/2026");
+  });
+});
+
+describe("formatarCompetencia", () => {
+  it("escreve o mês por extenso", () => {
+    expect(formatarCompetencia("2026-07")).toBe("julho de 2026");
+  });
+
+  it("formato inesperado volta como veio, e nulo vira vazio", () => {
+    expect(formatarCompetencia("07/2026")).toBe("07/2026");
+    expect(formatarCompetencia("2026-13")).toBe("2026-13");
+    expect(formatarCompetencia(null)).toBe("");
   });
 });

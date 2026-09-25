@@ -483,9 +483,13 @@ export function fonteDoRotuloDoSetor(
  * Como o ângulo corre de meio-dia no sentido horário, "abaixo do centro" é exatamente
  * <c>cos(meio) &lt; 0</c>.
  */
-export function arcoDoRotulo(inicio: number, fim: number, raio: number): string {
+export function arcoDoRotulo(inicio: number, fim: number, raio: number, giro = 0): string {
   const volta = Math.PI * 2;
-  const meio = ((((inicio + fim) / 2) % volta) + volta) % volta;
+
+  // O lado de ler é decidido onde o rótulo vai APARECER, e não onde ele foi desenhado: o disco
+  // gira ao selecionar um nó, e um setor que estava embaixo sobe para o topo. Decidido antes do
+  // giro, o "JUDICIÁRIO" ficava de cabeça para baixo no alto do círculo.
+  const meio = ((((inicio + fim) / 2 + giro) % volta) + volta) % volta;
   const deCabecaParaBaixo = Math.cos(meio) < 0;
 
   const [a, b, sentido] = deCabecaParaBaixo ? [fim, inicio, 0] : [inicio, fim, 1];

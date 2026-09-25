@@ -317,7 +317,7 @@ export function GrafoDoEstado({
                   <path
                     key={`arco-${setor.chave}`}
                     id={`arco-${setor.chave}`}
-                    d={arcoDoRotulo(setor.inicio, setor.fim, grafo.raioExterno + 19)}
+                    d={arcoDoRotulo(setor.inicio, setor.fim, grafo.raioExterno + 19, giro)}
                     fill="none"
                   />
                 ))}
@@ -420,20 +420,32 @@ export function GrafoDoEstado({
               vectorEffect="non-scaling-stroke"
             />
 
-            {grafo.miolo.map((no, i) => (
-              <text
-                key={no.codigo}
-                textAnchor="middle"
-                y={i === 0 ? -6 : 14}
-                className={
-                  i === 0
-                    ? "fill-titulo font-display text-[15px] font-bold"
-                    : "fill-texto-suave text-[12px]"
-                }
-              >
-                {no.sigla ?? no.nome}
-              </text>
-            ))}
+            {grafo.miolo.map((no, i) => {
+              // "República Federativa do Brasil" numa linha só passava da borda do miolo.
+              // Em duas, cabe; o que vem abaixo dela desce para dar lugar.
+              const linhas = i === 0 ? emDuasLinhas(no.sigla ?? no.nome, 16) : [no.sigla ?? no.nome];
+              const raizEmDuas =
+                emDuasLinhas(grafo.miolo[0].sigla ?? grafo.miolo[0].nome, 16).length === 2;
+
+              return (
+                <text
+                  key={no.codigo}
+                  textAnchor="middle"
+                  y={i === 0 ? (raizEmDuas ? -14 : -6) : raizEmDuas ? 24 : 14}
+                  className={
+                    i === 0
+                      ? "fill-titulo font-display text-[15px] font-bold"
+                      : "fill-texto-suave text-[12px]"
+                  }
+                >
+                  {linhas.map((linha, j) => (
+                    <tspan key={linha} x={0} dy={j === 0 ? 0 : 17}>
+                      {linha}
+                    </tspan>
+                  ))}
+                </text>
+              );
+            })}
           </svg>
 
           <figcaption className="mt-4 space-y-2 text-sm text-texto-suave">
@@ -519,7 +531,7 @@ function ControlesDeZoom({
       <Botao rotulo="Afastar" simbolo="−" aoClicar={aoAfastar} inativo={zoom <= 1} />
 
       <span className="numeros w-10 text-center text-xs text-texto-suave">
-        {zoom.toFixed(1)}×
+        {zoom.toFixed(1).replace(".", ",")}×
       </span>
 
       <Botao rotulo="Aproximar" simbolo="+" aoClicar={aoAproximar} inativo={zoom >= 6} />
@@ -730,4 +742,25 @@ export function LegendaDePoderes({
       ))}
     </ul>
   );
+}
+
+/**
+ * Parte um rótulo em duas linhas no espaço mais perto do meio, quando ele passa do limite.
+ * Rótulo curto, ou sem espaço, fica como está: quebrar palavra no meio é pior que apertar.
+ */
+function emDuasLinhas(texto: string, limite: number): string[] {
+  if (texto.length <= limite || !texto.includes(" ")) {
+    return [texto];
+  }
+
+  const meio = texto.length / 2;
+  let corte = -1;
+
+  for (let i = 0; i < texto.length; i++) {
+    if (texto[i] === " " && (corte === -1 || Math.abs(i - meio) < Math.abs(corte - meio))) {
+      corte = i;
+    }
+  }
+
+  return [texto.slice(0, corte), texto.slice(corte + 1)];
 }

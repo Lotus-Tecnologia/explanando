@@ -83,7 +83,11 @@ export function AlternadorDeTema() {
       <span aria-hidden="true" className="text-sm leading-none">
         {escuro ? "☀" : "☾"}
       </span>
-      {escuro ? "Modo claro" : "Modo escuro"}
+      {/*
+        No celular, só o ícone: com o texto, o botão caía numa terceira linha do cabeçalho,
+        abaixo do logo e dos links. O nome continua lá para leitor de tela.
+      */}
+      <span className="sr-only sm:not-sr-only">{escuro ? "Modo claro" : "Modo escuro"}</span>
     </button>
   );
 }

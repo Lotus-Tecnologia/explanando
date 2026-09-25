@@ -6,12 +6,24 @@ import Link from "next/link";
 import type { ItemDoRanking } from "@/lib/contrato";
 import type { Casa } from "@/lib/casas";
 import type { Ordenacao } from "@/lib/ordenacoes";
-import { formatarDensidade, formatarNumero, formatarReais } from "@/lib/formato";
+import {
+  formatarDensidade,
+  formatarNumero,
+  formatarPorcentagem,
+  formatarReais,
+} from "@/lib/formato";
 import { iniciais, retratoSeguro } from "@/lib/fotos";
 
 interface DashboardDaCasaProps {
   casa: Casa;
   itens: readonly ItemDoRanking[];
+
+  /**
+   * A casa inteira, para os totais. As ordenações por densidade deixam de fora quem não tem
+   * amostra — e somar o volume só de quem ficou fazia a Câmara "gastar" R$ 799,9 milhões numa
+   * aba e R$ 802,4 milhões na outra. O pódio segue a ordenação; os totais, não.
+   */
+  base?: readonly ItemDoRanking[];
   ordenacao?: Ordenacao;
   filtroPartidoAtivo?: string;
   filtroUfAtivo?: string;
@@ -22,6 +34,7 @@ interface DashboardDaCasaProps {
 export function DashboardDaCasa({
   casa,
   itens,
+  base,
   ordenacao,
   filtroPartidoAtivo,
   filtroUfAtivo,
@@ -32,18 +45,21 @@ export function DashboardDaCasa({
   const estatisticas = useMemo(() => {
     if (itens.length === 0) return null;
 
-    const volumeTotal = itens.reduce((soma, i) => soma + i.volumeTotalGasto, 0);
-    const despesasTotal = itens.reduce((soma, i) => soma + i.despesasAvaliadas, 0);
-    const flagsAltas = itens.reduce((soma, i) => soma + i.flagsAltas, 0);
-    const flagsMedias = itens.reduce((soma, i) => soma + i.flagsMedias, 0);
-    const flagsBaixas = itens.reduce((soma, i) => soma + i.flagsBaixas, 0);
+    const podio = itens.slice(0, 3);
+    const todos = base && base.length > 0 ? base : itens;
+
+    const volumeTotal = todos.reduce((soma, i) => soma + i.volumeTotalGasto, 0);
+    const despesasTotal = todos.reduce((soma, i) => soma + i.despesasAvaliadas, 0);
+    const flagsAltas = todos.reduce((soma, i) => soma + i.flagsAltas, 0);
+    const flagsMedias = todos.reduce((soma, i) => soma + i.flagsMedias, 0);
+    const flagsBaixas = todos.reduce((soma, i) => soma + i.flagsBaixas, 0);
     const totalIndicadores = flagsAltas + flagsMedias + flagsBaixas;
 
-    const mediaPorParlamentar = volumeTotal / itens.length;
+    const mediaPorParlamentar = volumeTotal / todos.length;
     const taxaIndicadores = despesasTotal > 0 ? (totalIndicadores / despesasTotal) * 100 : 0;
 
     // Cálculo da Mediana
-    const volumesOrdenados = [...itens]
+    const volumesOrdenados = [...todos]
       .map((i) => i.volumeTotalGasto)
       .sort((a, b) => a - b);
     const meio = Math.floor(volumesOrdenados.length / 2);
@@ -54,7 +70,7 @@ export function DashboardDaCasa({
 
     // Agrupamento por Partido
     const mapaPartidos = new Map<string, { total: number; qtd: number }>();
-    for (const item of itens) {
+    for (const item of todos) {
       const p = item.siglaPartido.trim() || "Sem Partido";
       const atual = mapaPartidos.get(p) ?? { total: 0, qtd: 0 };
       mapaPartidos.set(p, {
@@ -74,7 +90,7 @@ export function DashboardDaCasa({
 
     // Agrupamento por UF
     const mapaUfs = new Map<string, { total: number; qtd: number }>();
-    for (const item of itens) {
+    for (const item of todos) {
       const uf = item.uf.trim() || "BR";
       const atual = mapaUfs.get(uf) ?? { total: 0, qtd: 0 };
       mapaUfs.set(uf, {
@@ -91,8 +107,6 @@ export function DashboardDaCasa({
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
 
-    // Pódio dos 3 primeiros da ordenação atual
-    const podio = itens.slice(0, 3);
 
     return {
       volumeTotal,
@@ -108,7 +122,7 @@ export function DashboardDaCasa({
       topUfs,
       podio,
     };
-  }, [itens]);
+  }, [itens, base]);
 
   if (!estatisticas) {
     return (
@@ -220,10 +234,18 @@ export function DashboardDaCasa({
                 {formatarNumero(totalIndicadores)} achados
               </span>
             </div>
-            <p className="mt-1 text-xs text-texto-suave">
-              Apenas <strong className="text-alta-texto">3,3%</strong> das despesas auditadas
-              recebem classificação de gravidade alta.
-            </p>
+            {/*
+              Calculado, e não escrito: o "3,3%" fixo era da Câmara e aparecia igual no Senado.
+              E é a parte dos ACHADOS, não das despesas — das despesas, a alta é um décimo de 1%.
+            */}
+            {totalIndicadores > 0 ? (
+              <p className="mt-1 text-xs text-texto-suave">
+                <strong className="numeros text-alta-texto">
+                  {formatarPorcentagem(flagsAltas / totalIndicadores)}
+                </strong>{" "}
+                dos achados são de relevância alta.
+              </p>
+            ) : null}
 
             {/* Barra empilhada proporcional */}
             {totalIndicadores > 0 && (
@@ -386,7 +408,7 @@ export function DashboardDaCasa({
                         </span>
                         {item.indiceDeRisco !== null && (
                           <span className="numeros block text-[10px] text-texto-suave">
-                            {formatarDensidade(item.indiceDeRisco)} ind/100
+                            índice {formatarDensidade(item.indiceDeRisco)}
                           </span>
                         )}
                       </div>

@@ -10,7 +10,7 @@ import {
   obterMapaDoEstado,
   obterSerieDePessoal,
 } from "@/lib/api";
-import { formatarMomento, formatarNumero } from "@/lib/formato";
+import { formatarCompetencia, formatarMomento, formatarNumero } from "@/lib/formato";
 import { corDaEscala, corDoPoder } from "@/lib/grafo";
 
 /* Ver a nota em camara/page.tsx: precisa ser literal. */
@@ -87,7 +87,7 @@ export default async function Pagina() {
               <strong className="font-semibold text-titulo">
                 {formatarNumero(mapa.totalDeServidores)} servidores
               </strong>{" "}
-              no cadastro de pessoal de {mapa.competenciaDoPessoal}.
+              no cadastro de pessoal de {formatarCompetencia(mapa.competenciaDoPessoal)}.
             </p>
           ) : null}
 
@@ -122,7 +122,7 @@ export default async function Pagina() {
       {/*  Os cortes                                                        */}
       {/* ---------------------------------------------------------------- */}
       <section className="border-y border-borda-suave bg-surface/50">
-        <div className="mx-auto grid max-w-5xl gap-5 px-4 py-12 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-5 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3">
           <DistribuicaoDoEstado
             titulo="Por poder"
             explicacao="Onde está o volume da máquina pública."
@@ -165,7 +165,7 @@ export default async function Pagina() {
           <dl className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-3">
             <div className="bg-surface px-5 py-4">
               <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
-                Servidores em {mapa.competenciaDoPessoal}
+                Servidores em {formatarCompetencia(mapa.competenciaDoPessoal)}
               </dt>
               <dd className="numeros mt-1 font-display text-3xl font-bold text-titulo">
                 {formatarNumero(mapa.totalDeServidores)}

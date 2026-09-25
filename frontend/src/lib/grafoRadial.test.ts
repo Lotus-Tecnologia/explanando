@@ -271,6 +271,13 @@ describe("arcoDoRotulo", () => {
 
     expect(d).toMatch(/A 100 100 0 0 0 /);
   });
+  it("decide pelo lugar onde o rotulo aparece depois do giro do disco", () => {
+    // O erro real: ao selecionar o Executivo o disco gira meia volta, o Judiciario sobe
+    // para o topo, e o rotulo dele — decidido antes do giro — saia de ponta-cabeca.
+    const embaixo = arcoDoRotulo(meiaVolta - 0.4, meiaVolta + 0.4, 100, meiaVolta);
+
+    expect(embaixo).toMatch(/A 100 100 0 0 1 /);
+  });
 });
 
 describe("fonteDoRotuloDoSetor", () => {

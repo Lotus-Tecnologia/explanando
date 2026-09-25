@@ -57,7 +57,7 @@ export function DistribuicaoDoEstado({
               className="size-2.5 shrink-0 translate-y-px rounded-[2px]"
               style={{ background: cores(item.rotulo, indice) }}
             />
-            <dt className="min-w-0 flex-1 truncate text-sm text-texto">{item.rotulo}</dt>
+            <dt className="min-w-0 flex-1 text-sm break-words text-texto">{item.rotulo}</dt>
             <dd className="numeros text-sm font-semibold text-titulo">
               {formatarNumero(item.unidades)}
               <span className="ms-1.5 text-xs font-normal text-texto-suave">

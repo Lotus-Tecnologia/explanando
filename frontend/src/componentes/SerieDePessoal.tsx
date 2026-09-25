@@ -1,5 +1,5 @@
 import type { PontoDaSerie } from "@/lib/contrato";
-import { formatarNumero } from "@/lib/formato";
+import { formatarCompetencia, formatarCompetenciaCurta, formatarNumero } from "@/lib/formato";
 
 /**
  * A evolução mensal do quadro de pessoal.
@@ -106,7 +106,7 @@ export function SerieDePessoal({
         </span>
 
         <span className="text-sm text-texto-suave">
-          em {ultimo.competencia}
+          em {formatarCompetencia(ultimo.competencia)}
           {variacao !== 0 ? (
             <>
               {" · "}
@@ -114,7 +114,7 @@ export function SerieDePessoal({
                 {variacao > 0 ? "+" : "−"}
                 {formatarNumero(Math.abs(variacao))}
               </strong>{" "}
-              desde {primeiro.competencia}
+              desde {formatarCompetencia(primeiro.competencia)}
             </>
           ) : null}
         </span>
@@ -131,8 +131,8 @@ export function SerieDePessoal({
         role="img"
         aria-label={
           `Evolução mensal: ${formatarNumero(primeiro.vinculos)} vínculos em ` +
-          `${primeiro.competencia} e ${formatarNumero(ultimo.vinculos)} em ` +
-          `${ultimo.competencia}.` +
+          `${formatarCompetencia(primeiro.competencia)} e ${formatarNumero(ultimo.vinculos)} em ` +
+          `${formatarCompetencia(ultimo.competencia)}.` +
           (temVao ? " A série tem meses não coletados, marcados com pontilhado." : "") +
           " A série completa está na tabela abaixo."
         }
@@ -202,7 +202,7 @@ export function SerieDePessoal({
             className="fill-transparent"
           >
             <title>
-              {`${ponto.competencia}: ${formatarNumero(ponto.vinculos)} vínculos, ` +
+              {`${formatarCompetencia(ponto.competencia)}: ${formatarNumero(ponto.vinculos)} vínculos, ` +
                 `${formatarNumero(ponto.comFuncaoDeConfianca)} em função de confiança`}
             </title>
           </circle>
@@ -219,7 +219,7 @@ export function SerieDePessoal({
       </svg>
 
       <p className="mt-2 flex justify-between text-xs text-texto-suave">
-        <span>{primeiro.competencia}</span>
+        <span>{formatarCompetenciaCurta(primeiro.competencia)}</span>
         <span>
           {/*
             A escala comprimida dita em voz alta. Sem isto, uma variacao de 1% desenhada
@@ -229,7 +229,7 @@ export function SerieDePessoal({
           escala entre {formatarNumero(menor)} e {formatarNumero(maior)}
           {temVao ? " · pontilhado = meses não coletados" : ""}
         </span>
-        <span>{ultimo.competencia}</span>
+        <span>{formatarCompetenciaCurta(ultimo.competencia)}</span>
       </p>
 
       <details className="mt-3">
@@ -255,7 +255,7 @@ export function SerieDePessoal({
             <tbody>
               {serie.map((ponto) => (
                 <tr key={ponto.competencia} className="border-b border-borda-suave">
-                  <td className="py-1.5 pe-3 text-texto">{ponto.competencia}</td>
+                  <td className="py-1.5 pe-3 text-texto">{formatarCompetenciaCurta(ponto.competencia)}</td>
                   {/* Aqui SIM tabular: sao colunas de numeros que precisam alinhar. */}
                   <td className="numeros py-1.5 pe-3 text-right text-texto">
                     {formatarNumero(ponto.vinculos)}
