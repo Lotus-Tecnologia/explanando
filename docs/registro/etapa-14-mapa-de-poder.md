@@ -4,6 +4,10 @@
 **Decisão:** [ADR-0018](../decisoes/ADR-0018-cadeiras-de-comando.md)
 **Referência:** [CivLab §6](../referencias/civlab.md)
 
+> **Atualização em 2026-09-25:** o Vice-Presidente da República entrou na chefia, lido do
+> "Quem é Quem" da Vice-Presidência — agora são **140 cadeiras**. Ver a
+> [Etapa 15](etapa-15-plano-de-execucao.md).
+
 ---
 
 ## 1. O que entrou
