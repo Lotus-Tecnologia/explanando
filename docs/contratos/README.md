@@ -22,6 +22,13 @@ documento de Análise de Lacunas.
 | `senado-senadores-adm.json` | `GET /adm-dadosabertos/api/v1/senadores` |
 | `senado-legis-senadores.json` | `GET legis.senado.leg.br/dadosabertos/senador/lista/atual.json` |
 
+## TSE
+
+A investigação da Fase 6 está em [**tse.md**](tse.md), feita em 2026-09-25. A leitura curta: o
+portal e o CDN bloqueiam cliente automatizado (`403` da Akamai), o TSE publica o **CPF inteiro**
+do doador — o que, mascarado na posição da Receita, dá chave literal com o nosso sócio —, e a
+votação sai por município e zona.
+
 ## Senado
 
 O levantamento completo está em [**senado.md**](senado.md), feito em 2026-08-21 contra o ano

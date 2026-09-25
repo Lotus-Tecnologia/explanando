@@ -211,7 +211,13 @@ alcance alto não aparece.
 
 ---
 
-## Fase 6 — Investigação do TSE · **P, com prazo fechado**
+## Fase 6 — Investigação do TSE · **P, com prazo fechado** · ✅ feita em 2026-09-25
+
+> **Resultado em [`contratos/tse.md`](contratos/tse.md): sim para as quatro ideias**, uma delas
+> com risco. O TSE publica o CPF do doador inteiro; mascarado na posição da Receita, casa
+> literalmente com o nosso sócio. **A Fase 7 só não começou por um motivo que não é técnico:**
+> os lotes precisam ser baixados, e o CDN bloqueia cliente automatizado. É download de
+> arquivo — está com o Gustavo.
 
 **Por que é a fase mais importante.** Uma ingestão destrava três ideias: o último degrau da
 timeline (2), o último salto do "quem beneficia quem" (6), os doadores no mapa expandido
@@ -233,7 +239,7 @@ acabar sem resposta, isso também é resposta.
 
 ---
 
-## Fase 7 — Timeline com doação e mapa expandido · **M a G, conforme a Fase 6**
+## Fase 7 — Timeline com doação e mapa expandido · **M a G, conforme a Fase 6** · ⏸ espera os lotes do TSE
 
 **Só começa se a Fase 6 disser sim.**
 
