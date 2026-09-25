@@ -30,7 +30,7 @@ public sealed class RepositorioDeRede(ExplanandoDbContext contexto) : IRepositor
         CancellationToken cancelamento = default) =>
         await contexto.Fornecedores.AsNoTracking().ToListAsync(cancelamento).ConfigureAwait(false);
 
-    public async Task RemoverFlagsDeRedeAsync(
+    public async Task<IReadOnlyCollection<Guid>> RemoverFlagsDeRedeAsync(
         IReadOnlyCollection<string> codigosDeRegra,
         CancellationToken cancelamento = default)
     {
@@ -38,13 +38,26 @@ public sealed class RepositorioDeRede(ExplanandoDbContext contexto) : IRepositor
 
         if (codigosDeRegra.Count == 0)
         {
-            return;
+            return [];
         }
+
+        var donos = await contexto.FlagsAnomalias
+            .Where(flag => codigosDeRegra.Contains(flag.CodigoRegra))
+            .Join(
+                contexto.Despesas,
+                flag => flag.DespesaId,
+                despesa => despesa.Id,
+                (_, despesa) => despesa.ParlamentarId)
+            .Distinct()
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
 
         await contexto.FlagsAnomalias
             .Where(flag => codigosDeRegra.Contains(flag.CodigoRegra))
             .ExecuteDeleteAsync(cancelamento)
             .ConfigureAwait(false);
+
+        return donos;
     }
 
     public void Adicionar(FlagAnomalia flag) => contexto.FlagsAnomalias.Add(flag);

@@ -42,6 +42,7 @@ function despesa(ajustes: Partial<ItemDeDespesa> = {}): ItemDeDespesa {
     ehEstorno: false,
     flags: [],
     maiorGravidade: null,
+    respostas: [],
     ...ajustes,
   };
 }

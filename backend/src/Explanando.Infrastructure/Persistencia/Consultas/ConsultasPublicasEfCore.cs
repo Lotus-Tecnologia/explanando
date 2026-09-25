@@ -180,8 +180,31 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .OrderBy(nome => nome, StringComparer.Ordinal)
             .ToList();
 
+        // Agrupado no banco: o parlamentar de maior volume tem milhares de despesas e
+        // dezenas de achados, e só interessam as somas por regra.
+        var achados = await (
+            from flag in contexto.FlagsAnomalias.AsNoTracking()
+            join despesa in contexto.Despesas.AsNoTracking()
+                on flag.DespesaId equals despesa.Id
+            where despesa.ParlamentarId == parlamentarId
+            group flag by new { flag.CodigoRegra, flag.Gravidade } into grupo
+            select new
+            {
+                grupo.Key.CodigoRegra,
+                grupo.Key.Gravidade,
+                Quantidade = grupo.Count(),
+                Peso = grupo.Sum(flag => (int)flag.Gravidade * flag.GrauDeConfianca),
+            })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
         var score = cabecalho.score;
         var temAmostra = score is not null && score.AmostraSuficiente;
+
+        var composicao = ComposicaoDoIndice.Montar(
+            achados.Select(linha => new AchadosAgrupados(
+                linha.CodigoRegra, linha.Gravidade, linha.Quantidade, linha.Peso)),
+            score?.DespesasAvaliadas ?? 0);
 
         return new PerfilDoParlamentar
         {
@@ -208,6 +231,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             SerieMensal = serie,
             Cobertura = [.. cobertura.Select(Traduzir)],
             TiposDeDespesa = tipos,
+            Composicao = composicao,
         };
     }
 
@@ -283,8 +307,12 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .FirstOrDefaultAsync(cancelamento)
             .ConfigureAwait(false);
 
+        var respostas = await RespostasDoGabineteAsync(
+            [.. pagina.Select(linha => linha.despesa.Id)], cancelamento).ConfigureAwait(false);
+
         var itens = pagina
-            .Select(linha => Traduzir(linha.despesa, linha.flags, carteira))
+            .Select(linha => Traduzir(
+                linha.despesa, linha.flags, carteira, respostas[linha.despesa.Id]))
             .ToList();
 
         return new Pagina<ItemDeDespesa>
@@ -340,9 +368,12 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             return null;
         }
 
+        var respostas = await RespostasDoGabineteAsync([despesaId], cancelamento)
+            .ConfigureAwait(false);
+
         return new DespesaDetalhada
         {
-            Despesa = Traduzir(despesa, flags, autor.NumeroCarteira),
+            Despesa = Traduzir(despesa, flags, autor.NumeroCarteira, respostas[despesaId]),
             Parlamentar = new ParlamentarDaDespesa
             {
                 Id = autor.Id,
@@ -353,6 +384,40 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                 FotoUrl = autor.FotoUrl,
             },
         };
+    }
+
+    /// <summary>
+    /// As respostas publicadas do gabinete, por despesa. A retirada não sai: o gabinete
+    /// retirou, e a página respeita — o registro fica no banco.
+    /// </summary>
+    private async Task<ILookup<Guid, RespostaDoGabinete>> RespostasDoGabineteAsync(
+        IReadOnlyCollection<Guid> despesaIds,
+        CancellationToken cancelamento)
+    {
+        if (despesaIds.Count == 0)
+        {
+            return Array.Empty<RespostaDoGabinete>().ToLookup(_ => Guid.Empty);
+        }
+
+        var linhas = await contexto.Contestacoes
+            .AsNoTracking()
+            .Where(contestacao => despesaIds.Contains(contestacao.DespesaId)
+                && contestacao.Situacao == Domain.Contestacoes.SituacaoDaContestacao.Publicada)
+            .OrderBy(contestacao => contestacao.EnviadaEm)
+            .Select(contestacao => new
+            {
+                contestacao.DespesaId,
+                Resposta = new RespostaDoGabinete
+                {
+                    Texto = contestacao.Texto,
+                    UrlDoAnexo = contestacao.UrlDoAnexo,
+                    EnviadaEm = contestacao.EnviadaEm,
+                },
+            })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+
+        return linhas.ToLookup(linha => linha.DespesaId, linha => linha.Resposta);
     }
 
     /// <summary>O nome por extenso da casa, escrito num lugar só.</summary>
@@ -389,7 +454,8 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
     private static ItemDeDespesa Traduzir(
         Despesa despesa,
         IReadOnlyList<FlagAnomalia> flags,
-        int? numeroCarteira) =>
+        int? numeroCarteira,
+        IEnumerable<RespostaDoGabinete> respostas) =>
         new()
         {
             Id = despesa.Id,
@@ -419,6 +485,8 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                 GrauDeConfianca = flag.GrauDeConfianca,
                 VersaoDoMotor = flag.VersaoDoMotor,
             })],
+
+            Respostas = [.. respostas],
         };
 
     private static CoberturaDeRegra Traduzir(CoberturaDoParlamentar cobertura) =>

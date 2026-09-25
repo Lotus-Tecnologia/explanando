@@ -28,6 +28,15 @@ public sealed record ResultadoDeRede
     public int PisoDeParlamentares { get; init; }
 
     public bool BaseSuficiente => ParlamentaresNaBase >= PisoDeParlamentares;
+
+    /// <summary>
+    /// Quem tinha achado de rede antes desta passada, ou tem agora.
+    ///
+    /// <para>O score de cada um conta as flags de rede, então precisa ser recalculado depois
+    /// da passada — tanto de quem ganhou um achado quanto de quem perdeu. Preenchido pelo
+    /// serviço, que é quem conhece o que estava gravado.</para>
+    /// </summary>
+    public IReadOnlyCollection<Guid> ParlamentaresAfetados { get; init; } = [];
 }
 
 /// <summary>

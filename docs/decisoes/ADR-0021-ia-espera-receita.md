@@ -38,12 +38,12 @@ um erro. Sem receita, o primeiro erro pode ser o último.
 **Receita recorrente líquida que cubra o custo projetado da IA com folga, por tempo bastante
 para não ser acaso.**
 
-Proposta minha, para você fixar o número: **receita mensal líquida de pelo menos três vezes o
-custo projetado da IA, por três meses seguidos.** O custo projetado é o custo por relatório
-vezes o volume de relatórios esperado, medido antes de ligar o recurso — não estimado depois.
+**Receita mensal líquida de pelo menos três vezes o custo projetado da IA, por três meses
+seguidos.** O custo projetado é o custo por relatório vezes o volume de relatórios esperado,
+medido antes de ligar o recurso — não estimado depois.
 
-"Considerável" foi a palavra usada na decisão. O critério acima é a tradução dela em algo que
-se verifica numa planilha; o valor é decisão sua.
+"Considerável" foi a palavra usada na decisão; o critério acima é a tradução dela em algo que
+se verifica numa planilha. Proposto por mim e **fixado pelo Gustavo em 2026-09-24**.
 
 ## As condições que viajam junto, quando entrar
 

@@ -252,6 +252,83 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
     }
 
     [Fact]
+    public async Task Perfil_diz_de_onde_vem_o_indice_e_as_parcelas_fecham_com_ele()
+    {
+        // A Fase 1 do plano de execução: "índice 89, e é daqui que ele vem". Se as
+        // parcelas não somarem o índice publicado, a tela explica um número que não é o
+        // número.
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarRanqueado}"));
+
+        perfil.IndiceDeRisco.ShouldNotBeNull();
+        perfil.Composicao.ShouldNotBeEmpty();
+
+        perfil.Composicao.Sum(parcela => parcela.Fatia).ShouldBe(1m, 0.000_001m);
+        perfil.Composicao.Sum(parcela => parcela.PontosNoIndice)
+            .ShouldBe(perfil.IndiceDeRisco!.Value, 0.000_1m);
+
+        perfil.Composicao.ShouldAllBe(parcela => !string.IsNullOrWhiteSpace(parcela.Descricao));
+        perfil.Composicao.Select(parcela => parcela.Peso)
+            .ShouldBeInOrder(SortDirection.Descending);
+
+        perfil.Composicao.Sum(parcela => parcela.Quantidade)
+            .ShouldBe(perfil.FlagsAltas + perfil.FlagsMedias + perfil.FlagsBaixas);
+    }
+
+    [Fact]
+    public async Task Sem_amostra_a_composicao_vem_mas_o_indice_nao()
+    {
+        // Os achados existem e a página os lista; o que falta é o índice. A borda explica a
+        // ausência com a composição na mão, em vez de uma caixa vazia.
+        var perfil = await LerAsync<PerfilDoParlamentar>(
+            await Cliente.GetAsync($"/api/v1/parlamentares/{api.ParlamentarSemAmostra}"));
+
+        perfil.IndiceDeRisco.ShouldBeNull();
+        perfil.AmostraSuficiente.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task A_resposta_publicada_do_gabinete_vem_junto_da_despesa()
+    {
+        var detalhe = await LerAsync<DespesaDetalhada>(
+            await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaComComprovante}"));
+
+        var resposta = detalhe.Despesa.Respostas.ShouldHaveSingleItem();
+        resposta.Texto.ShouldStartWith("O serviço foi prestado");
+        resposta.UrlDoAnexo.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task A_resposta_retirada_nao_aparece()
+    {
+        var detalhe = await LerAsync<DespesaDetalhada>(
+            await Cliente.GetAsync($"/api/v1/despesas/{api.DespesaSemComprovante}"));
+
+        detalhe.Despesa.Respostas.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task O_email_do_gabinete_nao_e_publicado()
+    {
+        // Fica no banco, para auditoria da autoria. A página não precisa dele, e publicá-lo
+        // entregaria a caixa institucional a quem quisesse enchê-la.
+        var corpo = await Cliente.GetStringAsync($"/api/v1/despesas/{api.DespesaComComprovante}");
+
+        corpo.ShouldNotContain("gabinete@camara.leg.br");
+    }
+
+    [Fact]
+    public async Task A_listagem_tambem_traz_a_resposta_do_gabinete()
+    {
+        var pagina = await LerAsync<Pagina<ItemDeDespesa>>(
+            await Cliente.GetAsync(
+                $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas?itens=200"));
+
+        pagina.Itens.Single(d => d.Id == api.DespesaComComprovante).Respostas.ShouldHaveSingleItem();
+        pagina.Itens.Single(d => d.Id == api.DespesaSemComprovante).Respostas.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Parlamentar_inexistente_devolve_404()
     {
         var resposta = await Cliente.GetAsync($"/api/v1/parlamentares/{Guid.NewGuid()}");

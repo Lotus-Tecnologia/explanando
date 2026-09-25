@@ -237,4 +237,84 @@ public sealed class VarreduraDeRedePontaAPontaTests(BancoDeTestes banco)
             resultado.ParlamentaresNaBase.ShouldBeLessThan(resultado.PisoDeParlamentares);
         }
     }
+
+    [Fact]
+    public async Task Varredura_individual_nao_apaga_a_flag_de_rede_e_a_conta_no_indice()
+    {
+        // O defeito de 2026-09-24: a varredura individual apagava toda flag das despesas
+        // do deputado, inclusive o REG_NET_004 que a passada de rede tinha gravado. O índice
+        // publicado nunca contava o achado que a mesma página listava.
+        var (deputados, despesas) = await SemearConcentracaoAsync();
+
+        var rede = MontarServico(out var contextoDaRede);
+
+        await using (contextoDaRede)
+        {
+            await rede.VarrerAsync();
+        }
+
+        await using (var contexto = banco.CriarContexto())
+        {
+            var varredura = new ServicoDeVarredura(
+                new RepositorioDeVarredura(contexto),
+                MotorDeRegras.Padrao(),
+                new RelogioFixo());
+
+            await varredura.VarrerAsync(deputados[0]);
+        }
+
+        await using var leitura = banco.CriarContexto();
+
+        var deRede = await leitura.FlagsAnomalias
+            .Where(flag => flag.DespesaId == despesas[0] && flag.CodigoRegra == "REG_NET_004")
+            .ToListAsync();
+
+        deRede.Count.ShouldBe(1, "a varredura individual não apaga achado de outra passada");
+
+        var todas = await leitura.FlagsAnomalias
+            .Where(flag => flag.DespesaId == despesas[0])
+            .ToListAsync();
+
+        var score = await leitura.ScoresRisco.SingleAsync(s => s.ParlamentarId == deputados[0]);
+
+        score.PesoDasFlags.ShouldBe(todas.Sum(flag => flag.Peso), "o índice conta tudo o que a página lista");
+    }
+
+    [Fact]
+    public async Task Passada_de_rede_devolve_quem_ganhou_e_quem_perdeu_achado()
+    {
+        var (deputados, despesas) = await SemearConcentracaoAsync();
+
+        var primeira = MontarServico(out var contexto);
+        ResultadoDeRede resultado;
+
+        await using (contexto)
+        {
+            resultado = await primeira.VarrerAsync();
+        }
+
+        deputados.ShouldAllBe(id => resultado.ParlamentaresAfetados.Contains(id));
+
+        // Some a despesa de um deles: na passada seguinte ele perde o achado, e ainda assim
+        // precisa ser devolvido, porque o score dele tem de cair.
+        await using (var escrita = banco.CriarContexto())
+        {
+            await escrita.Despesas.Where(d => d.Id == despesas[0]).ExecuteDeleteAsync();
+        }
+
+        var segunda = MontarServico(out var contextoDaSegunda);
+
+        await using (contextoDaSegunda)
+        {
+            resultado = await segunda.VarrerAsync();
+        }
+
+        resultado.ParlamentaresAfetados.ShouldContain(deputados[1],
+            "com um a menos no trio, o achado dos outros dois mudou — ganhando ou perdendo");
+    }
+
+    private sealed class RelogioFixo : IRelogioDaVarredura
+    {
+        public DateTimeOffset Agora { get; } = new(2026, 8, 19, 12, 0, 0, TimeSpan.Zero);
+    }
 }

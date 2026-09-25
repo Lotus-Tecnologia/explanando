@@ -44,11 +44,28 @@ public interface IRepositorioDeVarredura
         CancellationToken cancelamento = default);
 
     /// <summary>
-    /// Apaga as flags das despesas informadas. A varredura recalcula do zero em vez de
-    /// somar: rodar de novo com as mesmas regras nao pode dobrar o score, e uma regra
-    /// afrouxada tem de conseguir <b>remover</b> um achado anterior.
+    /// Apaga as flags que <b>esta passada</b> produziu antes, nas despesas informadas. A
+    /// varredura recalcula do zero em vez de somar: rodar de novo com as mesmas regras nao
+    /// pode dobrar o score, e uma regra afrouxada tem de conseguir <b>remover</b> um achado
+    /// anterior.
+    ///
+    /// <para><b>Recorta pelo codigo da regra, e nao so' pela despesa.</b> A passada de rede
+    /// grava achados nas mesmas despesas; apagar por despesa levava junto o REG_NET_004 a
+    /// cada varredura individual, e o indice nunca os contava.</para>
     /// </summary>
-    Task RemoverFlagsAsync(IReadOnlyCollection<Guid> despesaIds, CancellationToken cancelamento = default);
+    Task RemoverFlagsAsync(
+        IReadOnlyCollection<Guid> despesaIds,
+        IReadOnlyCollection<string> codigosDaPassada,
+        CancellationToken cancelamento = default);
+
+    /// <summary>
+    /// As flags gravadas nessas despesas por <b>outra</b> passada — hoje, a de rede. Entram
+    /// no score junto com as desta, porque o leitor ve as duas na mesma lista de achados.
+    /// </summary>
+    Task<IReadOnlyList<FlagAnomalia>> ObterFlagsDeOutrasPassadasAsync(
+        IReadOnlyCollection<Guid> despesaIds,
+        IReadOnlyCollection<string> codigosDaPassada,
+        CancellationToken cancelamento = default);
 
     void Adicionar(FlagAnomalia flag);
 
@@ -134,9 +151,17 @@ public sealed class ServicoDeVarredura(
         var contexto = new ContextoDeAvaliacao(parlamentar, despesas, fornecedores, limites);
         var avaliacao = motor.Avaliar(contexto);
 
-        // Recalcula do zero: apaga o que a passada anterior escreveu antes de gravar.
-        await repositorio.RemoverFlagsAsync(
-            despesas.Select(despesa => despesa.Id).ToList(), cancelamento).ConfigureAwait(false);
+        // Recalcula do zero: apaga o que a passada anterior escreveu antes de gravar — mas
+        // so' o que ESTA passada escreve. O achado de rede e' de outra passada e fica.
+        var despesaIds = despesas.Select(despesa => despesa.Id).ToList();
+        var codigosDaPassada = motor.Regras.Select(regra => regra.Codigo).ToList();
+
+        await repositorio.RemoverFlagsAsync(despesaIds, codigosDaPassada, cancelamento)
+            .ConfigureAwait(false);
+
+        var flagsDeOutrasPassadas = await repositorio
+            .ObterFlagsDeOutrasPassadasAsync(despesaIds, codigosDaPassada, cancelamento)
+            .ConfigureAwait(false);
 
         foreach (var flag in avaliacao.Flags)
         {
@@ -151,8 +176,13 @@ public sealed class ServicoDeVarredura(
             repositorio.Adicionar(score);
         }
 
+        // O indice conta tudo o que a pagina lista. Sem as flags de rede aqui, a soma das
+        // parcelas por regra nao fecharia com o indice publicado.
         score.Recalcular(
-            despesas, avaliacao.Flags, relogio.Agora, _parametros.PisoAmostralParaIndiceDeRisco);
+            despesas,
+            [.. avaliacao.Flags, .. flagsDeOutrasPassadas],
+            relogio.Agora,
+            _parametros.PisoAmostralParaIndiceDeRisco);
 
         await RegistrarNoHistoricoAsync(score, avaliacao.VersaoDoMotor, cancelamento)
             .ConfigureAwait(false);

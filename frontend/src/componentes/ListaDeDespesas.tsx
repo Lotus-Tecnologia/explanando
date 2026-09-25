@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Comprovante, ValoresDaDespesa } from "./Comprovante";
+import { RespostasDoGabinete } from "./RespostasDoGabinete";
 import { TagDeGravidade } from "./TagDeGravidade";
 import type { ItemDeDespesa } from "@/lib/contrato";
 
@@ -39,6 +40,12 @@ function LinhaDaDespesa({ despesa, casa }: { despesa: ItemDeDespesa; casa?: stri
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {despesa.respostas?.length ? (
+        <div className="mt-3">
+          <RespostasDoGabinete respostas={despesa.respostas} compacta />
+        </div>
       ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-3">

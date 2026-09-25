@@ -60,18 +60,42 @@ public sealed class RepositorioDeVarredura(ExplanandoDbContext contexto) : IRepo
 
     public async Task RemoverFlagsAsync(
         IReadOnlyCollection<Guid> despesaIds,
+        IReadOnlyCollection<string> codigosDaPassada,
         CancellationToken cancelamento = default)
     {
         ArgumentNullException.ThrowIfNull(despesaIds);
+        ArgumentNullException.ThrowIfNull(codigosDaPassada);
 
-        if (despesaIds.Count == 0)
+        if (despesaIds.Count == 0 || codigosDaPassada.Count == 0)
         {
             return;
         }
 
         await contexto.FlagsAnomalias
-            .Where(flag => despesaIds.Contains(flag.DespesaId))
+            .Where(flag => despesaIds.Contains(flag.DespesaId)
+                && codigosDaPassada.Contains(flag.CodigoRegra))
             .ExecuteDeleteAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<FlagAnomalia>> ObterFlagsDeOutrasPassadasAsync(
+        IReadOnlyCollection<Guid> despesaIds,
+        IReadOnlyCollection<string> codigosDaPassada,
+        CancellationToken cancelamento = default)
+    {
+        ArgumentNullException.ThrowIfNull(despesaIds);
+        ArgumentNullException.ThrowIfNull(codigosDaPassada);
+
+        if (despesaIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await contexto.FlagsAnomalias
+            .AsNoTracking()
+            .Where(flag => despesaIds.Contains(flag.DespesaId)
+                && !codigosDaPassada.Contains(flag.CodigoRegra))
+            .ToListAsync(cancelamento)
             .ConfigureAwait(false);
     }
 

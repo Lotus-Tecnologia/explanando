@@ -150,6 +150,42 @@ export interface PerfilDoParlamentar {
    * faz o leitor concluir que não houve gasto.
    */
   tiposDeDespesa: string[];
+
+  /**
+   * De onde vem o índice, regra a regra, da que mais pesa para a que menos pesa.
+   *
+   * O índice é uma **densidade** — peso dos achados sobre as despesas —, então a forma
+   * honesta de decompô-lo é a fatia do peso, e não uma soma de pontos que o motor não faz.
+   * Vem mesmo sem amostra suficiente: os achados existem, o que falta é o índice.
+   */
+  composicao: ParcelaDoIndice[];
+}
+
+/** A parte do índice que vem de uma regra. */
+export interface ParcelaDoIndice {
+  codigo: string;
+  descricao: string | null;
+  quantidade: number;
+
+  /** Gravidade × grau de confiança, somados. */
+  peso: number;
+
+  /** De 0 a 1, **sem arredondar**. Quem desenha arredonda o conjunto — ver `porcentagensInteiras`. */
+  fatia: number;
+
+  /** Na unidade do índice: pontos por 100 despesas. A soma das parcelas é o índice. */
+  pontosNoIndice: number;
+
+  altas: number;
+  medias: number;
+  baixas: number;
+}
+
+/** A resposta oficial do gabinete, publicada sem edição. A retirada não chega aqui. */
+export interface RespostaDoGabinete {
+  texto: string;
+  urlDoAnexo: string | null;
+  enviadaEm: string;
 }
 
 export interface FlagDaDespesa {
@@ -195,6 +231,12 @@ export interface ItemDeDespesa {
 
   flags: FlagDaDespesa[];
   maiorGravidade: Gravidade | null;
+
+  /**
+   * O que o gabinete respondeu sobre esta despesa. Mora junto do achado porque o
+   * contraditório só funciona se quem lê um lê o outro.
+   */
+  respostas: RespostaDoGabinete[];
 }
 
 /** Quem gastou. O mínimo que a página de uma despesa precisa dizer. */

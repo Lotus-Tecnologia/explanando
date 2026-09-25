@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
+using Explanando.Domain.Contestacoes;
 using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Estado;
@@ -356,6 +357,27 @@ public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
 
         var retencao = servicos.GetRequiredService<Application.Retencao.ServicoDeRetencao>();
         await retencao.AplicarAsync(JanelaDeRetencao.Ilimitada);
+
+        // Duas respostas do gabinete: uma publicada e uma retirada. Só a primeira pode sair.
+        var publicada = ContestacaoDespesa.Criar(
+            DespesaComComprovante,
+            ranqueado.Id,
+            "gabinete@camara.leg.br",
+            "O serviço foi prestado; a nota complementar está em anexo.",
+            new DateTimeOffset(2026, 8, 1, 12, 0, 0, TimeSpan.Zero),
+            urlDoAnexo: "https://exemplo.invalido/anexo.pdf");
+
+        var retirada = ContestacaoDespesa.Criar(
+            DespesaSemComprovante,
+            ranqueado.Id,
+            "gabinete@camara.leg.br",
+            "Texto que o gabinete retirou.",
+            new DateTimeOffset(2026, 8, 2, 12, 0, 0, TimeSpan.Zero));
+
+        retirada.Retirar(new DateTimeOffset(2026, 8, 3, 12, 0, 0, TimeSpan.Zero));
+
+        contexto.Contestacoes.AddRange(publicada, retirada);
+        await contexto.SaveChangesAsync();
     }
 
     private static Parlamentar Deputado(int idExterno, string nome, string uf) =>

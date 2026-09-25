@@ -11,9 +11,17 @@ import { ENCARREGADO } from "@/lib/site";
  * para outra palavra: mudaria a base legal declarada.
  */
 
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Secao({
+  titulo,
+  id,
+  children,
+}: {
+  titulo: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="mt-8">
+    <section id={id} className="mt-8 scroll-mt-20">
       <h2 className="text-base font-bold text-titulo">{titulo}</h2>
       <div className="mt-2 space-y-3 text-sm text-texto">{children}</div>
     </section>
@@ -124,7 +132,7 @@ export function PoliticaDePrivacidade() {
         </p>
       </Secao>
 
-      <Secao titulo="Contestação de parlamentares">
+      <Secao titulo="Contestação de parlamentares" id="contestacao">
         <p>
           Gabinetes podem responder publicamente a qualquer indicador. A resposta oficial é
           exibida ao lado do achado, com identificação de origem. O acesso é verificado por

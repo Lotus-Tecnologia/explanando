@@ -51,3 +51,40 @@ export function formatarMoedaCompacta(valor: number): string {
 
   return `${sinal}R$ ${Math.round(absoluto).toLocaleString("pt-BR")}`;
 }
+
+/**
+ * Porcentagens inteiras que **somam exatamente 100**.
+ *
+ * Arredondar cada fatia por conta própria dá 99% ou 101% com frequência — três fatias de um
+ * terço viram 33 + 33 + 33. Numa tela cuja promessa é "é daqui que o índice vem", um total
+ * que não fecha é a primeira coisa que um leitor atento aponta. O método é o do maior resto:
+ * arredonda tudo para baixo e distribui os pontos que faltam para as maiores sobras.
+ *
+ * Fatias todas zero (ou lista vazia) devolvem zeros: não há 100% a distribuir.
+ */
+export function porcentagensInteiras(fatias: number[]): number[] {
+  const total = fatias.reduce((soma, fatia) => soma + fatia, 0);
+
+  if (total <= 0) {
+    return fatias.map(() => 0);
+  }
+
+  const brutas = fatias.map((fatia) => (fatia / total) * 100);
+  const inteiras = brutas.map(Math.floor);
+  let faltam = 100 - inteiras.reduce((soma, valor) => soma + valor, 0);
+
+  const porSobra = brutas
+    .map((bruta, indice) => ({ indice, sobra: bruta - Math.floor(bruta) }))
+    .sort((a, b) => b.sobra - a.sobra || a.indice - b.indice);
+
+  for (const { indice } of porSobra) {
+    if (faltam <= 0) {
+      break;
+    }
+
+    inteiras[indice] += 1;
+    faltam -= 1;
+  }
+
+  return inteiras;
+}

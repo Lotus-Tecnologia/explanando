@@ -49,7 +49,7 @@ produção.
 
 ---
 
-## Fase 1 — Score explicável · **P**
+## Fase 1 — Score explicável · **P** · ✅ entregue em 2026-09-24
 
 **Objetivo.** Trocar "índice 89" por "índice 89, e é daqui que ele vem".
 

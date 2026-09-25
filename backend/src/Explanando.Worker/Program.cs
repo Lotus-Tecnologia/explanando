@@ -612,6 +612,12 @@ switch (comando)
             var rede = servicos.GetRequiredService<ServicoDeVarreduraDeRede>();
             var resultadoDeRede = await rede.VarrerAsync().ConfigureAwait(false);
 
+            // O score conta as flags de rede, que acabaram de mudar. Ver o CicloMensal.
+            foreach (var afetado in resultadoDeRede.ParlamentaresAfetados)
+            {
+                await varredura.VarrerAsync(afetado).ConfigureAwait(false);
+            }
+
             var avisoDeAmostra = resultadoDeRede.BaseSuficiente
                 ? string.Empty
                 : $"  [ABAIXO do piso de {resultadoDeRede.PisoDeParlamentares}: "
@@ -631,6 +637,9 @@ switch (comando)
             {
                 Console.WriteLine($"  [FALHA]  {falha.CodigoRegra}: {falha.Motivo}");
             }
+
+            Console.WriteLine(
+                $"Scores recalculados com a rede : {resultadoDeRede.ParlamentaresAfetados.Count}");
 
             falhas.AddRange(resultadoDeRede.Falhas);
 

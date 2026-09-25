@@ -18,13 +18,10 @@ public interface IRepositorioDeRede
         CancellationToken cancelamento = default);
 
     /// <summary>
-    /// Apaga as flags de rede da passada anterior, por código de regra.
-    ///
-    /// A passada por parlamentar não pode fazer isso: ela apaga por despesa, e apagaria
-    /// achados de rede que nada têm a ver com aquele deputado. Por isso o recorte aqui é
-    /// pelo código.
+    /// Apaga as flags de rede da passada anterior, por código de regra, e devolve de quais
+    /// parlamentares elas eram — o score deles muda com a remoção.
     /// </summary>
-    Task RemoverFlagsDeRedeAsync(
+    Task<IReadOnlyCollection<Guid>> RemoverFlagsDeRedeAsync(
         IReadOnlyCollection<string> codigosDeRegra,
         CancellationToken cancelamento = default);
 
@@ -40,9 +37,11 @@ public interface IRepositorioDeRede
 /// perfil. Rodá-la junto com a varredura individual obrigaria cada deputado a carregar as
 /// despesas de todos os outros.</para>
 ///
-/// <para>Não recalcula o score de ninguém. As flags de rede entram no perfil na próxima
-/// varredura individual daquele parlamentar; fazê-las mexer no score aqui significaria
-/// escrever em 513 linhas de score numa transação só.</para>
+/// <para>Não recalcula o score de ninguém: devolve em
+/// <see cref="ResultadoDeRede.ParlamentaresAfetados"/> quem precisa ser varrido de novo, e
+/// quem chama faz isso. Sem esse segundo passo o índice publicado ficava sem o REG_NET_004
+/// — a varredura individual o apagava, e a de rede o regravava depois do score calculado.
+/// Medido em 2026-09-24: 17 deputados com índice abaixo do que a própria página listava.</para>
 /// </summary>
 public sealed class ServicoDeVarreduraDeRede(
     IRepositorioDeRede repositorio,
@@ -68,7 +67,8 @@ public sealed class ServicoDeVarreduraDeRede(
 
         // Recalcula do zero, como a passada individual: rodar de novo não pode dobrar as
         // flags, e uma regra afrouxada tem de conseguir remover um achado anterior.
-        await repositorio.RemoverFlagsDeRedeAsync(codigos, cancelamento).ConfigureAwait(false);
+        var antes = await repositorio.RemoverFlagsDeRedeAsync(codigos, cancelamento)
+            .ConfigureAwait(false);
 
         foreach (var flag in resultado.Flags)
         {
@@ -77,6 +77,12 @@ public sealed class ServicoDeVarreduraDeRede(
 
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
 
-        return resultado;
+        var donoDaDespesa = despesas.ToDictionary(despesa => despesa.Id, despesa => despesa.ParlamentarId);
+
+        var depois = resultado.Flags
+            .Select(flag => donoDaDespesa.GetValueOrDefault(flag.DespesaId))
+            .Where(id => id != Guid.Empty);
+
+        return resultado with { ParlamentaresAfetados = [.. antes.Union(depois)] };
     }
 }

@@ -60,8 +60,8 @@ mais valiosa das duas ideias — o contraditório — com o menor risco possíve
 parte identificada e interessada, não um anônimo, e o texto é sobre o próprio gabinete, não
 sobre terceiros.
 
-Isso entra no [plano de execução](../plano-de-execucao.md) quando a ordem das fases
-permitir, e não depende desta reavaliação.
+Isso entra no [plano de execução](../plano-de-execucao.md) **na Fase 1**, junto do score
+explicável — aprovado pelo Gustavo em 2026-09-24 —, e não depende desta reavaliação.
 
 ## Gatilhos para reavaliar
 
@@ -69,7 +69,7 @@ Todos os quatro, não qualquer um deles:
 
 | Gatilho | Por quê |
 |---|---|
-| **Audiência sustentada** — proposta: 50 mil visitantes únicos por mês, três meses seguidos | Abaixo disso, a caixa fica vazia e o consenso não se forma. O número é proposta minha; o critério é seu |
+| **Audiência sustentada** — 50 mil visitantes únicos por mês, três meses seguidos | Abaixo disso, a caixa fica vazia e o consenso não se forma. Número fixado pelo Gustavo em 2026-09-24 |
 | **Moderação com dono e prazo** — quem responde, em quanto tempo | Sem isso, o primeiro conteúdo difamatório fica no ar até alguém notar |
 | **Parecer jurídico atualizado** sobre a responsabilidade por conteúdo de terceiro depois da revisão do art. 19 | É a pergunta que decide se o recurso é viável, e não é de engenharia |
 | **Mecanismo contra ação coordenada** — no mínimo, peso por antiguidade de conta | Sem isso, a votação mede quem se organizou, não o que é verdade |

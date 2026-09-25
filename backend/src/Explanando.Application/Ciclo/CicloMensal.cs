@@ -121,6 +121,13 @@ public sealed class ServicoDeCicloMensal(
         var resultadoDeRede = await rede.VarrerAsync(cancelamento).ConfigureAwait(false);
         falhas.AddRange(resultadoDeRede.Falhas);
 
+        // O score conta as flags de rede, que acabaram de mudar. Só quem ganhou ou perdeu
+        // um achado de rede precisa ser recalculado — na base real, uma ou duas dezenas.
+        foreach (var id in resultadoDeRede.ParlamentaresAfetados)
+        {
+            await varredura.VarrerAsync(id, cancelamento).ConfigureAwait(false);
+        }
+
         // Consolida sem podar. A poda é destrutiva e nunca acontece por omissão — apagar
         // gasto público tem de ser um ato explícito, nunca efeito colateral de uma rotina.
         var resultadoDaRetencao = await retencao

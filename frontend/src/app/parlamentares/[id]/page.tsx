@@ -9,7 +9,9 @@ import {
 } from "@/lib/api";
 import { metadadosDoParlamentar } from "@/lib/metadados";
 import { formatarDensidade, formatarNumero, formatarReais } from "@/lib/formato";
+import { CASAS } from "@/lib/casas";
 import { BlocoDeCobertura } from "@/componentes/Abstencao";
+import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
 import { ListaDeDespesas } from "@/componentes/ListaDeDespesas";
 import { SerieMensal } from "@/componentes/SerieMensal";
 
@@ -107,10 +109,17 @@ export default async function Perfil({
     itens: ACHADOS_EM_DESTAQUE,
   });
 
+  // Volta para o ranking da casa dele, e não para a página inicial: é de lá que quem
+  // clicou num nome veio, e as duas casas nunca dividem um ranking.
+  const casa = CASAS.find((candidata) => candidata.nomeOficial === perfil.casa);
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <Link href="/" className="text-sm text-titulo underline-offset-2 hover:underline">
-        ← Ranking
+      <Link
+        href={casa?.caminho ?? "/"}
+        className="text-sm text-titulo underline-offset-2 hover:underline"
+      >
+        ← {casa ? `Ranking ${casa.chave === "camara" ? "da Câmara" : "do Senado"}` : "Início"}
       </Link>
 
       <header className="mt-4 flex flex-wrap items-start gap-4">
@@ -172,7 +181,7 @@ export default async function Perfil({
           nota={
             perfil.indiceDeRisco === null
               ? "Menos de 100 despesas: a densidade seria ruído."
-              : "Indicadores por 100 despesas."
+              : "Peso dos achados a cada 100 despesas."
           }
         />
         <Numero
@@ -186,6 +195,20 @@ export default async function Perfil({
           nota="Indicadores de peso intermediário e baixo."
         />
       </dl>
+
+      {/*
+        Logo abaixo dos números, porque é a pergunta que o número provoca: de onde vem isso?
+      */}
+      {perfil.composicao ? (
+        <div className="mt-8">
+          <ComposicaoDoIndice
+            composicao={perfil.composicao}
+            indice={perfil.indiceDeRisco}
+            despesasAvaliadas={perfil.despesasAvaliadas}
+            cobertura={perfil.cobertura}
+          />
+        </div>
+      ) : null}
 
       {/*
         A cobertura vem ANTES da lista de achados, e não em rodapé. É o que impede o leitor

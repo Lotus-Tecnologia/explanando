@@ -185,10 +185,73 @@ public sealed record PerfilDoParlamentar
     /// </summary>
     public IReadOnlyList<string> TiposDeDespesa { get; init; } = [];
 
+    /// <summary>
+    /// De onde vem o índice, regra a regra, da que mais pesa para a que menos pesa.
+    ///
+    /// <para><b>O índice é uma densidade, não uma soma de pontos</b>: peso dos achados
+    /// dividido pelas despesas avaliadas. A forma honesta de decompô-lo é a fatia do peso —
+    /// "62% vem desta regra" —, e não "+30 por concentração", que seria inventar uma
+    /// aritmética que o motor não faz.</para>
+    ///
+    /// <para>Vem mesmo quando a amostra é insuficiente: os achados existem e a página os
+    /// lista. O que falta nesse caso é o índice, e a borda explica a ausência.</para>
+    /// </summary>
+    public IReadOnlyList<ParcelaDoIndice> Composicao { get; init; } = [];
+
     /// <summary>Quantas regras produziram resultado interpretável.</summary>
     public int RegrasConclusivas => Cobertura.Count(regra => regra.SilencioEhConclusivo);
 
     public int RegrasSemDado => Cobertura.Count(regra => !regra.SilencioEhConclusivo);
+}
+
+/// <summary>
+/// A parte do índice que vem de uma regra.
+///
+/// <para><see cref="Fatia"/> vai sem arredondar: arredondar cada uma no servidor faz a soma
+/// dar 99% ou 101%, e quem desenha arredonda o conjunto de uma vez só.</para>
+/// </summary>
+public sealed record ParcelaDoIndice
+{
+    public required string Codigo { get; init; }
+
+    /// <summary>A redação de leitor do <see cref="CatalogoDeRegras"/>.</summary>
+    public string? Descricao { get; init; }
+
+    /// <summary>Quantos achados desta regra.</summary>
+    public int Quantidade { get; init; }
+
+    /// <summary>Soma de gravidade × grau de confiança dos achados desta regra.</summary>
+    public decimal Peso { get; init; }
+
+    /// <summary>A parte do peso total que vem daqui, de 0 a 1.</summary>
+    public decimal Fatia { get; init; }
+
+    /// <summary>
+    /// Quanto desta regra entra no índice, na mesma unidade dele: pontos por 100 despesas.
+    /// A soma das parcelas é o índice.
+    /// </summary>
+    public decimal PontosNoIndice { get; init; }
+
+    public int Altas { get; init; }
+
+    public int Medias { get; init; }
+
+    public int Baixas { get; init; }
+}
+
+/// <summary>
+/// A resposta oficial do gabinete a uma despesa, publicada sem edição.
+///
+/// <para>Só as publicadas saem: a retirada pelo próprio gabinete some da página. O e-mail
+/// que comprovou a autoria fica no banco, para auditoria, e não é publicado.</para>
+/// </summary>
+public sealed record RespostaDoGabinete
+{
+    public required string Texto { get; init; }
+
+    public string? UrlDoAnexo { get; init; }
+
+    public required DateTimeOffset EnviadaEm { get; init; }
 }
 
 /// <summary>Um achado, como a tela o exibe.</summary>
@@ -232,6 +295,15 @@ public sealed record ItemDeDespesa
     public bool EhEstorno { get; init; }
 
     public IReadOnlyList<FlagDaDespesa> Flags { get; init; } = [];
+
+    /// <summary>
+    /// O que o gabinete respondeu sobre esta despesa. Vai junto do achado, e não numa
+    /// página à parte: o contraditório só funciona se quem lê o achado lê a resposta.
+    ///
+    /// <para>Ligado pela despesa, e não pela flag: as flags são recriadas a cada varredura,
+    /// e a ligação por flag se perderia na primeira passada seguinte.</para>
+    /// </summary>
+    public IReadOnlyList<RespostaDoGabinete> Respostas { get; init; } = [];
 
     /// <summary>A gravidade mais alta entre as flags, para a interface pintar a linha.</summary>
     public Gravidade? MaiorGravidade => Flags.Count == 0 ? null : Flags.Max(f => f.Gravidade);

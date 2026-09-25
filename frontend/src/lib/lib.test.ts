@@ -261,6 +261,7 @@ function perfil(ajustes: Partial<PerfilDoParlamentar> = {}): PerfilDoParlamentar
     regrasConclusivas: 8,
     regrasSemDado: 3,
     tiposDeDespesa: ["COMBUSTÍVEIS E LUBRIFICANTES.", "TELEFONIA"],
+    composicao: [],
     ...ajustes,
   };
 }

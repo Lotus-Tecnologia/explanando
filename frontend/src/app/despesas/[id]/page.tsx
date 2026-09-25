@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { obterDespesa } from "@/lib/api";
 import { formatarReais } from "@/lib/formato";
 import { Comprovante, ValoresDaDespesa } from "@/componentes/Comprovante";
+import { RespostasDoGabinete, SemRespostaDoGabinete } from "@/componentes/RespostasDoGabinete";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
 
 /*
@@ -138,7 +139,8 @@ export default async function Despesa({ params }: Parametros) {
                   {/* O grau de confiança viaja com o achado porque nem todo indicador é um
                       fato: REG_NET_004 cruza pessoas e sai com 0,7, não com 1,0. */}
                   <span className="numeros text-xs text-texto-suave">
-                    confiança {(flag.grauDeConfianca * 100).toFixed(0)}%
+                    confiança {(flag.grauDeConfianca * 100).toFixed(0)}% · regra{" "}
+                    {flag.codigoRegra}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-texto">{flag.descricao}</p>
@@ -147,6 +149,25 @@ export default async function Despesa({ params }: Parametros) {
           </ul>
         )}
       </section>
+
+      {/*
+        O contraditório mora aqui, entre o achado e o documento — e não numa página à parte.
+        Só aparece o lugar quando há achado: sem indicador, não há o que responder.
+      */}
+      {despesa.flags.length > 0 || (despesa.respostas?.length ?? 0) > 0 ? (
+        <section aria-labelledby="titulo-resposta" className="mt-8">
+          <h2 id="titulo-resposta" className="text-base font-bold text-titulo">
+            O que o gabinete diz
+          </h2>
+          <div className="mt-3">
+            {despesa.respostas?.length ? (
+              <RespostasDoGabinete respostas={despesa.respostas} />
+            ) : (
+              <SemRespostaDoGabinete />
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <div className="mt-6">
         <Comprovante despesa={despesa} casa={parlamentar.casa} />
