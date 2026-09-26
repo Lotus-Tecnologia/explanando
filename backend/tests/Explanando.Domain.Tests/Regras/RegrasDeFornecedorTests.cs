@@ -28,6 +28,46 @@ public sealed class RegrasDeFornecedorTests
         flags[0].Gravidade.ShouldBe(Gravidade.Media);
     }
 
+    [Theory]
+    [InlineData("6462000")]
+    [InlineData("6463800")]
+    public void Aluguel_pago_a_holding_nao_e_ramo_divergente(string cnae)
+    {
+        // Decisão de 26/09/2026. Holding patrimonial dona do imóvel alugado é comum, e era
+        // de onde vinham 89% do índice do primeiro do ranking do Senado.
+        new CenarioDeAvaliacao()
+            .ParlamentarDoSenado()
+            .ComFornecedor(cnaePrincipal: cnae)
+            .ComDespesa(8_000m,
+                tipo: "Aluguel de imóveis para escritório político, compreendendo despesas concernentes a eles.")
+            .Rodar(new RegraCnaeDivergente())
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Nenhuma_descricao_abre_com_veredito()
+    {
+        // Decisão de 26/09/2026: "Alerta de compliance:" e "Fator de risco elevado:" abriam
+        // 13 mil descrições, que vão inteiras para o RSS. Não imputam conduta, mas soam como
+        // veredito antes do fato. A descrição abre com o fato.
+        var contexto = new CenarioDeAvaliacao()
+            .ComFornecedor(cnaePrincipal: "4723700", dataAbertura: new DateOnly(2026, 6, 20), uf: "SP")
+            .ComDespesa(3_000m, mes: 7, dia: 6, tipo: CenarioDeAvaliacao.Consultoria, numeroDocumento: "1")
+            .ComDespesa(3_000m, mes: 7, dia: 7, tipo: CenarioDeAvaliacao.Consultoria, numeroDocumento: "2")
+            .ComDespesa(3_000m, mes: 7, dia: 8, tipo: CenarioDeAvaliacao.Consultoria, numeroDocumento: "3")
+            .ComDespesa(3_000m, mes: 1, dia: 10, tipo: "HOSPEDAGEM ,EXCETO DO PARLAMENTAR NO DISTRITO FEDERAL.")
+            .Construir();
+
+        var flags = MotorDeRegras.Padrao().Avaliar(contexto).Flags;
+
+        flags.ShouldNotBeEmpty();
+        foreach (var flag in flags)
+        {
+            flag.Descricao.ShouldNotStartWith("Alerta de compliance", Case.Insensitive);
+            flag.Descricao.ShouldNotStartWith("Fator de risco", Case.Insensitive);
+        }
+    }
+
     [Fact]
     public void Cnae_divergente_se_cala_quando_o_ramo_bate()
     {

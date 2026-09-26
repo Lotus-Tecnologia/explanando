@@ -218,6 +218,12 @@ internal sealed class ScoreRiscoParlamentarConfiguracao
 
         builder.Property(score => score.AmostraSuficiente).IsRequired();
 
+        // A cobertura de fornecedor (decisao de 26/09/2026). A fracao e' derivada; o que se
+        // grava e' a contagem e o veredito do piso, que o ranking filtra em SQL.
+        builder.Property(score => score.DespesasComFornecedor).IsRequired().HasDefaultValue(0);
+        builder.Property(score => score.CoberturaSuficiente).IsRequired().HasDefaultValue(false);
+        builder.Ignore(score => score.CoberturaDeFornecedor);
+
         builder
             .Property(score => score.DataUltimaVarredura)
             .HasColumnType("timestamp with time zone")

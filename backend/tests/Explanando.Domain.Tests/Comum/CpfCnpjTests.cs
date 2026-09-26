@@ -117,4 +117,46 @@ public sealed class CpfCnpjTests
         // CPF de fornecedor pessoa fisica e' dado pessoal: nunca sai inteiro para a UI.
         CpfCnpj.Criar("52998224725").Formatado.ShouldBe("***.982.247-**");
     }
+
+    // ------------------------------------------------------------------
+    //  O CPF nunca é guardado inteiro (decisão de 26/09/2026)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Cpf_e_validado_com_os_11_digitos_e_guardado_mascarado()
+    {
+        // A Câmara publica o CPF do fornecedor pessoa física inteiro — 325 deles, em 5.748
+        // despesas, estavam gravados assim em 25/09. A validação precisa dos 11 dígitos; o
+        // que fica no objeto (e no banco, e no backup) é a máscara que a Receita usa no QSA.
+        var documento = CpfCnpj.Criar("52998224725");
+
+        documento.Tipo.ShouldBe(TipoDocumento.Cpf);
+        documento.Numero.ShouldBe("***982247**");
+        documento.Numero.ShouldNotContain("52998224725");
+    }
+
+    [Fact]
+    public void A_forma_mascarada_volta_do_banco_como_o_mesmo_cpf()
+    {
+        // O conversor do EF recria o documento a partir do que está gravado.
+        var lido = CpfCnpj.Criar("***982247**");
+
+        lido.Tipo.ShouldBe(TipoDocumento.Cpf);
+        lido.ShouldBe(CpfCnpj.Criar("52998224725"));
+        lido.Formatado.ShouldBe("***.982.247-**");
+    }
+
+    [Fact]
+    public void Cpf_nao_vai_para_a_consulta_de_cnpj()
+    {
+        // A BrasilAPI só consulta CNPJ: o CPF voltava 400 e gastava uma requisição.
+        CpfCnpj.Criar("52998224725").PodeSerEnriquecido.ShouldBeFalse();
+        CpfCnpj.Criar("52998224725").EhValido.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Onze_digitos_que_nao_sao_cpf_valido_continuam_invalidos()
+    {
+        CpfCnpj.Criar("12345678900").Tipo.ShouldBe(TipoDocumento.Invalido);
+    }
 }

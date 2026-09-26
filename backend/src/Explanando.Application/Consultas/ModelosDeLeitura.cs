@@ -70,6 +70,15 @@ public sealed record ItemDoRanking
     /// ruído, e o parlamentar sai do ranking de risco — mas continua no de volume.
     /// </summary>
     public bool AmostraSuficiente { get; init; }
+
+    /// <summary>
+    /// Fração das despesas com fornecedor identificado na Receita, de 0 a 1 — quanto do gasto o
+    /// índice de fato descreve (decisão de 26/09/2026). Nulo quando não há score.
+    /// </summary>
+    public decimal? CoberturaDeFornecedor { get; init; }
+
+    /// <summary>Metade ou mais: entra no ranking por índice. Abaixo, só no de volume.</summary>
+    public bool CoberturaSuficiente { get; init; }
 }
 
 /// <summary>Uma página de resultados, com o que a borda precisa para paginar.</summary>
@@ -158,6 +167,12 @@ public sealed record PerfilDoParlamentar
     public decimal? IndiceDeRisco { get; init; }
     public decimal? IndiceDeAltas { get; init; }
     public bool AmostraSuficiente { get; init; }
+
+    /// <summary>Ver <see cref="ItemDoRanking.CoberturaDeFornecedor"/>.</summary>
+    public decimal? CoberturaDeFornecedor { get; init; }
+
+    /// <summary>Ver <see cref="ItemDoRanking.CoberturaSuficiente"/>.</summary>
+    public bool CoberturaSuficiente { get; init; }
 
     public int FlagsAltas { get; init; }
     public int FlagsMedias { get; init; }

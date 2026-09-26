@@ -28,8 +28,15 @@ public sealed class RegraFracionamento : IRegraAnomalia
 
         // Estorno fica de fora: a regra conta NOTAS emitidas, e uma devolucao nao e'
         // uma compra fatiada. Incluir estornos inflaria a contagem sem gasto correspondente.
+        //
+        // Passagem tambem (decisao de 26/09/2026, versao 6 do motor): a agencia fatura bilhete
+        // a bilhete, e dez notas da mesma agencia no mes e' o funcionamento normal da
+        // contratacao. No Senado eram 949 das 1.474 flags desta regra. Na Camara a passagem
+        // quase nunca chegava aqui, porque vem sem documento do fornecedor.
         var grupos = contexto.Despesas
-            .Where(despesa => !despesa.DocumentoFornecedor.EhVazio && !despesa.EhEstorno)
+            .Where(despesa => !despesa.DocumentoFornecedor.EhVazio
+                && !despesa.EhEstorno
+                && !EhPassagem(despesa.TipoDespesa))
             .GroupBy(despesa => (despesa.Competencia, despesa.DocumentoFornecedor.Numero));
 
         foreach (var grupo in grupos)
@@ -54,6 +61,9 @@ public sealed class RegraFracionamento : IRegraAnomalia
                 grauDeConfianca: 1.0m);
         }
     }
+
+    private static bool EhPassagem(string tipoDespesa) =>
+        tipoDespesa.Contains("PASSAGE", StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>

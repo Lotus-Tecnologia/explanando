@@ -41,8 +41,56 @@ public sealed class ScoreRiscoParlamentarTests
         int piso = PisoAmostral)
     {
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
-        score.Recalcular(Despesas(quantidadeDeDespesas, valorCada), flags, DateTimeOffset.UtcNow, piso);
+        score.Recalcular(
+            Despesas(quantidadeDeDespesas, valorCada), flags, DateTimeOffset.UtcNow, piso,
+            despesasComFornecedor: quantidadeDeDespesas);
         return score;
+    }
+
+    // ------------------------------------------------------------------
+    //  A cobertura de fornecedor (decisão de 26/09/2026)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void A_cobertura_e_a_fracao_das_despesas_com_fornecedor_identificado()
+    {
+        // Auditoria de 25/09: 92 dos 498 deputados ranqueados tinham menos da metade das
+        // despesas com fornecedor identificado — quase sempre por passagem aérea, que a
+        // Câmara publica sem fornecedor. O índice deles descrevia menos da metade do gasto.
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        score.Recalcular(Despesas(200), [], DateTimeOffset.UtcNow, PisoAmostral, despesasComFornecedor: 60);
+
+        score.DespesasComFornecedor.ShouldBe(60);
+        score.CoberturaDeFornecedor.ShouldBe(0.3m);
+        score.CoberturaSuficiente.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Metade_ou_mais_com_fornecedor_basta_para_o_ranking_de_indice()
+    {
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        score.Recalcular(Despesas(200), [], DateTimeOffset.UtcNow, PisoAmostral, despesasComFornecedor: 100);
+
+        score.CoberturaSuficiente.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Sem_despesa_nao_ha_cobertura_suficiente()
+    {
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+        score.Recalcular([], [], DateTimeOffset.UtcNow, PisoAmostral, despesasComFornecedor: 0);
+
+        score.CoberturaDeFornecedor.ShouldBe(0m);
+        score.CoberturaSuficiente.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Mais_despesas_com_fornecedor_do_que_despesas_e_erro_de_quem_chamou()
+    {
+        var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
+
+        Should.Throw<ArgumentOutOfRangeException>(() => score.Recalcular(
+            Despesas(10), [], DateTimeOffset.UtcNow, PisoAmostral, despesasComFornecedor: 11));
     }
 
     [Fact]
@@ -243,9 +291,9 @@ public sealed class ScoreRiscoParlamentarTests
         var despesas = Despesas(200);
         var agora = DateTimeOffset.UtcNow;
 
-        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral);
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral, despesas.Count);
         var primeiro = score.IndiceDeRisco;
-        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral);
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], agora, PisoAmostral, despesas.Count);
 
         score.IndiceDeRisco.ShouldBe(primeiro);
         score.VolumeTotalGasto.ShouldBe(200_000m);
@@ -257,8 +305,8 @@ public sealed class ScoreRiscoParlamentarTests
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
         var despesas = Despesas(200);
 
-        score.Recalcular(despesas, [Flag(Gravidade.Alta)], DateTimeOffset.UtcNow, PisoAmostral);
-        score.Recalcular(despesas, [], DateTimeOffset.UtcNow, PisoAmostral);
+        score.Recalcular(despesas, [Flag(Gravidade.Alta)], DateTimeOffset.UtcNow, PisoAmostral, despesas.Count);
+        score.Recalcular(despesas, [], DateTimeOffset.UtcNow, PisoAmostral, despesas.Count);
 
         score.IndiceDeRisco.ShouldBe(0m);
         score.PesoDasFlags.ShouldBe(0m);
@@ -272,7 +320,7 @@ public sealed class ScoreRiscoParlamentarTests
         var momento = new DateTimeOffset(2026, 8, 20, 12, 0, 0, TimeSpan.Zero);
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
 
-        score.Recalcular(Despesas(200), [], momento, PisoAmostral);
+        score.Recalcular(Despesas(200), [], momento, PisoAmostral, 200);
 
         score.DataUltimaVarredura.ShouldBe(momento);
     }

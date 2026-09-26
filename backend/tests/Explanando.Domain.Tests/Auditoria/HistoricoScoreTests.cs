@@ -49,7 +49,7 @@ public sealed class HistoricoScoreTests
             .ToList();
 
         var score = ScoreRiscoParlamentar.Criar(ParlamentarId);
-        score.Recalcular(Despesas(despesas, valorCada), flags, Agora, PisoAmostral);
+        score.Recalcular(Despesas(despesas, valorCada), flags, Agora, PisoAmostral, despesas);
         return score;
     }
 
@@ -198,7 +198,8 @@ public sealed class HistoricoScoreTests
             Despesas(10, 1_000m),
             [FlagAnomalia.Criar(DespesaId, "REG_KYB_001", Gravidade.Alta, "Inconsistência financeira.", 1.0m)],
             Agora,
-            PisoAmostral);
+            PisoAmostral,
+            despesasComFornecedor: 10);
 
         var ponto = HistoricoScore.Capturar(score, 2, Agora);
 

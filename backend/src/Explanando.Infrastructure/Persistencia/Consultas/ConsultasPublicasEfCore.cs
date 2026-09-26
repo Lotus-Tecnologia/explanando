@@ -47,9 +47,15 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
 
         // Quem esta abaixo do piso sai das ordenacoes por densidade, e so' delas. O volume
         // nao depende de amostra: um deputado com 20 despesas gastou o que gastou.
+        //
+        // O mesmo vale para a cobertura de fornecedor (decisao de 26/09/2026): com menos da
+        // metade das despesas com fornecedor identificado, o indice descreve menos da metade
+        // do gasto, e disputar posicao com quem teve tudo examinado seria comparar coisas
+        // diferentes. Na base de 25/09, 92 dos 498 deputados ranqueados.
         if (ordenacao is OrdenacaoDoRanking.Indice or OrdenacaoDoRanking.Gravidade)
         {
-            consulta = consulta.Where(linha => linha.score.AmostraSuficiente);
+            consulta = consulta.Where(linha =>
+                linha.score.AmostraSuficiente && linha.score.CoberturaSuficiente);
         }
 
         consulta = ordenacao switch
@@ -101,6 +107,10 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
                 FlagsMedias = linha.score.TotalFlagsMedias,
                 FlagsBaixas = linha.score.TotalFlagsBaixas,
                 AmostraSuficiente = linha.score.AmostraSuficiente,
+                CoberturaDeFornecedor = linha.score.DespesasAvaliadas == 0
+                    ? (decimal?)null
+                    : (decimal)linha.score.DespesasComFornecedor / linha.score.DespesasAvaliadas,
+                CoberturaSuficiente = linha.score.CoberturaSuficiente,
             })
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
@@ -231,6 +241,10 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             IndiceDeRisco = temAmostra ? score!.IndiceDeRisco : null,
             IndiceDeAltas = temAmostra ? score!.IndiceDeAltas : null,
             AmostraSuficiente = temAmostra,
+            CoberturaDeFornecedor = score is null || score.DespesasAvaliadas == 0
+                ? null
+                : score.CoberturaDeFornecedor,
+            CoberturaSuficiente = score?.CoberturaSuficiente ?? false,
             FlagsAltas = score?.TotalFlagsVermelhas ?? 0,
             FlagsMedias = score?.TotalFlagsMedias ?? 0,
             FlagsBaixas = score?.TotalFlagsBaixas ?? 0,

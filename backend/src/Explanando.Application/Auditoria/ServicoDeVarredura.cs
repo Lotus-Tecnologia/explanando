@@ -194,7 +194,9 @@ public sealed class ServicoDeVarredura(
             despesas,
             [.. avaliacao.Flags, .. flagsDeOutrasPassadas],
             relogio.Agora,
-            _parametros.PisoAmostralParaIndiceDeRisco);
+            _parametros.PisoAmostralParaIndiceDeRisco,
+            despesasComFornecedor: despesas.Count(despesa => contexto.FornecedorDe(despesa) is not null),
+            _parametros.PisoDeCoberturaDeFornecedor);
 
         await RegistrarNoHistoricoAsync(score, avaliacao.VersaoDoMotor, cancelamento)
             .ConfigureAwait(false);

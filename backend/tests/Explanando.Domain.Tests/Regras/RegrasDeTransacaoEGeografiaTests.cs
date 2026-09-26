@@ -24,6 +24,24 @@ public sealed class RegrasDeTransacaoEGeografiaTests
         flags[0].Descricao.ShouldContain("5 notas");
     }
 
+    [Theory]
+    [InlineData("Passagens aéreas, aquáticas e terrestres nacionais")]
+    [InlineData("PASSAGEM AÉREA - RPA")]
+    public void Fracionamento_nao_olha_passagens__a_agencia_fatura_bilhete_a_bilhete(string tipo)
+    {
+        // Decisão de 26/09/2026. No Senado, 949 das 1.474 flags desta regra eram passagens:
+        // a agência emite uma nota por bilhete, e dez notas da mesma agência no mês é o
+        // funcionamento normal da contratação, não fatiamento.
+        var cenario = new CenarioDeAvaliacao().ParlamentarDoSenado().ComFornecedor();
+
+        for (var i = 0; i < 5; i++)
+        {
+            cenario.ComDespesa(1_500m, mes: 7, dia: 5 + i, tipo: tipo);
+        }
+
+        cenario.Rodar(new RegraFracionamento()).ShouldBeEmpty();
+    }
+
     [Fact]
     public void Fracionamento_se_cala_com_poucas_notas()
     {

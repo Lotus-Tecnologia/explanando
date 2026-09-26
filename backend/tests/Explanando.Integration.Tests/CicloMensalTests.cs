@@ -73,7 +73,7 @@ public sealed class CicloMensalTests(BancoDeTestes banco)
             contexto.Parlamentares.Add(parlamentar);
 
             var score = ScoreRiscoParlamentar.Criar(parlamentar.Id);
-            score.Recalcular([], [], quando, PisoAmostral);
+            score.Recalcular([], [], quando, PisoAmostral, 0);
 
             contexto.ScoresRisco.Add(score);
         }

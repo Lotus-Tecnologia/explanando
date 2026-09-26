@@ -105,6 +105,34 @@ public sealed class ScoreRiscoParlamentar : Entidade
     /// <summary>Exibida em destaque na pagina publica — mostra se o dado esta fresco.</summary>
     public DateTimeOffset DataUltimaVarredura { get; private set; }
 
+    /// <summary>
+    /// Quantas das despesas avaliadas tem o fornecedor identificado no cadastro da Receita.
+    ///
+    /// <para>Existe porque o indice divide o peso dos achados por TODAS as despesas — e a
+    /// maior parte das regras so' examina despesa com fornecedor identificado. Medido na
+    /// auditoria de 25/09: 92 dos 498 deputados ranqueados tinham menos da metade das despesas
+    /// com fornecedor, quase sempre por passagem aerea, que a Camara publica sem ele. Para
+    /// esses, indice baixo podia ser pouca verificacao, nao pouco achado.</para>
+    /// </summary>
+    public int DespesasComFornecedor { get; private set; }
+
+    /// <summary>
+    /// Metade das despesas com fornecedor identificado: abaixo disso, o indice descreve menos
+    /// da metade do gasto (decisao de 26/09/2026). Configuravel em ParametrosDoMotor.
+    /// </summary>
+    public const decimal PisoDeCoberturaPadrao = 0.5m;
+
+    /// <summary>De 0 a 1. Zero quando nao ha despesa — nao ha o que cobrir.</summary>
+    public decimal CoberturaDeFornecedor =>
+        DespesasAvaliadas == 0 ? 0m : (decimal)DespesasComFornecedor / DespesasAvaliadas;
+
+    /// <summary>
+    /// Se o indice descreve gasto bastante para entrar no ranking por indice (decisao de
+    /// 26/09/2026). Abaixo do piso o parlamentar continua no ranking de volume e o perfil
+    /// continua mostrando o indice — com a cobertura ao lado.
+    /// </summary>
+    public bool CoberturaSuficiente { get; private set; }
+
     public static ScoreRiscoParlamentar Criar(Guid parlamentarId) => new()
     {
         ParlamentarId = parlamentarId,
@@ -121,11 +149,15 @@ public sealed class ScoreRiscoParlamentar : Entidade
         IReadOnlyCollection<Despesa> despesas,
         IReadOnlyCollection<FlagAnomalia> flags,
         DateTimeOffset momento,
-        int pisoAmostral)
+        int pisoAmostral,
+        int despesasComFornecedor,
+        decimal pisoDeCobertura = PisoDeCoberturaPadrao)
     {
         ArgumentNullException.ThrowIfNull(despesas);
         ArgumentNullException.ThrowIfNull(flags);
         ArgumentOutOfRangeException.ThrowIfNegative(pisoAmostral);
+        ArgumentOutOfRangeException.ThrowIfNegative(despesasComFornecedor);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(despesasComFornecedor, despesas.Count);
 
         var volume = 0m;
 
@@ -177,6 +209,9 @@ public sealed class ScoreRiscoParlamentar : Entidade
         IndiceDeRisco = PorCemDespesas(peso);
 
         AmostraSuficiente = despesas.Count >= pisoAmostral && despesas.Count > 0;
+
+        DespesasComFornecedor = despesasComFornecedor;
+        CoberturaSuficiente = despesas.Count > 0 && CoberturaDeFornecedor >= pisoDeCobertura;
 
         DataUltimaVarredura = momento;
     }

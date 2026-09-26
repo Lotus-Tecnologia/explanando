@@ -199,8 +199,14 @@ public static class CompatibilidadeCnae
         //  Ficaram DE FORA de proposito, e continuam sinalizando: `69` contabilidade,
         //  `64` fomento mercantil e `73` publicidade. Nenhum dos tres concerne a um imovel,
         //  e e' exatamente esse o sinal que a rubrica ainda pode dar.
+        //
+        //  A excecao dentro do `64`, decidida em 26/09/2026 (versao 6 do motor): `6462` e
+        //  `6463`, as holdings. Holding patrimonial dona do imovel alugado e' comum, e era de
+        //  onde vinham 89% do indice do primeiro do ranking do Senado. O resto do `64` segue
+        //  sinalizando.
         ["aluguel de imoveis para escritorio politico, compreendendo despesas concernentes a eles"] =
-            ["68", "6810", "6821", "35", "36", "37", "61", "81", "80", "47", "82", "43", "97", "41", "95"],
+            ["68", "6810", "6821", "35", "36", "37", "61", "81", "80", "47", "82", "43", "97", "41", "95",
+             "6462", "6463"],
 
         // 47 — passagens, de qualquer modal.
         ["passagens aereas, aquaticas e terrestres nacionais"] = ["49", "50", "51", "79"],

@@ -29,6 +29,13 @@ public sealed record ParametrosDoMotor
     /// </summary>
     public int PisoAmostralParaIndiceDeRisco { get; init; } = 100;
 
+    /// <summary>
+    /// Fracao minima das despesas com fornecedor identificado para entrar no ranking por
+    /// indice. Ver ScoreRiscoParlamentar.CoberturaSuficiente.
+    /// </summary>
+    public decimal PisoDeCoberturaDeFornecedor { get; init; } =
+        Auditoria.ScoreRiscoParlamentar.PisoDeCoberturaPadrao;
+
     // ---------------------------------------------------------------
     //  REG_KYB_003 — empresa recem-nascida
     // ---------------------------------------------------------------

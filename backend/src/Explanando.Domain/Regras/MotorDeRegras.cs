@@ -85,9 +85,16 @@ public sealed class MotorDeRegras(
     /// base real mostrou faltando; e REG_GEO_003 passou a se abster quando a rubrica junta
     /// estadia com combustivel, porque ali nao da' para saber se a despesa foi hotel ou
     /// tanque cheio.</item>
+    /// <item><b>5</b> — REG_NET_001 (socio do fornecedor e doador da campanha), com a carga do
+    /// TSE de 2022.</item>
+    /// <item><b>6</b> — as decisoes de 26/09/2026 sobre a segunda auditoria: REG_TX_001 deixa
+    /// de olhar passagens (a agencia fatura bilhete a bilhete); REG_KYB_001 aceita holding
+    /// (6462/6463) como dona do imovel alugado no Senado; as descricoes abrem com o fato, sem
+    /// "Alerta de compliance" nem "Fator de risco elevado"; e a cobertura passa a declarar o
+    /// documento do fornecedor e a natureza da despesa.</item>
     /// </list>
     /// </summary>
-    public const int VersaoAtual = 5;
+    public const int VersaoAtual = 6;
 
     /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
     public int Versao { get; } = versao;

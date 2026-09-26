@@ -118,7 +118,7 @@ public sealed class RegraGastoForaDaBaseEleitoral : IRegraAnomalia
                 despesa.Id,
                 Codigo,
                 Gravidade.Baixa,
-                $"Alerta de compliance: despesa presencial de '{despesa.TipoDespesa}' no valor "
+                $"Despesa presencial de '{despesa.TipoDespesa}' no valor "
                 + $"de {despesa.ValorLiquido.ToString("C2", CulturaBrasileira.Padrao)} paga a "
                 + $"fornecedor sediado em {ufDoFornecedor}, fora da base eleitoral "
                 + $"({ufDoParlamentar}) e de Brasília.",
@@ -163,7 +163,7 @@ public sealed class RegraGastoEmRecesso : IRegraAnomalia
                 despesa.Id,
                 Codigo,
                 Gravidade.Baixa,
-                $"Alerta de compliance: '{despesa.TipoDespesa}' de "
+                $"Despesa de '{despesa.TipoDespesa}' de "
                 + $"{despesa.ValorLiquido.ToString("C2", CulturaBrasileira.Padrao)} em "
                 + $"{despesa.DataDocumento:dd/MM/yyyy}, durante o recesso parlamentar "
                 + "previsto no art. 57 da Constituição.",

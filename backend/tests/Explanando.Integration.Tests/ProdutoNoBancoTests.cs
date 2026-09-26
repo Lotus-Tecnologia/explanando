@@ -403,7 +403,7 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
     {
         var deputado = NovoDeputado();
         var score = ScoreRiscoParlamentar.Criar(deputado.Id);
-        score.Recalcular([], [], Agora, 100);
+        score.Recalcular([], [], Agora, 100, 0);
 
         await using (var escrita = banco.CriarContexto())
         {
@@ -448,7 +448,7 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
             .ToList();
 
         var score = ScoreRiscoParlamentar.Criar(deputado.Id);
-        score.Recalcular(despesas, flags, Agora, 100);
+        score.Recalcular(despesas, flags, Agora, 100, despesas.Count);
 
         var ponto = HistoricoScore.Capturar(score, MotorDeRegrasVersao, Agora);
 
@@ -468,6 +468,60 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
         lido.TotalFlagsVermelhas.ShouldBe(7);
         lido.VersaoDoMotor.ShouldBe(MotorDeRegrasVersao);
         lido.Referencia.ShouldBe(new DateOnly(2026, 8, 20));
+    }
+
+    // ------------------------------------------------------------------
+    //  O piso de cobertura de fornecedor (decisao de 26/09/2026)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public async Task Abaixo_do_piso_de_cobertura_sai_do_ranking_por_indice_e_fica_no_de_volume()
+    {
+        // Auditoria de 25/09: 92 dos 498 deputados ranqueados tinham menos da metade das
+        // despesas com fornecedor identificado. O indice deles descrevia menos da metade do
+        // gasto, e disputava posicao com quem tinha tudo examinado.
+        var coberto = NovoDeputado();
+        var descoberto = NovoDeputado();
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.AddRange(coberto, descoberto);
+
+            foreach (var (deputado, comFornecedor) in new[] { (coberto, 150), (descoberto, 45) })
+            {
+                var despesas = Enumerable.Range(1, 150)
+                    .Select(i => NovaDespesaDe(deputado.Id, $"cob-{ProximoIdExterno()}-{i}"))
+                    .ToList();
+
+                var score = ScoreRiscoParlamentar.Criar(deputado.Id);
+                score.Recalcular(despesas, [], Agora, 100, comFornecedor);
+                escrita.ScoresRisco.Add(score);
+            }
+
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var consultas = new Infrastructure.Persistencia.Consultas.ConsultasPublicasEfCore(leitura);
+
+        var porIndice = await consultas.RanquearAsync(
+            Application.Consultas.OrdenacaoDoRanking.Indice, TipoParlamentar.DeputadoFederal, 1, 200);
+        var porVolume = await consultas.RanquearAsync(
+            Application.Consultas.OrdenacaoDoRanking.Volume, TipoParlamentar.DeputadoFederal, 1, 200);
+
+        porIndice.Itens.Select(item => item.Id).ShouldContain(coberto.Id);
+        porIndice.Itens.Select(item => item.Id).ShouldNotContain(descoberto.Id);
+
+        var noVolume = porVolume.Itens.Single(item => item.Id == descoberto.Id);
+        noVolume.CoberturaDeFornecedor.ShouldBe(0.3m);
+        noVolume.CoberturaSuficiente.ShouldBeFalse();
+
+        // O indice continua publicado: ele existe, so' nao disputa posicao.
+        noVolume.IndiceDeRisco.ShouldNotBeNull();
+
+        var perfil = await consultas.ObterPerfilAsync(descoberto.Id);
+        perfil!.CoberturaDeFornecedor.ShouldBe(0.3m);
+        perfil.CoberturaSuficiente.ShouldBeFalse();
     }
 
     private const int MotorDeRegrasVersao = 2;

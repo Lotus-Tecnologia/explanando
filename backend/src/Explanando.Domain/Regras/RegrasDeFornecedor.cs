@@ -48,7 +48,7 @@ public sealed class RegraCnaeDivergente : IRegraAnomalia
                 despesa.Id,
                 Codigo,
                 Gravidade.Media,
-                $"Alerta de compliance: a despesa de '{despesa.TipoDespesa}' foi paga a "
+                $"A despesa de '{despesa.TipoDespesa}' foi paga a "
                 + $"'{fornecedor.RazaoSocial}', cujo ramo registrado na Receita Federal "
                 + $"(CNAE {fornecedor.CnaePrincipal}) pertence a outra atividade econômica.",
                 grauDeConfianca: 1.0m);
@@ -154,7 +154,7 @@ public sealed class RegraEmpresaRecemNascida : IRegraAnomalia
                 despesa.Id,
                 Codigo,
                 Gravidade.Media,
-                $"Fator de risco elevado: '{fornecedor.RazaoSocial}' tinha {dias} dias de "
+                $"O fornecedor '{fornecedor.RazaoSocial}' tinha {dias} dias de "
                 + $"atividade quando emitiu nota de "
                 + $"{despesa.ValorLiquido.ToString("C2", CulturaBrasileira.Padrao)}.",
                 grauDeConfianca: 1.0m);
@@ -268,7 +268,7 @@ public sealed class RegraNotaFiscalInicial : IRegraAnomalia
                 maisBaixa.Despesa.Id,
                 Codigo,
                 Gravidade.Media,
-                $"Fator de risco elevado: {iniciais.Count} notas fiscais de "
+                $"{iniciais.Count} notas fiscais de "
                 + $"'{fornecedor.RazaoSocial}' para este parlamentar têm numeração inicial "
                 + $"({numeros}), compatível com um dos primeiros clientes da empresa.",
                 grauDeConfianca: 1.0m);

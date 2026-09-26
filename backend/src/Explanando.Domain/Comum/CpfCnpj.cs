@@ -6,7 +6,9 @@ public enum TipoDocumento
     /// <summary>Campo ausente na origem.</summary>
     Vazio = 0,
 
-    /// <summary>Pessoa fisica (11 digitos).</summary>
+    /// <summary>
+    /// Pessoa fisica: validado com os 11 digitos, guardado mascarado (<c>***NNNNNN**</c>).
+    /// </summary>
     Cpf = 1,
 
     /// <summary>Pessoa juridica (14 digitos).</summary>
@@ -27,7 +29,7 @@ public enum TipoDocumento
 /// na amostra real). Este tipo torna as tres possibilidades explicitas em vez de deixar
 /// a decisao para cada ponto de uso.
 /// </summary>
-public sealed record CpfCnpj
+public sealed partial record CpfCnpj
 {
     /// <summary>
     /// A Camara usa este valor quando a despesa nao tem fornecedor identificavel.
@@ -41,7 +43,15 @@ public sealed record CpfCnpj
         Tipo = tipo;
     }
 
-    /// <summary>Somente digitos, sem pontuacao. Vazio quando a origem nao informou nada.</summary>
+    /// <summary>
+    /// Somente digitos, sem pontuacao — exceto o CPF, que e' guardado mascarado como a Receita
+    /// publica o do socio: <c>***NNNNNN**</c>, os seis digitos do meio. Vazio quando a origem
+    /// nao informou nada.
+    ///
+    /// <para><b>O CPF completo nunca sai daqui</b> (decisao de 26/09/2026). A Camara publica o
+    /// CPF do fornecedor pessoa fisica inteiro, e em 25/09 havia 325 deles gravados assim, em
+    /// 5.748 despesas — no banco e no backup. Os 11 digitos so' existem durante a validacao.</para>
+    /// </summary>
     public string Numero { get; }
 
     public TipoDocumento Tipo { get; }
@@ -53,13 +63,21 @@ public sealed record CpfCnpj
     public bool EhValido => Tipo is TipoDocumento.Cpf or TipoDocumento.Cnpj;
 
     /// <summary>
-    /// Se vale a pena consultar a BrasilAPI para este documento. Falso para vazio,
-    /// sentinela e invalido — consultar seria queimar requisicao e poluir o log de erro.
+    /// Se vale a pena consultar a BrasilAPI para este documento — so' CNPJ. Falso para vazio,
+    /// sentinela e invalido, que queimariam requisicao; e para CPF, que a consulta de CNPJ
+    /// devolve 400 (nenhum fornecedor pessoa fisica chegou a ter cadastro na base).
     /// </summary>
-    public bool PodeSerEnriquecido => EhValido;
+    public bool PodeSerEnriquecido => Tipo is TipoDocumento.Cnpj;
 
     public static CpfCnpj Criar(string? bruto)
     {
+        // A forma guardada volta do banco pelo conversor do EF e precisa ser reconhecida
+        // como o mesmo CPF.
+        if (bruto is { Length: 11 } && CpfMascarado().IsMatch(bruto))
+        {
+            return new CpfCnpj(bruto, TipoDocumento.Cpf);
+        }
+
         var numero = SomenteDigitos(bruto);
 
         if (numero.Length == 0)
@@ -79,8 +97,13 @@ public sealed record CpfCnpj
             _ => TipoDocumento.Invalido,
         };
 
-        return new CpfCnpj(numero, tipo);
+        return tipo == TipoDocumento.Cpf
+            ? new CpfCnpj($"***{numero[3..9]}**", tipo)
+            : new CpfCnpj(numero, tipo);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\*{3}[0-9]{6}\*{2}$")]
+    private static partial System.Text.RegularExpressions.Regex CpfMascarado();
 
     /// <summary>
     /// Texto para exibicao. CNPJ sai inteiro — e' dado de pessoa juridica e publico.

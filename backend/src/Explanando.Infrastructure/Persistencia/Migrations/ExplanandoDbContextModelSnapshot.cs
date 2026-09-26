@@ -195,6 +195,12 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("amostra_suficiente");
 
+                    b.Property<bool>("CoberturaSuficiente")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("cobertura_suficiente");
+
                     b.Property<DateTimeOffset>("DataUltimaVarredura")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("data_ultima_varredura");
@@ -202,6 +208,12 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                     b.Property<int>("DespesasAvaliadas")
                         .HasColumnType("integer")
                         .HasColumnName("despesas_avaliadas");
+
+                    b.Property<int>("DespesasComFornecedor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("despesas_com_fornecedor");
 
                     b.Property<decimal>("IndiceDeRisco")
                         .HasColumnType("numeric(10,4)")
