@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: grafo do Estado, dia 5 de cada mes
+
+[Timer]
+OnCalendar=*-*-05 03:00:00 America/Sao_Paulo
+# Se a maquina estava desligada na hora marcada, roda assim que voltar.
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

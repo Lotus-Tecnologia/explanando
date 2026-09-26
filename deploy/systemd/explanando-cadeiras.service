@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: quem ocupa as cadeiras de comando
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/explanando/deploy
+ExecStart=/usr/bin/docker compose run --rm worker coletar-cadeiras --se-vencido
+TimeoutStartSec=1h

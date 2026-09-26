@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: teste de restauracao, domingo 05h30
+
+[Timer]
+OnCalendar=Sun *-*-* 05:30:00 America/Sao_Paulo
+# Se a maquina estava desligada na hora marcada, roda assim que voltar.
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

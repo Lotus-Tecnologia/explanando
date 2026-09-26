@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: ciclo mensal; dispara todo dia e so' roda quando vence
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 America/Sao_Paulo
+# Se a maquina estava desligada na hora marcada, roda assim que voltar.
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

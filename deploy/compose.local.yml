@@ -1,0 +1,51 @@
+# ============================================================================================
+#  O compose de produção, rodando nesta máquina — para testar antes de a VPS existir.
+#
+#      docker compose -p explanando-teste -f compose.yml -f compose.local.yml --env-file teste.env ...
+#
+#  **O `-p explanando-teste` não é opcional.** O compose de desenvolvimento da raiz também se
+#  chama `explanando` e também tem um volume `postgres-dados`: sem o `-p`, este arquivo
+#  montaria o banco de desenvolvimento dentro do Postgres de produção.
+#
+#  O que muda em relação à produção:
+#   - o R2 vira um S3 local, servido pelo próprio rclone da imagem de backup;
+#   - API e site saem em portas que não brigam com o `next dev` e a API de desenvolvimento;
+#   - o túnel do Cloudflare não sobe (fica no perfil "publico", que aqui não se liga).
+# ============================================================================================
+
+services:
+  api:
+    ports: !override
+      - "127.0.0.1:18080:8080"
+
+  web:
+    build:
+      args:
+        EXPLANANDO_API: http://127.0.0.1:18080
+    ports: !override
+      - "127.0.0.1:13000:3000"
+
+  # O "R2" local. Mesmo protocolo, mesmo cliente, mesma linha de comando — só o endpoint e o
+  # provedor mudam, e é exatamente isso que o teste precisa provar que basta mudar.
+  s3local:
+    image: explanando-backup
+    build:
+      context: ./backup
+    entrypoint: ["sh", "-c"]
+    command:
+      - mkdir -p /dados/explanando-backup && exec rclone serve s3 /dados --addr :9000 --auth-key teste,teste-segredo
+    volumes:
+      - s3local-dados:/dados
+
+  backup:
+    environment:
+      RCLONE_CONFIG_DESTINO_PROVIDER: Rclone
+      RCLONE_CONFIG_DESTINO_ENDPOINT: http://s3local:9000
+      RCLONE_CONFIG_DESTINO_ACCESS_KEY_ID: teste
+      RCLONE_CONFIG_DESTINO_SECRET_ACCESS_KEY: teste-segredo
+    depends_on:
+      s3local:
+        condition: service_started
+
+volumes:
+  s3local-dados:

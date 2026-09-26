@@ -54,12 +54,10 @@ jobs:
   #  Ate aqui o CI nao tocava no frontend: 106 testes, o lint e o tsc cresceram
   #  desde a Etapa 06 sem nunca terem rodado fora da maquina de quem escreveu.
   #
-  #  E o build do Cloudflare precisa rodar AQUI por um motivo especifico: o
-  #  @opennextjs/cloudflare avisa que nao e' compativel com Windows e trava de
-  #  forma imprevisivel em execucao. Este job e' o unico lugar onde ele e'
-  #  exercitado em Linux, que e' onde ele vai rodar de verdade.
+  #  O build de producao roda aqui em Linux, que e' onde ele vai rodar de verdade
+  #  (ADR-0019: Node na VPS, `output: "standalone"`).
   frontend:
-    name: Frontend — testes e bundle do Cloudflare
+    name: Frontend — testes e build standalone
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -91,19 +89,21 @@ jobs:
 
       # Sem API alcancavel aqui, e isso e' esperado: o build degrada para as
       # rotas que nao dependem dela e continua provando o que este passo existe
-      # para provar — que o adaptador monta o Worker sem quebrar.
-      - name: Bundle do Cloudflare
-        run: npm run cf:build
+      # para provar — que o servidor standalone monta sem quebrar. O build de
+      # verdade, com as ~870 paginas, e' o da VPS, com a API de pe.
+      - name: Build de producao
+        run: npm run build
 
-      - name: Conferir que o Worker foi gerado
-        run: test -f .open-next/worker.js
+      - name: Conferir que o servidor standalone foi gerado
+        run: test -f .next/standalone/server.js
 
   # ---------------------------------------------------------------------------
   #  Empacotamento
   # ---------------------------------------------------------------------------
-  #  Constroi as duas imagens sem publicar. Publicar exige credencial de registro,
-  #  que so' existe quando as contas de nuvem existirem — mas o build em si ja
-  #  protege contra a classe de erro que so' aparece dentro do conteiner.
+  #  Constroi as duas imagens sem publicar, para arm64 — a arquitetura da VPS da
+  #  Oracle (ADR-0019). O .NET compila cruzado (ver backend/Dockerfile), entao o
+  #  runner x64 gera a imagem ARM sem emulacao. O build em si ja protege contra a
+  #  classe de erro que so' aparece dentro do conteiner.
   #
   #  Ela e' real: a primeira versao do Dockerfile compilava aqui e falhava la',
   #  porque o .editorconfig nao viajava no contexto e os analisadores passavam a
@@ -127,6 +127,7 @@ jobs:
           context: backend
           file: backend/Dockerfile
           target: api
+          platforms: linux/arm64
           push: false
           tags: explanando-api:ci
           cache-from: type=gha
@@ -138,6 +139,7 @@ jobs:
           context: backend
           file: backend/Dockerfile
           target: worker
+          platforms: linux/arm64
           push: false
           tags: explanando-worker:ci
           cache-from: type=gha

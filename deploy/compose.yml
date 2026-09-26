@@ -1,0 +1,238 @@
+# ============================================================================================
+#  Explanando — produção numa VPS só (ADR-0019)
+# ============================================================================================
+#
+#  Postgres, API, frontend e o túnel do Cloudflare na mesma máquina ARM. O roteiro completo —
+#  da máquina vazia ao site no ar — está em docs/desdobramento.md.
+#
+#      docker compose --env-file .env up -d          (a partir de deploy/)
+#      ./atualizar.sh                                 (pull + build + subida na ordem certa)
+#
+#  **Nenhuma porta fica aberta para a internet.** O tráfego entra pelo Cloudflare Tunnel, que
+#  é uma conexão de SAÍDA desta máquina até a Cloudflare. Três consequências, todas boas:
+#   - não há 80/443 a abrir na Security List da Oracle nem no iptables da imagem Ubuntu;
+#   - o IP da máquina não aparece em DNS, então ninguém contorna a CDN batendo direto nele;
+#   - e por isso `RateLimit__AtrasDeProxy=true` é seguro de verdade: todo pedido que chega à
+#     API passou pela Cloudflare, que sobrescreve CF-Connecting-IP. Com a porta aberta e a
+#     nuvem laranja, quem descobrisse o IP forjaria o cabeçalho e ganharia partição nova a
+#     cada requisição.
+#
+#  As portas em 127.0.0.1 servem só a quem está DENTRO da máquina: o build do frontend
+#  (que busca a API) e quem entrar por SSH para conferir alguma coisa.
+# ============================================================================================
+
+name: explanando
+
+x-conexao: &conexao "Host=postgres;Port=5432;Database=explanando;Username=explanando;Password=${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env};Maximum Pool Size=20"
+
+# Log do Docker sem teto enche o disco em silêncio: o driver padrão não gira arquivo nenhum.
+# 3 × 10 MB por serviço é o bastante para ler o que aconteceu ontem.
+x-log: &log
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend: &backend
+  context: ../backend
+  dockerfile: Dockerfile
+
+services:
+  # ── Banco ──────────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: explanando
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: explanando
+      # Collation deterministica, a mesma do ambiente local: o motor compara texto (CNAE,
+      # razao social) e nao pode mudar de resultado conforme o locale da maquina.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    # Afinado para 12 GB (ADR-0019 §5). Os valores vêm do .env para que a mesma receita
+    # sirva à máquina de 6 GB, se for a que a Oracle tiver para dar — ver .env.exemplo.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-3GB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-8GB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-32MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-512MB}
+      # O block volume da Oracle é SSD em rede: leitura aleatória não custa 4× a sequencial,
+      # que é o que o padrão supõe, e com 4.0 o planejador foge de índice que deveria usar.
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - max_connections=60
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_compression=on
+      # Consulta que passa de 1 s vai para o log. Na base de hoje nenhuma leitura de tela
+      # deveria chegar perto; se chegar, é índice faltando, e é aqui que se descobre.
+      - -c
+      - log_min_duration_statement=1000
+    # O /dev/shm padrão do Docker é 64 MB, e é onde o Postgres põe a memória das consultas
+    # paralelas. Com ele, uma agregação grande morre com "could not resize shared memory".
+    shm_size: 1g
+    # Sem porta publicada, nem em 127.0.0.1: quem precisa do psql entra pelo próprio
+    # contêiner (`docker compose exec postgres psql -U explanando`).
+    volumes:
+      - postgres-dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U explanando -d explanando"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *log
+
+  # ── Esquema ────────────────────────────────────────────────────────────────────────────
+  #
+  # A API não aplica migrations, de propósito (desdobramento.md §6.1): quem aplica é o
+  # worker. Este serviço sobe, migra e sai — e a API só sobe depois que ele terminou bem.
+  # Subir a API contra banco sem esquema dá HTTP 500, e já aconteceu uma vez.
+  migracoes:
+    build:
+      <<: *backend
+      target: worker
+    image: explanando-worker
+    command: ["migrar"]
+    environment:
+      EXPLANANDO_CONEXAO: *conexao
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging: *log
+
+  # ── API ────────────────────────────────────────────────────────────────────────────────
+  api:
+    build:
+      <<: *backend
+      target: api
+    image: explanando-api
+    restart: unless-stopped
+    environment:
+      EXPLANANDO_CONEXAO: *conexao
+      RateLimit__AtrasDeProxy: "true"
+      RateLimit__ChaveInterna: ${CHAVE_INTERNA:?defina CHAVE_INTERNA no .env}
+      # Medido no teste local: sem isto, cada SQL do EF sai no log em nível Information —
+      # uma linha por consulta, que é ruído e disco. O worker já filtra isso no Program.cs.
+      Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+    depends_on:
+      migracoes:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8080:8080"
+    # Sem healthcheck: a imagem chiseled não tem shell nem curl para rodá-lo, e é essa a
+    # escolha certa (superfície menor). Quem confere a API é o `atualizar.sh`, de fora.
+    mem_limit: 1g
+    logging: *log
+
+  # ── Frontend ───────────────────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      # O build pré-renderiza buscando a API em 127.0.0.1:8080 — por isso a rede do host, e
+      # por isso ele só roda com a API de pé. Ver frontend/Dockerfile.
+      network: host
+      args:
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://explanando.com.br}
+        NEXT_PUBLIC_INDEXAVEL: ${INDEXAVEL:-}
+        EXPLANANDO_API: http://127.0.0.1:8080
+      secrets:
+        - chave_interna
+    image: explanando-web
+    restart: unless-stopped
+    environment:
+      # Em execução, a API é alcançada pela rede do compose, não pelo host.
+      EXPLANANDO_API: http://api:8080
+      EXPLANANDO_CHAVE_INTERNA: ${CHAVE_INTERNA:?defina CHAVE_INTERNA no .env}
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"
+    mem_limit: 1g
+    logging: *log
+
+  # ── A porta de entrada ─────────────────────────────────────────────────────────────────
+  #
+  # Os nomes públicos se configuram no painel da Cloudflare (Zero Trust → Tunnels), com o
+  # token deste túnel:  explanando.com.br e www → http://web:3000
+  #                     api.explanando.com.br   → http://api:8080
+  # Só sobe com COMPOSE_PROFILES=publico, para que o teste local não precise do token.
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSAO:-2026.9.3}
+    profiles: ["publico"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - web
+      - api
+    logging: *log
+
+  # ── Tarefas (não ficam de pé) ──────────────────────────────────────────────────────────
+  #
+  # Rodam por `docker compose run --rm <servico> <comando>`, disparadas pelos timers do
+  # systemd em deploy/systemd/. O perfil "tarefas" impede que `up -d` as suba.
+  worker:
+    build:
+      <<: *backend
+      target: worker
+    image: explanando-worker
+    profiles: ["tarefas"]
+    environment:
+      EXPLANANDO_CONEXAO: *conexao
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *log
+
+  backup:
+    build:
+      context: ./backup
+    image: explanando-backup
+    profiles: ["tarefas"]
+    environment:
+      PGHOST: postgres
+      PGUSER: explanando
+      PGDATABASE: explanando
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      # O R2 fala S3. O rclone lê o destino inteiro de variáveis de ambiente — nenhum
+      # arquivo de configuração com a chave fica no disco.
+      RCLONE_CONFIG_DESTINO_TYPE: s3
+      RCLONE_CONFIG_DESTINO_PROVIDER: ${BACKUP_PROVEDOR:-Cloudflare}
+      RCLONE_CONFIG_DESTINO_ENDPOINT: ${BACKUP_ENDPOINT:-}
+      RCLONE_CONFIG_DESTINO_ACCESS_KEY_ID: ${BACKUP_CHAVE_ID:-}
+      RCLONE_CONFIG_DESTINO_SECRET_ACCESS_KEY: ${BACKUP_CHAVE_SECRETA:-}
+      # O token do R2 com permissão só de objeto não pode criar balde, e o rclone tenta
+      # por padrão — falharia com 403 num balde que já existe.
+      RCLONE_CONFIG_DESTINO_NO_CHECK_BUCKET: "true"
+      BACKUP_BALDE: ${BACKUP_BALDE:-explanando-backup}
+      BACKUP_DIAS_DIARIOS: ${BACKUP_DIAS_DIARIOS:-15}
+      BACKUP_DIAS_MENSAIS: ${BACKUP_DIAS_MENSAIS:-400}
+      # Opcional: um endereço do healthchecks.io (ou parecido) que recebe um sinal a cada
+      # execução. Backup que falha em silêncio é descoberto no dia em que se precisa dele.
+      AVISO_URL: ${BACKUP_AVISO_URL:-}
+      CONFERENCIA_AVISO_URL: ${CONFERENCIA_AVISO_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *log
+
+secrets:
+  chave_interna:
+    environment: CHAVE_INTERNA
+
+volumes:
+  postgres-dados:

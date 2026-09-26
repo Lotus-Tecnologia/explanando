@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: backup diario, 04h30
+
+[Timer]
+OnCalendar=*-*-* 04:30:00 America/Sao_Paulo
+# Se a maquina estava desligada na hora marcada, roda assim que voltar.
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

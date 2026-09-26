@@ -1,0 +1,11 @@
+[Unit]
+Description=Explanando: backup diario do Postgres para o R2
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/explanando/deploy
+ExecStart=/usr/bin/docker compose run --rm backup backup.sh
+TimeoutStartSec=30min
