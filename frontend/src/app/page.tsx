@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ranquearTudo } from "@/lib/api";
 import { CASAS, type Casa } from "@/lib/casas";
 import { iniciais, retratoSeguro } from "@/lib/fotos";
-import { formatarNumero, formatarReais } from "@/lib/formato";
+import { formatarNumero, formatarPorcentagem, formatarReais } from "@/lib/formato";
+import { distribuicaoDeGravidade } from "@/lib/gravidade";
 import { ORDENACOES, caminhoDoRanking } from "@/lib/ordenacoes";
 import type { ItemDoRanking } from "@/lib/contrato";
 import { BuscaRapidaHome } from "@/componentes/BuscaRapidaHome";
@@ -43,6 +44,12 @@ export default async function Home() {
 
   const volume = tudo.reduce((soma, item) => soma + item.volumeTotalGasto, 0);
   const despesas = tudo.reduce((soma, item) => soma + item.despesasAvaliadas, 0);
+
+  // A parte de cada gravidade vem das duas casas, e não de um número escrito à mão: o
+  // 43,3/53,4/3,3 fixo não batia com a base (41,9/55,1/3,0 na auditoria de 25/09).
+  const distribuicao = distribuicaoDeGravidade(casas.map(({ itens }) => itens));
+  const parte = (fracao: number | undefined) =>
+    fracao === undefined ? "sem dado" : `${formatarPorcentagem(fracao)} dos achados`;
 
   return (
     <main className="min-h-screen">
@@ -181,7 +188,10 @@ export default async function Home() {
             <PassoPipeline
               numero="2"
               tag="Algoritmos Fixos"
-              titulo="Cruzamento de 13 Regras"
+              // Sem o número: "13" era escrito à mão e o perfil lista 12 — as 12 que olham cada
+              // parlamentar; a 13ª (REG_NET_004) olha a rede. Os dois estavam certos e pareciam
+              // se contradizer (auditoria de 25/09). A lista, com a contagem, está no perfil.
+              titulo="Cruzamento de Regras"
               texto="Regras determinísticas verificam atividade econômica (CNAE), quadro societário, doações de campanha, datas atípicas em recessos e padrões repetidos de valores."
               icone="cruzamento"
             />
@@ -217,7 +227,9 @@ export default async function Home() {
           <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <TagDeGravidade gravidade="Baixa" />
-              <span className="numeros text-xs font-bold text-texto-suave">43,3% da base</span>
+              <span className="numeros text-xs font-bold text-texto-suave">
+                {parte(distribuicao?.baixa)}
+              </span>
             </div>
             <h3 className="mt-3 text-sm font-bold text-titulo">Baixa Relevância</h3>
             <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
@@ -229,7 +241,9 @@ export default async function Home() {
           <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <TagDeGravidade gravidade="Media" />
-              <span className="numeros text-xs font-bold text-texto-suave">53,4% da base</span>
+              <span className="numeros text-xs font-bold text-texto-suave">
+                {parte(distribuicao?.media)}
+              </span>
             </div>
             <h3 className="mt-3 text-sm font-bold text-titulo">Média Relevância</h3>
             <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
@@ -242,13 +256,13 @@ export default async function Home() {
             <div className="flex items-center justify-between">
               <TagDeGravidade gravidade="Alta" />
               <span className="numeros text-xs font-bold text-alta-texto font-semibold">
-                3,3% da base
+                {parte(distribuicao?.alta)}
               </span>
             </div>
             <h3 className="mt-3 text-sm font-bold text-titulo">Alta Relevância</h3>
             <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
-              O vermelho fica estritamente com os 3,3% de achados mais graves contra limites legais
-              ou regras de cota.
+              O vermelho fica estritamente com os achados mais graves contra limites legais ou
+              regras de cota.
             </p>
           </div>
 
@@ -499,7 +513,7 @@ function CartaoDaCasa({ casa, itens }: { casa: Casa; itens: ItemDoRanking[] | nu
                   <div className="flex items-center gap-3">
                     <span
                       aria-hidden="true"
-                      className="flex size-7 shrink-0 items-center justify-center rounded-selo bg-realce text-xs font-bold text-titulo group-hover:bg-titulo group-hover:text-white transition-colors"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-selo bg-realce text-xs font-bold text-titulo group-hover:bg-titulo group-hover:text-sobre-titulo transition-colors"
                     >
                       {ehVolume ? "R$" : ehIndice ? "%" : "!"}
                     </span>
@@ -609,7 +623,7 @@ function PassoPipeline({
         <div className="flex items-center justify-between">
           <span
             aria-hidden="true"
-            className="numeros flex size-7 items-center justify-center rounded-selo bg-titulo text-xs font-bold text-white shadow-xs"
+            className="numeros flex size-7 items-center justify-center rounded-selo bg-titulo text-xs font-bold text-sobre-titulo shadow-xs"
           >
             {numero}
           </span>

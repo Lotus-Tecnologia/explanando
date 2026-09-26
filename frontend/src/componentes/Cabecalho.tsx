@@ -41,7 +41,7 @@ export function Cabecalho() {
         >
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-campo bg-titulo text-white shadow-xs"
+            className="flex size-7 items-center justify-center rounded-campo bg-titulo text-sobre-titulo shadow-xs"
           >
             <svg
               className="size-4"

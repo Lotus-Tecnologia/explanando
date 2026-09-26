@@ -110,7 +110,7 @@ describe("ComposicaoDoIndice", () => {
     expect(screen.getByText(/abaixo do piso de/)).toBeInTheDocument();
     expect(screen.queryByText(/^\d+%$/)).not.toBeInTheDocument();
     // Os achados continuam ali: o que falta é o índice, não o que foi apontado.
-    expect(screen.getByText(/2 achados/)).toBeInTheDocument();
+    expect(screen.getByText(/Os 2 achados existem e estão abaixo/)).toBeInTheDocument();
   });
 
   it("sem achado, diz que o índice é zero e que isso não é atestado", () => {
@@ -130,7 +130,7 @@ describe("ComposicaoDoIndice", () => {
       />,
     );
 
-    expect(screen.getByText(/Uma regra não entra na conta/)).toBeInTheDocument();
+    expect(screen.getByText(/Uma regra ficou fora da conta: não pôde ser aplicada a nenhuma despesa/)).toBeInTheDocument();
     expect(screen.getByText(/perto do limite mensal/)).toBeInTheDocument();
     expect(screen.getByRole("status", { name: /Não avaliado/ })).toBeInTheDocument();
   });

@@ -17,8 +17,16 @@ import type {
   VotacaoDoParlamentar,
 } from "./contrato";
 
+/*
+  Tudo aqui roda no servidor, e o endereço interno vem primeiro.
+
+  O compose passa `EXPLANANDO_API=http://api:8080` (a rede interna); a ordem antiga punha
+  `NEXT_PUBLIC_API` na frente, e bastava defini-la no build para o renderizador sair pela
+  Cloudflare, com a chave interna junto. O navegador não usa este módulo: a única ilha que
+  buscava dados daqui passou a pedir ao próprio site — ver `lib/mudancasDaUnidade.ts`.
+*/
 const BASE =
-  process.env.NEXT_PUBLIC_API ?? process.env.EXPLANANDO_API ?? "http://localhost:5199";
+  process.env.EXPLANANDO_API ?? process.env.NEXT_PUBLIC_API ?? "http://localhost:5199";
 
 /**
  * Quanto tempo uma página fica válida antes de o Next revalidar.
@@ -62,11 +70,40 @@ function cabecalhos(): HeadersInit {
     : { Accept: "application/json" };
 }
 
+/**
+ * Quantas vezes o renderizador insiste quando a própria API responde 429.
+ *
+ * **Medido no build do compose de produção:** as ~980 páginas pré-renderizadas pedem mais
+ * do que o balde interno da API (2.400 por minuto) em menos de 20 segundos, e o primeiro 429
+ * derrubava o build inteiro. O limitador existe para proteger o banco, e o que ele pede é
+ * que se espere — então se espera o `Retry-After` e se tenta de novo. O build fica alguns
+ * segundos mais lento; e a revalidação em produção, que disputa o mesmo balde durante uma
+ * atualização, deixa de falhar pelo mesmo motivo.
+ *
+ * O teto de espera é de 60 s porque o balde da API repõe as fichas de uma vez, a cada minuto
+ * (LimitacaoDeTaxa.cs): o `Retry-After` pode pedir até isso, e um teto menor faz a tentativa
+ * acordar antes da reposição e gastar a vez — medido, 49 de 982 páginas com teto de 15 s.
+ *
+ * Só o 429. Um 500 repetido só multiplicaria a carga sobre a API que já está mal.
+ */
+const TENTATIVAS_EM_429 = 5;
+const ESPERA_MAXIMA_EM_429_MS = 60_000;
+
+function esperaPedida(resposta: Response): number {
+  const segundos = Number(resposta.headers?.get("Retry-After"));
+
+  return Number.isFinite(segundos) && segundos >= 0
+    ? Math.min(segundos * 1000, ESPERA_MAXIMA_EM_429_MS)
+    : 1000;
+}
+
 async function buscar<T>(caminho: string): Promise<T | null> {
-  const resposta = await fetch(`${BASE}${caminho}`, {
-    next: { revalidate: SEGUNDOS_DE_REVALIDACAO },
-    headers: cabecalhos(),
-  });
+  let resposta = await pedir(caminho);
+
+  for (let tentativa = 1; resposta.status === 429 && tentativa < TENTATIVAS_EM_429; tentativa++) {
+    await new Promise((pronto) => setTimeout(pronto, esperaPedida(resposta)));
+    resposta = await pedir(caminho);
+  }
 
   // 404 é resposta legítima — parlamentar que não existe —, e não falha. Confundir as duas
   // faria a página de erro aparecer no lugar do "não encontrado".
@@ -79,6 +116,13 @@ async function buscar<T>(caminho: string): Promise<T | null> {
   }
 
   return (await resposta.json()) as T;
+}
+
+function pedir(caminho: string): Promise<Response> {
+  return fetch(`${BASE}${caminho}`, {
+    next: { revalidate: SEGUNDOS_DE_REVALIDACAO },
+    headers: cabecalhos(),
+  });
 }
 
 /**

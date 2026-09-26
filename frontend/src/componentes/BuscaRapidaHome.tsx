@@ -7,15 +7,7 @@ import { useRouter } from "next/navigation";
 import type { ItemDoRanking } from "@/lib/contrato";
 import { formatarReais } from "@/lib/formato";
 import { iniciais, retratoSeguro } from "@/lib/fotos";
-
-/** Dobra acentos e caixa alta para buscas insensíveis a diacríticos. */
-function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
-}
+import { buscarParlamentares, normalizar } from "@/lib/busca";
 
 interface BuscaRapidaHomeProps {
   parlamentares: readonly ItemDoRanking[];
@@ -58,31 +50,11 @@ export function BuscaRapidaHome({
 
   const termoNormalizado = normalizar(consulta);
 
-  const resultados = useMemo(() => {
-    if (termoNormalizado.length < 2) return [];
-
-    const termos = termoNormalizado.split(/\s+/).filter(Boolean);
-
-    return parlamentares
-      .filter((p) => p.id !== excluirId)
-      .filter((p) => {
-        const nome = normalizar(p.nomeParlamentar);
-        const partido = normalizar(p.siglaPartido);
-        const uf = normalizar(p.uf);
-        const casa = normalizar(p.casa);
-
-        // Todos os termos digitados precisam bater em algum campo
-        return termos.every(
-          (t) =>
-            nome.includes(t) ||
-            partido === t ||
-            partido.includes(t) ||
-            uf === t ||
-            casa.includes(t),
-        );
-      })
-      .slice(0, 7);
-  }, [parlamentares, termoNormalizado, excluirId]);
+  // Ordem e corte explicados em lib/busca: exatos antes de pedaço do nome, casas alternadas.
+  const resultados = useMemo(
+    () => buscarParlamentares(parlamentares, termoNormalizado, 7, excluirId),
+  [parlamentares, termoNormalizado, excluirId],
+  );
 
   // Fecha o menu ao clicar fora
   useEffect(() => {

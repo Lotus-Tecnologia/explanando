@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { obterDespesa } from "@/lib/api";
 import { formatarDataDoDocumento, formatarReais } from "@/lib/formato";
+import { tituloDaDespesa } from "@/lib/metadados";
 import { Comprovante, ValoresDaDespesa } from "@/componentes/Comprovante";
 import { RespostasDoGabinete, SemRespostaDoGabinete } from "@/componentes/RespostasDoGabinete";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
@@ -35,7 +36,11 @@ export async function generateMetadata({ params }: Parametros): Promise<Metadata
   const { despesa, parlamentar } = detalhe;
 
   return {
-    title: `${despesa.tipoDespesa} — ${formatarReais(despesa.valorLiquido)} · ${parlamentar.nomeParlamentar}`,
+    title: tituloDaDespesa(
+      parlamentar.nomeParlamentar,
+      formatarReais(despesa.valorLiquido),
+      despesa.tipoDespesa,
+    ),
     description:
       `Despesa de ${formatarReais(despesa.valorLiquido)} declarada em ` +
       `${String(despesa.mes).padStart(2, "0")}/${despesa.ano} por ` +

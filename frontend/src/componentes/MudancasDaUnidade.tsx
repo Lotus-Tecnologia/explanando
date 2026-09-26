@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { MudancaDoEstado } from "@/lib/contrato";
-import { listarMudancasDaUnidade } from "@/lib/api";
+import { buscarMudancasDaUnidade } from "@/lib/mudancasDaUnidade";
 import { CartaoDeMudanca } from "./PainelDoEstado";
 
 type Estado =
@@ -50,7 +50,7 @@ export function MudancasDaUnidade({
   useEffect(() => {
     let vivo = true;
 
-    listarMudancasDaUnidade(codigo).then((mudancas) => {
+    buscarMudancasDaUnidade(codigo).then((mudancas) => {
       // O guarda evita a resposta de uma unidade antiga chegar depois da nova e pintar
       // a barra com a historia do orgao errado.
       if (!vivo) return;

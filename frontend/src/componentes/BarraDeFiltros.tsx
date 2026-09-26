@@ -107,7 +107,7 @@ export function BarraDeFiltros({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          className="bg-titulo px-3 py-1.5 text-sm font-semibold text-white hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+          className="bg-titulo px-3 py-1.5 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
         >
           Aplicar
         </button>

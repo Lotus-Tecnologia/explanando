@@ -63,7 +63,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
     descricao:
       "Indicadores de um motor de regras determinístico, pesados pela relevância e medidos a cada 100 despesas analisadas. Descreve inconsistências; não imputa conduta.",
     explicacao:
-      "Peso dos achados a cada 100 despesas — alta pesa 3, média 2, baixa 1. Exclui quem tem menos de 100 despesas analisadas, onde a densidade seria ruído — essas pessoas continuam no ranking de volume.",
+      "Peso dos achados a cada 100 despesas — alta pesa 3, média 2, baixa 1, vezes a confiança da regra. Exclui quem tem menos de 100 despesas analisadas, onde a densidade seria ruído — essas pessoas continuam no ranking de volume.",
     resumo: "Peso dos achados a cada 100 despesas.",
   },
   {
@@ -72,7 +72,7 @@ export const ORDENACOES: readonly Ordenacao[] = [
     rotulo: "Indicadores de alta relevância",
     titulo: "Indicadores de alta relevância — ranking",
     descricao:
-      "Ordenado apenas pelos achados de maior peso, que são 3,3% do total. Descreve inconsistências; não imputa conduta.",
+      "Ordenado apenas pelos achados de maior peso, que são a menor parte do total. Descreve inconsistências; não imputa conduta.",
     explicacao:
       "Ordena apenas pelos achados de maior peso — pelo total, quem tem muitos achados graves fica abaixo de quem tem zero. Exclui quem tem menos de 100 despesas analisadas.",
     resumo: "Só os achados de maior peso.",

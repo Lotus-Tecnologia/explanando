@@ -17,5 +17,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     coletarCodigosDoEstado(),
   ]);
 
-  return rotasDoSitemap(ids, new Date(), unidades);
+  return rotasDoSitemap(ids, unidades);
 }

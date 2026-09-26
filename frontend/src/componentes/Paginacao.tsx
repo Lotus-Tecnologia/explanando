@@ -19,7 +19,9 @@ export function Paginacao({
   filtros: FiltrosDeDespesas;
   totalDePaginas: number;
 }) {
-  if (totalDePaginas <= 1) {
+  // Fora da faixa, o rodapé some: "Página 999 de 89" com um "Anterior" para a 998, também
+  // vazia, era o que aparecia (auditoria de 25/09). Quem orienta ali é a mensagem da lista.
+  if (totalDePaginas <= 1 || filtros.pagina > totalDePaginas) {
     return null;
   }
 

@@ -4,7 +4,7 @@ import {
   coletarIdsParaPreRender,
   ranquearTudo,
 } from "./api";
-import { metadadosDoParlamentar } from "./metadados";
+import { metadadosDoParlamentar, tituloDaDespesa } from "./metadados";
 import { formatarCompetencia, formatarDataDoDocumento, formatarMomento, formatarNomeDeLugar } from "./formato";
 import { URL_BASE, ehIndexavel, rotasDoSitemap } from "./site";
 import { CASAS } from "./casas";
@@ -354,10 +354,17 @@ describe("metadadosDoParlamentar", () => {
 // ── Sitemap ──────────────────────────────────────────────────────────────────────────────
 
 describe("rotasDoSitemap", () => {
-  const agora = new Date("2026-08-21T00:00:00Z");
+  it("nao declara lastmod: a hora da geracao nao e' a da mudanca", () => {
+    // Medido em 25/09: as 976 URLs com o mesmo <lastmod>, o instante do build. O buscador
+    // aprende a ignorar um lastmod que sempre muda; sem data real por pagina, melhor nenhuma.
+    for (const rota of rotasDoSitemap(["a1"], [26])) {
+      expect(rota).not.toHaveProperty("lastModified");
+    }
+  });
+
 
   it("lista a home e os SEIS rankings — tres ordenacoes vezes duas casas", () => {
-    const rotas = rotasDoSitemap([], agora);
+    const rotas = rotasDoSitemap([]);
     const enderecos = rotas.map((r) => r.url);
 
     expect(enderecos).toContain(`${URL_BASE}/`);
@@ -372,7 +379,7 @@ describe("rotasDoSitemap", () => {
   it("nao privilegia uma casa sobre a outra", () => {
     // O tamanho desigual — 513 deputados contra 118 senadores — e' real e nao vira
     // hierarquia: as raizes das duas casas tem a mesma prioridade no sitemap.
-    const rotas = rotasDoSitemap([], agora);
+    const rotas = rotasDoSitemap([]);
     const prioridades = CASAS.map(
       (casa) => rotas.find((r) => r.url === `${URL_BASE}${casa.caminho}`)!.priority,
     );
@@ -381,7 +388,7 @@ describe("rotasDoSitemap", () => {
   });
 
   it("inclui um perfil por parlamentar", () => {
-    const rotas = rotasDoSitemap(["a1", "b2", "c3"], agora);
+    const rotas = rotasDoSitemap(["a1", "b2", "c3"]);
 
     expect(rotas.map((r) => r.url)).toEqual(
       expect.arrayContaining([
@@ -395,24 +402,24 @@ describe("rotasDoSitemap", () => {
   it("nunca devolve sitemap vazio quando a API esta fora", () => {
     // Um sitemap vazio pede ao buscador que desindexe o site inteiro. Sem ids, as rotas
     // fixas continuam valendo — elas existem independentemente da API responder no build.
-    expect(rotasDoSitemap([], agora).length).toBeGreaterThan(0);
+    expect(rotasDoSitemap([]).length).toBeGreaterThan(0);
   });
 
   it("nao repete endereco", () => {
-    const rotas = rotasDoSitemap(["a1", "a1", "b2"], agora);
+    const rotas = rotasDoSitemap(["a1", "a1", "b2"]);
     const enderecos = rotas.map((r) => r.url);
 
     expect(new Set(enderecos).size).toBe(enderecos.length);
   });
 
   it("so emite endereco absoluto sob o dominio do site", () => {
-    for (const rota of rotasDoSitemap(["a1"], agora)) {
+    for (const rota of rotasDoSitemap(["a1"])) {
       expect(rota.url.startsWith(`${URL_BASE}/`)).toBe(true);
     }
   });
 
   it("declara a home como a rota de maior prioridade", () => {
-    const rotas = rotasDoSitemap(["a1"], agora);
+    const rotas = rotasDoSitemap(["a1"]);
     const home = rotas.find((r) => r.url === `${URL_BASE}/`)!;
 
     for (const outra of rotas.filter((r) => r.url !== home.url)) {
@@ -449,7 +456,7 @@ describe("ORDENACOES", () => {
   it("aparece inteira no sitemap — a rota que nao esta la nao existe para o buscador", () => {
     // A invariante que impede o sitemap de divergir das rotas: acrescentar uma ordenacao
     // sem anuncia-la deixaria uma pagina publica fora do indice, em silencio.
-    const enderecos = rotasDoSitemap([], new Date()).map((r) => r.url);
+    const enderecos = rotasDoSitemap([]).map((r) => r.url);
 
     for (const casa of CASAS) {
       for (const ordenacao of ORDENACOES) {
@@ -475,6 +482,21 @@ describe("ORDENACOES", () => {
     // Sem essa frase, o leitor conclui que os 15 ausentes nao tem indicador nenhum.
     for (const chave of ["indice", "gravidade"] as const) {
       expect(ordenacaoPorChave(chave)!.explicacao).toMatch(/100 despesas/);
+    }
+  });
+
+  it("a explicacao da densidade permite refazer a conta, com a confianca da regra", () => {
+    // Sem o fator, quem refaz a conta com o texto do ranking nao chega ao numero publicado
+    // (REG_NET_001 tem confianca 0,85).
+    expect(ordenacaoPorChave("indice")!.explicacao).toMatch(/confiança da regra/);
+  });
+
+  it("nenhum texto traz porcentagem escrita a mao", () => {
+    // O "3,3% do total" era da Camara e aparecia igual no Senado, onde a alta e' 1,35%.
+    for (const ordenacao of ORDENACOES) {
+      expect(`${ordenacao.descricao} ${ordenacao.explicacao} ${ordenacao.resumo}`).not.toMatch(
+        /\d+(,\d+)?\s*%/,
+      );
     }
   });
 
@@ -629,6 +651,59 @@ describe("cabecalho interno", () => {
   });
 });
 
+// ── O 429 da propria API ─────────────────────────────────────────────────────────────────
+
+describe("429 da propria API", () => {
+  function resposta429(retryAfter: string | null) {
+    return {
+      ok: false,
+      status: 429,
+      headers: new Headers(retryAfter === null ? {} : { "Retry-After": retryAfter }),
+      json: async () => ({}),
+    } as unknown as Response;
+  }
+
+  it("espera o Retry-After e tenta de novo, em vez de derrubar a pagina", async () => {
+    // Medido no build da VPS: as ~980 paginas pedem mais que o balde interno de 2.400/min,
+    // e o primeiro 429 derrubava o build inteiro. Com a espera, ele so' fica mais lento.
+    const { fetchFalso: api } = apiFalsa(10);
+    let primeira = true;
+    const fetchFalso = vi.fn(async (url: string | URL) => {
+      if (primeira) {
+        primeira = false;
+        return resposta429("0");
+      }
+      return api(url);
+    });
+    vi.stubGlobal("fetch", fetchFalso);
+
+    const itens = await ranquearTudo(CASAS[0], "volume");
+
+    expect(itens).toHaveLength(10);
+    expect(fetchFalso).toHaveBeenCalledTimes(2);
+  });
+
+  it("desiste depois de algumas tentativas, e a falha continua sendo falha", async () => {
+    const fetchFalso = vi.fn(async () => resposta429("0"));
+    vi.stubGlobal("fetch", fetchFalso);
+
+    // ranquearTudo degrada para nulo na falha, de proposito (ver api.ts).
+    await expect(ranquearTudo(CASAS[0], "volume")).resolves.toBeNull();
+    expect(fetchFalso).toHaveBeenCalledTimes(5);
+  });
+
+  it("nao repete erro que nao e' de limite", async () => {
+    // Um 500 repetido cinco vezes so' multiplica a carga sobre a API que ja esta mal.
+    const fetchFalso = vi.fn(
+      async () => ({ ok: false, status: 500, json: async () => ({}) }) as unknown as Response,
+    );
+    vi.stubGlobal("fetch", fetchFalso);
+
+    await expect(ranquearTudo(CASAS[0], "volume")).resolves.toBeNull();
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+  });
+});
+
 // ── A trava de indexacao ─────────────────────────────────────────────────────────────────
 
 describe("ehIndexavel", () => {
@@ -693,7 +768,7 @@ describe("corDoPoder", () => {
 
 describe("o mapa do Estado no sitemap", () => {
   it("esta la — a rota que nao esta no sitemap nao existe para o buscador", () => {
-    const enderecos = rotasDoSitemap([], new Date()).map((r) => r.url);
+    const enderecos = rotasDoSitemap([]).map((r) => r.url);
 
     expect(enderecos).toContain(`${URL_BASE}/estado`);
   });
@@ -701,14 +776,14 @@ describe("o mapa do Estado no sitemap", () => {
 
 describe("as unidades do Estado no sitemap", () => {
   it("cada orgao ganha endereco proprio", () => {
-    const enderecos = rotasDoSitemap([], new Date(), [26, 244]).map((r) => r.url);
+    const enderecos = rotasDoSitemap([], [26, 244]).map((r) => r.url);
 
     expect(enderecos).toContain(`${URL_BASE}/estado/26`);
     expect(enderecos).toContain(`${URL_BASE}/estado/244`);
   });
 
   it("nao repete unidade", () => {
-    const rotas = rotasDoSitemap([], new Date(), [26, 26, 244]);
+    const rotas = rotasDoSitemap([], [26, 26, 244]);
     const enderecos = rotas.map((r) => r.url);
 
     expect(new Set(enderecos).size).toBe(enderecos.length);
@@ -717,7 +792,7 @@ describe("as unidades do Estado no sitemap", () => {
   it("sem unidades, o sitemap continua completo", () => {
     // O grafo pode nao ter subido ainda para a base de producao. As rotas fixas e os
     // perfis nao podem sumir por causa disso.
-    const enderecos = rotasDoSitemap(["a1"], new Date()).map((r) => r.url);
+    const enderecos = rotasDoSitemap(["a1"]).map((r) => r.url);
 
     expect(enderecos).toContain(`${URL_BASE}/estado`);
     expect(enderecos).toContain(`${URL_BASE}/parlamentares/a1`);
@@ -758,5 +833,26 @@ describe("formatarNomeDeLugar", () => {
     expect(formatarNomeDeLugar("BARRA DO GARÇAS")).toBe("Barra do Garças");
     expect(formatarNomeDeLugar("DOIS IRMÃOS")).toBe("Dois Irmãos");
     expect(formatarNomeDeLugar("DE LOURDES")).toBe("De Lourdes");
+  });
+});
+
+describe("tituloDaDespesa", () => {
+  // Medido em 25/09: 239 caracteres, com o nome no fim, e a aba mostrava "... — R$ 1.50".
+  const longo =
+    "Aquisição de material de consumo para uso no escritório político, inclusive aquisição ou locação de software, despesas postais, aquisição de publicações, locação de móveis e de equipamentos";
+
+  it("poe o nome e o valor primeiro", () => {
+    expect(tituloDaDespesa("Wellington Fagundes", "R$ 1.500,00", "TELEFONIA")).toBe(
+      "Wellington Fagundes — R$ 1.500,00 em telefonia",
+    );
+  });
+
+  it("abrevia tipo longo em fronteira de palavra, com reticencias", () => {
+    const titulo = tituloDaDespesa("Wellington Fagundes", "R$ 1.500,00", longo);
+
+    expect(titulo.startsWith("Wellington Fagundes — R$ 1.500,00 em aquisição de material")).toBe(true);
+    expect(titulo.endsWith("…")).toBe(true);
+    expect(titulo.length).toBeLessThanOrEqual(90);
+    expect(titulo).not.toMatch(/[\s,]…$/);
   });
 });

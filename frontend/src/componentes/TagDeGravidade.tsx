@@ -7,7 +7,7 @@ import type { Gravidade } from "@/lib/contrato";
  * cerca de 8% dos homens, que têm deficiência de visão de cor — e severidade é justamente o
  * atributo que menos pode se perder.
  *
- * O vermelho fica estritamente com a gravidade alta, que é 3,3% dos achados da base real.
+ * O vermelho fica estritamente com a gravidade alta, a menor parte dos achados da base real (3,0% na auditoria de 25/09).
  * Pintar as 43,3% de gravidade baixa da mesma cor afirmaria sobre 20 mil achados uma
  * severidade que o motor não atribuiu.
  */
@@ -70,7 +70,7 @@ export function TagDeGravidade({ gravidade }: { gravidade: Gravidade }) {
         aria-hidden="true"
         className={`flex size-3.5 shrink-0 items-center justify-center text-[9px] leading-none font-bold ${FORMA[gravidade]} bg-current`}
       >
-        <span className="text-white">{icone}</span>
+        <span className="text-fundo">{icone}</span>
       </span>
       {/* Sem uppercase: caixa alta em texto curto é lida como ênfase, e ênfase sobre um
           achado descritivo é imputação pela tipografia. */}

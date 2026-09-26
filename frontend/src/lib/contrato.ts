@@ -285,8 +285,11 @@ export interface ParcelaDoIndice {
   /** De 0 a 1, **sem arredondar**. Quem desenha arredonda o conjunto — ver `porcentagensInteiras`. */
   fatia: number;
 
-  /** Na unidade do índice: pontos por 100 despesas. A soma das parcelas é o índice. */
-  pontosNoIndice: number;
+  /**
+   * Na unidade do índice: pontos por 100 despesas. A soma das parcelas é o índice.
+   * Nulo abaixo do piso amostral, quando não há índice publicado (ADR-0009).
+   */
+  pontosNoIndice: number | null;
 
   altas: number;
   medias: number;

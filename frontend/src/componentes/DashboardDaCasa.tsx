@@ -347,7 +347,18 @@ export function DashboardDaCasa({
               </span>
             </div>
             <p className="mt-1 text-xs text-texto-suave">
-              Os três primeiros parlamentares com maiores índices nesta visualização.
+              {/*
+                O critério acompanha a ordenação. "Maiores índices" fixo, com o pódio por volume
+                (Omar Aziz, 18,77), sugeria liderança no índice — que era de outra pessoa
+                (auditoria de 25/09).
+              */}
+              Os três primeiros parlamentares{" "}
+              {ordenacao?.chave === "indice"
+                ? "com maior densidade de indicadores"
+                : ordenacao?.chave === "gravidade"
+                  ? "com mais achados de alta relevância"
+                  : "com maior volume gasto"}
+              .
             </p>
 
             <ol className="mt-3.5 flex flex-col gap-2">
@@ -505,8 +516,13 @@ export function DashboardDaCasa({
                       <span className="rounded-selo bg-surface border border-borda-suave px-2 py-0.2 text-[10px] font-bold">
                         {ufData.uf}
                       </span>
+                      {/*
+                        Pessoas com despesa, e não cadeiras: titular e suplente que se revezaram
+                        contam os dois. Chamar isso de "vagas" punha Roraima com 5 no Senado, que
+                        tem 3 por UF (auditoria de 25/09).
+                      */}
                       <span className="text-texto-suave font-normal text-[11px]">
-                        ({ufData.qtd} {ufData.qtd === 1 ? "vaga" : "vagas"})
+                        ({ufData.qtd} com despesa)
                       </span>
                     </span>
                     <span className="numeros font-bold text-texto">

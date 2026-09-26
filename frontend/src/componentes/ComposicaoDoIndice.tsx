@@ -1,4 +1,5 @@
 import type { CoberturaDeRegra, ParcelaDoIndice } from "@/lib/contrato";
+import { fraseDosAchadosAbaixo } from "@/lib/frases";
 import { formatarDensidade, formatarNumero, porcentagensInteiras } from "@/lib/formato";
 import { TagDeAbstencao } from "./Abstencao";
 
@@ -75,9 +76,15 @@ export function ComposicaoDoIndice({
       {naoAvaliadas.length > 0 ? (
         <div className="mt-5 border-t border-borda-suave pt-4">
           <p className="text-sm font-semibold text-titulo">
+            {/*
+              "Nenhuma despesa", e não só "fora da conta": o bloco "O que foi analisado", logo
+              abaixo, conta também as regras aplicadas EM PARTE, e as duas frases sem esse
+              recorte pareciam se contradizer ("uma regra" aqui, "2 de 12" lá — Giovani
+              Cherini, auditoria de 25/09).
+            */}
             {naoAvaliadas.length === 1
-              ? "Uma regra não entra na conta por falta de dado público"
-              : `${naoAvaliadas.length} regras não entram na conta por falta de dado público`}
+              ? "Uma regra ficou fora da conta: não pôde ser aplicada a nenhuma despesa, por falta de dado público"
+              : `${naoAvaliadas.length} regras ficaram fora da conta: não puderam ser aplicadas a nenhuma despesa, por falta de dado público`}
           </p>
           <p className="mt-1 text-xs text-texto-suave">
             Ficar fora da conta não é o mesmo que não ter achado: a regra não teve como olhar.
@@ -115,10 +122,7 @@ function Explicacao({
         do piso de <span className="numeros">{PISO_AMOSTRAL}</span>. Com tão pouco, uma densidade
         seria ruído — um único achado pareceria um padrão.{" "}
         {achados > 0 ? (
-          <>
-            Os <strong className="numeros">{formatarNumero(achados)}</strong>{" "}
-            {achados === 1 ? "achado existe" : "achados existem"} e estão abaixo, regra a regra.
-          </>
+fraseDosAchadosAbaixo(achados)
         ) : (
           "E nenhuma regra produziu achado."
         )}
@@ -195,7 +199,7 @@ function LinhaDaParcela({
       <p className="numeros mt-1 text-xs text-texto-suave">
         {formatarNumero(parcela.quantidade)} {parcela.quantidade === 1 ? "achado" : "achados"}
         {relevancia}
-        {porcentagem !== null
+        {porcentagem !== null && parcela.pontosNoIndice !== null
           ? ` · ${formatarDensidade(parcela.pontosNoIndice)} ${
               parcela.pontosNoIndice === 1 ? "ponto" : "pontos"
             } do índice`

@@ -58,7 +58,11 @@ export async function PaginaDoRanking({
           <strong className="text-titulo font-semibold">
             descrevem inconsistências, sem imputar conduta.
           </strong>{" "}
-          Cada achado informa a regra violada e dá acesso ao comprovante oficial.
+          {/* "Regra aplicada", e não "violada": o ADR-0004 descreve, não imputa. E o Senado não
+              publica comprovante (ADR-0012) — prometê-lo ali era falso para a casa inteira. */}
+          {ehCamara
+            ? "Cada achado informa a regra aplicada e dá acesso ao comprovante oficial."
+            : "Cada achado informa a regra aplicada. O Senado não publica o comprovante das despesas."}
         </p>
 
         {/* Seletor Rápido de Ordenação / Visão */}
@@ -79,14 +83,14 @@ export async function PaginaDoRanking({
                   aria-current={ativo ? "page" : undefined}
                   className={`inline-flex items-center gap-2 rounded-campo px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-titulo ${
                     ativo
-                      ? "bg-titulo text-white shadow-xs"
+                      ? "bg-titulo text-sobre-titulo shadow-xs"
                       : "border border-borda-suave bg-surface text-texto hover:border-titulo hover:text-titulo"
                   }`}
                 >
                   <span
                     aria-hidden="true"
                     className={`flex size-4 items-center justify-center rounded-full text-[10px] ${
-                      ativo ? "bg-white/20 text-white" : "bg-realce text-titulo"
+                      ativo ? "bg-sobre-titulo/20 text-sobre-titulo" : "bg-realce text-titulo"
                     }`}
                   >
                     {ord.chave === "volume" ? "R$" : ord.chave === "indice" ? "%" : "!"}
@@ -123,7 +127,18 @@ export async function PaginaDoRanking({
           {/* Nota técnica de rodapé */}
           <footer className="mt-8 border-t border-borda-suave pt-4 text-xs text-texto-suave">
             <p>
-              {ordenacao.chave === "volume" ? (
+              {/*
+                Lista vazia não vira "0 aparecem, por causa do piso": na auditoria de 25/09 o
+                /senado/gravidade serviu um cache velho, vazio, enquanto a API já devolvia 86
+                senadores — e a frase atribuía o vazio às pessoas. Vazio aqui é sobre nós.
+              */}
+              {itens.length === 0 ? (
+                <>
+                  Os dados desta ordenação não chegaram nesta atualização da página. Isso não é
+                  uma afirmação sobre os {casa.integrantes}: a página se atualiza em poucos
+                  minutos.
+                </>
+              ) : ordenacao.chave === "volume" ? (
                 <>
                   Todos os{" "}
                   <strong className="numeros font-semibold text-texto">

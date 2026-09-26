@@ -130,7 +130,8 @@ describe("DashboardDaCasa", () => {
       />,
     );
 
-    const botaoSp = screen.getByRole("button", { name: /SP/i });
+    // Pela sigla no começo do nome: "com despesa", no mesmo botão, também contém "sp".
+    const botaoSp = screen.getByRole("button", { name: /^SP\b/ });
     await user.click(botaoSp);
 
     expect(mockFiltrarUf).toHaveBeenCalledWith("SP");

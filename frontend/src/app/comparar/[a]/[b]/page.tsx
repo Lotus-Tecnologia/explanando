@@ -38,6 +38,19 @@ export async function generateMetadata({ params }: Parametros): Promise<Metadata
 
   const [primeiro, segundo] = parCanonico(a, b);
 
+  // Casas diferentes: a página recusa a comparação (ADR-0012), e o título não pode anunciá-la.
+  // Medido em 25/09: "Giovani Cherini × Tasso Jereissati — cota parlamentar" sobre um h1 que
+  // dizia "Esta comparação não é feita".
+  if (avaliarComparacao(perfilA, perfilB).tipo === "casas-diferentes") {
+    return {
+      title: `${perfilA.nomeParlamentar} e ${perfilB.nomeParlamentar} — casas diferentes, sem comparação`,
+      description:
+        "Câmara e Senado têm cotas diferentes, e os números de uma casa não se comparam com os da outra.",
+      alternates: { canonical: `/comparar/${primeiro}/${segundo}` },
+      robots: { index: false, follow: true },
+    };
+  }
+
   return {
     title: `${perfilA.nomeParlamentar} × ${perfilB.nomeParlamentar} — cota parlamentar`,
     description:
@@ -51,17 +64,19 @@ export async function generateMetadata({ params }: Parametros): Promise<Metadata
 export default async function Comparacao({ params }: Parametros) {
   const { a, b } = await params;
   const [primeiro, segundo] = parCanonico(a, b);
+  const [perfilA, perfilB] = await Promise.all([obterPerfil(a), obterPerfil(b)]);
+
+  // O 404 vem ANTES do redirecionamento. Medido em 25/09: um id inexistente recebia 308 para
+  // a ordem canônica e só lá o 404 — e um redirecionamento permanente para o que não existe
+  // fica guardado no navegador e no buscador.
+  if (!perfilA || !perfilB) {
+    notFound();
+  }
 
   // A URL invertida vira a canônica. Um link compartilhado dos dois jeitos precisa acabar no
   // mesmo endereço, ou a conversa se divide em duas páginas.
   if (primeiro !== a) {
     permanentRedirect(`/comparar/${primeiro}/${segundo}`);
-  }
-
-  const [perfilA, perfilB] = await Promise.all([obterPerfil(a), obterPerfil(b)]);
-
-  if (!perfilA || !perfilB) {
-    notFound();
   }
 
   const situacao = avaliarComparacao(perfilA, perfilB);

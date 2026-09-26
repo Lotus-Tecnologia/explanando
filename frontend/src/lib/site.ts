@@ -67,7 +67,6 @@ const ROTAS_FIXAS = [
 
 export interface RotaDoSitemap {
   url: string;
-  lastModified: Date;
   changeFrequency: "monthly";
   priority: number;
 }
@@ -79,18 +78,20 @@ export interface RotaDoSitemap {
  * varredura global mensal de todos os 513, e mentir para o buscador sobre a frequência
  * gasta orçamento de rastreamento em páginas que não mudaram.
  *
+ * **Sem `lastModified`.** Ele era a hora da geração, igual nas 976 URLs (medido em 25/09), e
+ * o buscador aprende a ignorar um lastmod que sempre muda. A API não publica a data do último
+ * recálculo por perfil ou órgão; quando publicar, ela entra aqui.
+ *
  * Sem ids — API fora no build — as rotas fixas continuam saindo. Um sitemap vazio pede ao
  * buscador que desindexe o site inteiro, e indexação é o motor de crescimento do produto
  * (ADR-0001).
  */
 export function rotasDoSitemap(
   ids: readonly string[],
-  agora: Date,
   unidadesDoEstado: readonly number[] = [],
 ): RotaDoSitemap[] {
   const rotas: RotaDoSitemap[] = ROTAS_FIXAS.map((rota) => ({
     url: `${URL_BASE}${rota.caminho}`,
-    lastModified: agora,
     changeFrequency: "monthly",
     priority: rota.prioridade,
   }));
@@ -98,7 +99,6 @@ export function rotasDoSitemap(
   for (const id of new Set(ids)) {
     rotas.push({
       url: `${URL_BASE}/parlamentares/${id}`,
-      lastModified: agora,
       changeFrequency: "monthly",
       priority: 0.6,
     });
@@ -110,7 +110,6 @@ export function rotasDoSitemap(
   for (const codigo of new Set(unidadesDoEstado)) {
     rotas.push({
       url: `${URL_BASE}/estado/${codigo}`,
-      lastModified: agora,
       changeFrequency: "monthly",
       priority: 0.5,
     });

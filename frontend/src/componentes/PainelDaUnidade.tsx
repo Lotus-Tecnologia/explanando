@@ -133,7 +133,7 @@ export function PainelDaUnidade({
 
       <Link
         href={`/estado/${no.codigo}`}
-        className="mt-5 inline-block rounded-campo bg-titulo px-4 py-2 text-sm font-semibold text-white hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+        className="mt-5 inline-block rounded-campo bg-titulo px-4 py-2 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
       >
         {/*
           Sem a sigla: "Abrir a página da PE" não diz de quem é a página, e o artigo errava

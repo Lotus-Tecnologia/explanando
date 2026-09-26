@@ -24,6 +24,12 @@
   /* Tipografia — 9,72 e 10,35 contra branco */
   --color-titulo: #064e3b;
   --color-titulo-hover: #053e2f;
+  /*
+    Texto SOBRE o fundo --color-titulo (botão, aba ativa, número em selo). Não é `text-white`
+    fixo porque no escuro o título vira menta clara: branco sobre #6ee7b7 mediu 1,52:1 na
+    auditoria de 25/09, e o AA pede 4,5. Aqui: branco sobre #064e3b, 9,72.
+  */
+  --color-sobre-titulo: #ffffff;
   --color-texto: #334155;
   --color-texto-suave: #475569;
 
@@ -148,6 +154,8 @@
 
     --color-titulo: #6ee7b7;
     --color-titulo-hover: #a7f3d0;
+    /* #0f172a sobre #6ee7b7 dá 11,5; sobre o hover #a7f3d0, 14,2. */
+    --color-sobre-titulo: #0f172a;
     --color-texto: #e2e8f0;
     --color-texto-suave: #adbcd0;
 
@@ -184,6 +192,7 @@
 
   --color-titulo: #6ee7b7;
   --color-titulo-hover: #a7f3d0;
+  --color-sobre-titulo: #0f172a;
   --color-texto: #e2e8f0;
   --color-texto-suave: #adbcd0;
 

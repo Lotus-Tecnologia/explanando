@@ -38,6 +38,10 @@ export const metadata: Metadata = {
   // Base absoluta: sem ela o Next resolve os canônicos contra localhost no build.
   metadataBase: new URL(URL_BASE),
 
+  // O X só mostra a imagem grande com este tipo de card; a imagem em si vem do
+  // `opengraph-image` de cada perfil, que o X lê como fallback de `twitter:image`.
+  twitter: { card: "summary_large_image" },
+
   /*
     Cinto e suspensório com o robots.txt.
 
@@ -71,7 +75,7 @@ export default function RootLayout({
         */}
         <a
           href="#conteudo"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-titulo focus:px-3 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-titulo focus:px-3 focus:py-2 focus:text-sobre-titulo"
         >
           Pular para o conteúdo
         </a>

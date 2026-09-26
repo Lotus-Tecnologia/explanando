@@ -62,7 +62,7 @@ export function DespesasComIndicadores({
             onClick={() => setFiltro("todas")}
             className={`rounded-selo px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-titulo ${
               filtro === "todas"
-                ? "bg-titulo text-white shadow-xs"
+                ? "bg-titulo text-sobre-titulo shadow-xs"
                 : "border border-borda-suave bg-surface text-texto hover:border-titulo"
             }`}
           >
@@ -75,7 +75,7 @@ export function DespesasComIndicadores({
               onClick={() => setFiltro("Alta")}
               className={`inline-flex items-center gap-1.5 rounded-selo px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-titulo ${
                 filtro === "Alta"
-                  ? "bg-alta-texto text-white shadow-xs"
+                  ? "bg-alta-texto text-fundo shadow-xs"
                   : "border border-alta-texto/20 bg-alta-fundo text-alta-texto hover:border-alta-texto"
               }`}
             >
@@ -93,7 +93,7 @@ export function DespesasComIndicadores({
               onClick={() => setFiltro("Media")}
               className={`inline-flex items-center gap-1.5 rounded-selo px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-titulo ${
                 filtro === "Media"
-                  ? "bg-media-texto text-white shadow-xs"
+                  ? "bg-media-texto text-fundo shadow-xs"
                   : "border border-media-texto/20 bg-media-fundo text-media-texto hover:border-media-texto"
               }`}
             >
@@ -111,7 +111,7 @@ export function DespesasComIndicadores({
               onClick={() => setFiltro("Baixa")}
               className={`inline-flex items-center gap-1.5 rounded-selo px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-titulo ${
                 filtro === "Baixa"
-                  ? "bg-texto text-white shadow-xs"
+                  ? "bg-texto text-fundo shadow-xs"
                   : "border border-borda-suave bg-surface text-texto hover:border-titulo"
               }`}
             >

@@ -1,4 +1,5 @@
 import type { PagamentosPorFornecedor } from "@/lib/contrato";
+import { fraseDosMaioresFornecedores } from "@/lib/frases";
 import { formatarMoedaCompacta, formatarNumero, formatarReais } from "@/lib/formato";
 
 /**
@@ -28,8 +29,7 @@ export function EscadaDeFornecedores({ escada }: { escada: PagamentosPorForneced
         Quem mais recebeu, ano a ano
       </h2>
       <p className="mt-1 text-sm text-texto-suave">
-        Os {formatarNumero(escada.fornecedores.length)} maiores de{" "}
-        {formatarNumero(escada.totalDeFornecedores)} fornecedores, pelo total pago.
+        {fraseDosMaioresFornecedores(escada.fornecedores.length, escada.totalDeFornecedores)}
         {escada.anoDaVariacao ? (
           <>
             {" "}

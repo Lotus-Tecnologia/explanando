@@ -27,7 +27,7 @@ export function Aviso({
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
           href="/"
-          className="inline-block bg-titulo px-3 py-1.5 text-sm font-semibold text-white hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+          className="inline-block bg-titulo px-3 py-1.5 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
         >
           Ir para o ranking
         </Link>

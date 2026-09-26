@@ -145,7 +145,7 @@ export default async function Pagina({ params }: Parametros) {
         </p>
       ) : null}
 
-      <dl className="mt-8 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
+      <dl className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
         {fichas.map((ficha) => (
           <div key={ficha.termo} className="bg-surface px-5 py-4">
             <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
@@ -255,7 +255,7 @@ export default async function Pagina({ params }: Parametros) {
               para o menor.
             </p>
 
-            <ul className="mt-5 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
+            <ul className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
               {[...filhas]
                 .sort((a, b) => b.unidadesSubordinadas - a.unidadesSubordinadas)
                 .map((filha) => (

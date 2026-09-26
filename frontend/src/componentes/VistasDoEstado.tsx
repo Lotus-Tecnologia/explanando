@@ -105,7 +105,7 @@ export function VistasDoEstado({
  * esconder o Judiciário faria parecer que ele não tem comando, e desabilitá-lo esconderia
  * a explicação de por que não sabemos quem o ocupa.
  */
-function AbasDePoder({
+export function AbasDePoder({
   mapa,
   atual,
   aoEscolher,
@@ -144,8 +144,13 @@ function AbasDePoder({
               }}
             />
             {poder.poder}
-            <span className={vazio ? "numeros opacity-50" : "numeros"}>
-              {poder.totalDeCadeiras}
+            {/*
+              Sem cadeira nenhuma, é falta de fonte, e não "zero ocupantes": "Judiciário 0"
+              aparecia na aba enquanto o conteúdo dizia "não sabemos quem ocupa" (auditoria
+              de 25/09). Ausência de dado não vira zero — o mesmo "sem dado" da lista de órgãos.
+            */}
+            <span className={vazio ? "text-xs font-normal opacity-70" : "numeros"}>
+              {vazio ? "sem dado" : poder.totalDeCadeiras}
             </span>
           </button>
         );

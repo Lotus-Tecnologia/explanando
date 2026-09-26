@@ -26,7 +26,7 @@ export function Comprovante({
         href={despesa.urlDocumento}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 bg-titulo px-3 py-1.5 text-xs font-semibold text-white hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+        className="inline-flex items-center gap-1.5 bg-titulo px-3 py-1.5 text-xs font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
       >
         Ver nota fiscal
         <span aria-hidden="true">↗</span>

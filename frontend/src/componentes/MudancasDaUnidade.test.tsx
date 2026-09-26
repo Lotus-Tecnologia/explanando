@@ -4,8 +4,8 @@ import type { MudancaDoEstado } from "@/lib/contrato";
 
 const listar = vi.fn();
 
-vi.mock("@/lib/api", () => ({
-  listarMudancasDaUnidade: (codigo: number) => listar(codigo),
+vi.mock("@/lib/mudancasDaUnidade", () => ({
+  buscarMudancasDaUnidade: (codigo: number) => listar(codigo),
 }));
 
 const { MudancasDaUnidade } = await import("./MudancasDaUnidade");

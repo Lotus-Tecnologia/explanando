@@ -153,6 +153,19 @@ export function GrafoDoEstado({
             />
           ) : null}
 
+          {/*
+            O desenho fica fora da ordem do Tab, e este atalho leva à lista em texto. Medido em
+            25/09: dentro do svg de role="img" havia 334 links focáveis — quem usa teclado
+            passava por 334 paradas antes do resto da página, e o leitor de tela anunciava
+            focos sem papel de link (filhos de role="img" são apresentacionais).
+          */}
+          <a
+            href="#orgaos-e-entidades"
+            className="sr-only focus:not-sr-only focus:mb-2 focus:inline-block focus:bg-titulo focus:px-3 focus:py-2 focus:text-sm focus:text-sobre-titulo"
+          >
+            Pular o desenho e ir à lista de órgãos
+          </a>
+
           <svg
             viewBox={janela}
             className="mx-auto block h-auto w-full max-w-[42rem] touch-manipulation active:cursor-grabbing"
@@ -192,7 +205,7 @@ export function GrafoDoEstado({
             aria-label={
               `Mapa da estrutura do Estado: ${formatarNumero(grafo.nos.length)} órgãos e ` +
               "entidades, dispostos por poder no ângulo e por natureza jurídica no raio. " +
-              "A lista completa, navegável pelo teclado, vem logo abaixo do desenho."
+              "A lista em texto, navegável pelo teclado, está na seção Órgãos e entidades."
             }
             onClick={() => setSelecionado(null)}
           >
@@ -604,6 +617,9 @@ function NoDoGrafo({
       onMouseLeave={aoSair}
       onFocus={aoEntrar}
       onBlur={aoSair}
+      // Fora do Tab: o svg é role="img", e o teclado navega pela lista em texto (ver o atalho
+      // antes do desenho) e pela busca no grafo.
+      tabIndex={-1}
       aria-label={`${no.nome} — ${no.tipo}${no.poder ? `, ${no.poder}` : ""}`}
     >
       <g transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>

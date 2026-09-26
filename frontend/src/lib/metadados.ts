@@ -39,3 +39,24 @@ export function metadadosDoParlamentar(perfil: PerfilDoParlamentar): {
 
   return { title, description: frases.join(" ") };
 }
+
+/** Quanto do tipo de despesa cabe no título antes de abreviar. */
+const TIPO_NO_TITULO = 45;
+
+/**
+ * O título da página de uma despesa: quem, quanto e em quê — nessa ordem.
+ *
+ * Medido na auditoria de 25/09: o tipo vinha primeiro e inteiro (o do Senado passa de 180
+ * caracteres), o título chegava a 239, e a aba do navegador mostrava "… — R$ 1.50", sem o
+ * nome. O tipo é abreviado numa fronteira de palavra; a página mostra ele inteiro.
+ */
+export function tituloDaDespesa(nome: string, valor: string, tipo: string): string {
+  let emQue = tipo.trim().replace(/\.$/, "").toLocaleLowerCase("pt-BR");
+
+  if (emQue.length > TIPO_NO_TITULO) {
+    const corte = emQue.slice(0, TIPO_NO_TITULO);
+    emQue = `${corte.slice(0, corte.lastIndexOf(" ")).replace(/[\s,;:—-]+$/, "")}…`;
+  }
+
+  return `${nome} — ${valor} em ${emQue}`;
+}

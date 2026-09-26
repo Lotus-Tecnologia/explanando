@@ -1,0 +1,22 @@
+# O que NÃO entra no contexto de build do frontend.
+#
+# node_modules e .next da máquina local são de outro sistema operacional (Windows) e de
+# outra arquitetura: binários nativos do SWC, do lightningcss e do Tailwind compilados para
+# win32-x64 não rodam no Alpine arm64 — e o erro aparece longe da causa.
+node_modules
+.next
+
+# Sobras do adaptador do Cloudflare (ADR-0015, aposentado pelo ADR-0019): ~760 MB que
+# ainda podem existir numa máquina de desenvolvimento antiga.
+.open-next
+.wrangler
+.xdg-config
+coverage
+*.tsbuildinfo
+
+# Segredos locais. O .env.local aponta para a API de produção e traz a chave interna; o
+# build recebe os dois por outro caminho (ARG e segredo de build).
+.env*
+
+Dockerfile
+.dockerignore

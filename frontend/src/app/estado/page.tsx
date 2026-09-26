@@ -56,6 +56,13 @@ export default async function Pagina() {
     );
   }
 
+  const poderesComDado = (poderes?.poderes ?? [])
+    .filter((p) => p.totalDeCadeiras > 0)
+    .map((p) => p.poder);
+  const poderesSemDado = (poderes?.poderes ?? [])
+    .filter((p) => p.totalDeCadeiras === 0)
+    .map((p) => p.poder);
+
   const orgaos = mapa.nos.filter((no) => no.tipo === "Órgão" || no.tipo === "Entidade");
 
   return (
@@ -78,8 +85,9 @@ export default async function Pagina() {
               {formatarNumero(mapa.totalDeUnidades)} unidades
             </strong>{" "}
             compõem a administração pública federal — de ministérios a conselhos de três
-            pessoas. Aqui estão todas: de quem cada uma depende, quanta gente trabalha nelas, e
-            se foram criadas por lei ou por uma assinatura interna.
+            pessoas. O desenho mostra os órgãos de cima, e cada um abre as unidades que tem abaixo:
+            de quem cada uma depende, quanta gente trabalha nelas, e se foram criadas por lei ou
+            por uma assinatura interna.
           </p>
 
           {mapa.totalDeServidores != null ? (
@@ -162,7 +170,7 @@ export default async function Pagina() {
             casa com exatidão fica sem par, em vez de ser adivinhado.
           </p>
 
-          <dl className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-3">
+          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-3">
             <div className="bg-surface px-5 py-4">
               <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
                 Servidores em {formatarCompetencia(mapa.competenciaDoPessoal)}
@@ -231,7 +239,7 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       {/*  A lista, que é o desenho em texto                                */}
       {/* ---------------------------------------------------------------- */}
-      <section className="border-t border-borda-suave bg-surface/50">
+      <section id="orgaos-e-entidades" className="scroll-mt-24 border-t border-borda-suave bg-surface/50">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <h2 className="font-display text-2xl font-bold tracking-tight text-titulo">
             Órgãos e entidades
@@ -242,7 +250,7 @@ export default async function Pagina() {
             a mesma informação do desenho, em texto — quem não distingue as cores lê aqui.
           </p>
 
-          <ul className="mt-6 grid gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
+          <ul className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
             {[...orgaos]
               .sort((a, b) => b.unidadesSubordinadas - a.unidadesSubordinadas)
               .map((orgao) => (
@@ -290,10 +298,26 @@ export default async function Pagina() {
             O que este mapa ainda não mostra
           </h2>
 
+          {/*
+            O que já existe vem do próprio mapa de poder, e não de texto fixo. Medido em 25/09:
+            este bloco dizia que o mapa não mostra quem ocupa os cargos, enquanto a vista "Quem
+            comanda" listava 40 ocupantes do Executivo e 100 do Legislativo, com fonte e data.
+          */}
+          {poderesComDado.length > 0 ? (
+            <p className="mt-2 text-sm text-texto">
+              <strong className="font-semibold">Parte das pessoas já está.</strong> A vista
+              “Quem comanda” traz os ocupantes dos cargos de comando, com a fonte e a data de cada
+              leitura, em: {juntar(poderesComDado)}.
+              {poderesSemDado.length > 0
+                ? ` Ainda sem fonte que diga quem ocupa esses cargos: ${juntar(poderesSemDado)}.`
+                : null}
+            </p>
+          ) : null}
+
           <p className="mt-2 text-sm text-texto">
-            <strong className="font-semibold">As pessoas.</strong> Quem ocupa cada cargo,
-            quantas cadeiras estão vagas, há quanto tempo. O SIORG não publica isso — não há
-            campo de titular em endpoint nenhum —, e são três ausências diferentes:
+            <strong className="font-semibold">O resto das pessoas.</strong> Quem ocupa cada cargo
+            abaixo do comando, quantas cadeiras estão vagas, há quanto tempo. O SIORG não publica
+            isso — não há campo de titular em endpoint nenhum —, e são três ausências diferentes:
           </p>
 
           <ul className="mt-3 space-y-2 text-sm text-texto">
@@ -324,4 +348,9 @@ export default async function Pagina() {
       </section>
     </main>
   );
+}
+
+/** "Executivo e Legislativo" — a enumeração do português, com o "e" antes do último. */
+function juntar(itens: string[]): string {
+  return new Intl.ListFormat("pt-BR", { style: "long", type: "conjunction" }).format(itens);
 }
