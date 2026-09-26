@@ -1,6 +1,6 @@
 # Estado atual do projeto — handoff
 
-**Atualizado em:** 2026-09-25 · **Branch:** `main` · **Último commit:** `c008a35`
+**Atualizado em:** 2026-09-26 · **Branch:** `main` · **Etapa mais recente:** [16](docs/registro/etapa-16-empacotamento-e-auditoria.md)
 
 Este documento existe para que outra sessão retome sem reler o histórico. O que está aqui foi
 **verificado contra o banco e o código**, não escrito de memória. Detalhe de cada etapa está em
@@ -34,8 +34,9 @@ Repositório `Lotus-Tecnologia/explanando`, **privado** (ADR-0008). Dono: Gustav
 |---|---|
 | Etapas 00 a 14 (fundação → mapa de poder) | ✅ |
 | **Etapa 15 — plano de execução, fases 1 a 7, e auditoria** | ✅ ([registro](docs/registro/etapa-15-plano-de-execucao.md)) |
+| **Etapa 16 — servidor empacotado, Senado na base, 2ª auditoria, card, segurança** | ✅ ([registro](docs/registro/etapa-16-empacotamento-e-auditoria.md)) |
 | Fase 8 — alertas por e-mail e Telegram | ⏸ depende da VPS e de provedor de e-mail |
-| **Deploy** | ⏸ **a VPS da Oracle ainda não foi criada** (ver §4) |
+| **Deploy** | ⏸ **empacotado e testado local; falta a VPS da Oracle** (ver §4) |
 
 O [plano de execução](docs/plano-de-execucao.md) traz cada fase com o que entrou e o que foi
 medido. Resumo do que existe na tela hoje:
@@ -50,26 +51,23 @@ medido. Resumo do que existe na tela hoje:
 | 6 · Investigação do TSE | [`docs/contratos/tse.md`](docs/contratos/tse.md) |
 | 7 · Eleição de 2022 na base + **REG_NET_001** + "De onde vieram os votos" | Perfil, índice, RSS |
 
-### 2.2 Números da base local (Docker), 2026-09-25
+### 2.2 Números da base local (Docker), 2026-09-26
 
 | | |
 |---|---|
-| Parlamentares | **513 deputados** (só a Câmara — o Senado não está na base local) |
-| Despesas | 711.796 · R$ 802.407.895,78 |
-| Flags | 21.121 · motor **versão 5**, 12 regras + REG_NET_004 na passada de rede |
-| REG_NET_001 | **73 achados em 40 deputados** |
-| Candidaturas 2022 ligadas | **510 de 513** (3 com nome civil diferente no TSE ficaram de fora) |
-| Votos por município / doações | 152.859 / 15.461 (12.845 a parlamentares e 2.767 de sócios; 151 são as duas coisas) |
+| Parlamentares | **631** — 513 deputados + **118 senadores** (Senado carregado em 25/09) |
+| Despesas | 790.303 · R$ 923.924.734,56 (Câmara 711.796 · Senado 78.507) |
+| Flags | 25.132 · motor **versão 5**, 12 regras + REG_NET_004 na passada de rede |
+| REG_NET_001 | 76 achados |
+| Candidaturas 2022 ligadas | **540** — 510 deputados e **só 30 senadores** (os de 2018 estão em outro lote do TSE) |
 | Grafo do Estado | 96.658 unidades · 759.351 vínculos de pessoal · 140 cadeiras |
-| Tamanho | 397 MB — **não cabe mais na Neon gratuita (512 MB)**, que é o motivo do ADR-0019 |
+| Tamanho | 458 MB · dump comprimido 72–75 MB |
 
-> **A Neon tem o Senado e a base local não.** A Neon (produção antiga) guarda 631
-> parlamentares — 513 + **118 senadores** —, mas nada do grafo, das cadeiras nem do TSE. Ao
-> subir a VPS, o Senado vem de uma coleta nova (`coletar-senado`) ou de um dump da Neon.
+> **A base local agora é a mais completa que existe** — tem tudo o que a Neon tinha e mais. A
+> carga da VPS é um dump dela (roteiro §4); a Neon não serve mais para nada.
 
-**Testes:** backend **1.015** (567 domínio, 130 aplicação, 10 arquitetura, 220 integração,
-88 ponta a ponta) + frontend **272**. Build de produção do Next verde (513 perfis, 336
-unidades do Estado, feeds, comparador sob demanda).
+**Testes:** backend **1.041** (582 domínio, 132 aplicação, 10 arquitetura, 222 integração,
+95 ponta a ponta) + frontend **306**. Build de produção em contêiner: 982 páginas, ~2,5 min.
 
 ### 2.3 Rodando local
 
@@ -129,6 +127,11 @@ publica), confiança máxima 0,85, e a tela diz "compatível", nunca "é".
 - CPF de sócio chega mascarado da Receita (`***NNNNNN**`). O do doador, que o TSE publica
   **inteiro**, é mascarado **na leitura** (`CpfParcial.DeCpfCompleto`) e nunca é gravado.
 - **Não coletamos o CPF do parlamentar** (a política de privacidade promete).
+- **CPF dentro de nome** (a razão social do MEI é "NOME 12345678901") é mascarado na criação
+  da despesa e do fornecedor (`CpfEmTexto`) — 641 fornecedores e 2.885 despesas em 25/09.
+- **CPF do fornecedor pessoa física** (325, publicados inteiros pela Câmara) sai **sempre
+  mascarado** na tela e na API (`CpfCnpj.Formatado`), mas ainda é **gravado inteiro** —
+  decisão aberta do Gustavo (pendências §3).
 - Nome de sócio aparece **só** no bloco "Sócios em comum"; nome de doador, **só** quando ele é
   compatível com sócio de fornecedor pago pelo mesmo parlamentar.
 
@@ -155,27 +158,35 @@ re-varridos (defeito corrigido em 24/09 — 17 deputados tinham índice menor qu
 ## 4. O próximo passo: a VPS
 
 [ADR-0019](docs/decisoes/ADR-0019-tudo-numa-vps.md): tudo numa **VPS Always Free da Oracle**
-(Ampere A1, ARM, 2 OCPUs e 12 GB), Postgres local no lugar da Neon, **Cloudflare como CDN**
-(não mais como runtime — sai o `@opennextjs/cloudflare`), backup diário **fora da máquina**
-(R2) com teste de restauração.
+(Ampere A1, ARM), Postgres local, Cloudflare como CDN, backup diário no R2 com teste de
+restauração. **O servidor está empacotado e foi testado de ponta a ponta nesta máquina** — o
+roteiro, da máquina vazia ao site indexado, é o [desdobramento.md](docs/desdobramento.md).
 
-**Situação:** o Gustavo criou a conta na Oracle e a chave SSH (`$HOME\.ssh\oracle_explanando`).
-A criação da instância deu **"Out of capacity for shape VM.Standard.A1.Flex in AD-1"** —
-São Paulo sem ARM livre. Ele vai tentar de madrugada, eventualmente com 1 OCPU / 6 GB (dá para
-crescer depois) ou convertendo a conta para Pay As You Go. Lembretes para quando a máquina
-existir: abrir 80/443 na Security List **e** no iptables da imagem Ubuntu da Oracle; reservar IP
-público; a regra de ociosidade (7 dias abaixo de 20% em CPU, rede e memória).
+| | |
+|---|---|
+| `deploy/compose.yml` | Postgres afinado, `migracoes` → `api` → `web`, `cloudflared`; tarefas `worker` e `backup` |
+| `deploy/atualizar.sh` | Pull, build e subida **na ordem certa** (o build do Next precisa da API de pé) |
+| `deploy/backup/` | `backup.sh`, `conferir.sh` (restaura e compara linha a linha), `restaurar.sh` |
+| `deploy/systemd/` | Timers: ciclo (agora coleta **as duas casas**), cadeiras, Estado, backup, conferência |
+| Entrada | **Cloudflare Tunnel** — nenhuma porta aberta; some o "abrir 80/443" |
 
-### O que dá para adiantar sem a VPS (proposto ao Gustavo, aguardando o "vai")
+**Situação:** a criação da instância deu "Out of capacity" em São Paulo (25/09); o Gustavo tenta
+de madrugada, eventualmente com 1 OCPU / 6 GB (o compose serve aos dois tamanhos).
 
-1. **Empacotar o servidor:** compose de produção (Postgres 17 afinado para 12 GB, API, worker,
-   Next), Next em `output: standalone` sem o adaptador do Cloudflare, imagens multi-arquitetura
-   (arm64), script de backup para o R2 com teste de restauração, testar tudo local, e reescrever
-   [`docs/desdobramento.md`](docs/desdobramento.md) (hoje descreve Cloud Run + Neon) como roteiro
-   da VPS.
-2. **Carregar o Senado na base local** (`coletar-senado`) para testar as duas casas juntas.
-3. **Card de compartilhamento** por parlamentar (imagem para WhatsApp/X).
-4. **Revisão de segurança** antes do público (cabeçalhos, rate limit atrás do proxy).
+**Ociosidade — decisão dele:** a pilha ociosa usa ~4% da memória, então a VPS se qualifica como
+ociosa sem tráfego; o ADR-0019 §5 contava com o contrário. Recomendação: converter a conta para
+Pay As You Go (roteiro §9).
+
+**Teste local do compose de produção:** `docker compose -p explanando-teste -f compose.yml -f
+compose.local.yml --env-file <arquivo> ...` a partir de `deploy/` — **o `-p` não é opcional**
+(o compose de desenvolvimento também se chama `explanando` e tem o mesmo nome de volume).
+
+### O que vem depois da VPS
+
+1. **Decisões da auditoria de 25/09** — [pendências §3](docs/pendencias.md) (nove itens, cada um
+   com recomendação).
+2. **Fase 8** — alertas por e-mail e Telegram.
+3. As pendências pequenas minhas (§5 abaixo).
 
 ---
 
@@ -188,15 +199,20 @@ público; a regra de ociosidade (7 dias abaixo de 20% em CPU, rede e memória).
 - Publicar o nome do sócio em comum. Baixar e carregar o TSE.
 
 ### Abertas, dele
+- **As nove da auditoria de 25/09** ([pendências §3](docs/pendencias.md)): ociosidade da Oracle
+  (PAYG), CPF do fornecedor PF gravado inteiro, `REG_TX_001` em passagens do Senado,
+  `REG_KYB_001` em aluguel a holding, denominador do índice, "Alerta de compliance" nas
+  descrições, "prevenção à fraude" na política, lote do TSE de 2018, grafo no celular.
 - Alerta de "gasto em reduto eleitoral" (o dado existe; pagar fornecedor da base não é achado).
 - `REG_TX_001` no Senado; limites da CEAP 2023–2025 e da CEAPS por UF (`REG_TX_002` segue
   `SemDado`); avaliação de legítimo interesse; revisão jurídica da política.
 - DNS no Cloudflare, bucket do R2, a VPS. INLABS (nomeações no DOU).
 
 ### Pequenas, minhas
-Escritórios de apoio do Senado (`REG_NET_003`); casa na chave de `checkpoints_ingestao`; as 62
-despesas rejeitadas por glosa; senadores de 2018 (outro lote do TSE). Lista completa em
-[`docs/pendencias.md`](docs/pendencias.md).
+Escritórios de apoio do Senado (`REG_NET_003`); casa na chave de `checkpoints_ingestao` (agora
+que o ciclo coleta as duas casas, a guarda do `coletar-senado` não roda no ciclo); as 62
+despesas rejeitadas por glosa; invalidar o cache do Next depois de uma carga (hoje espera os 5
+min do ISR). Lista completa em [`docs/pendencias.md`](docs/pendencias.md).
 
 ---
 
@@ -218,6 +234,15 @@ despesas rejeitadas por glosa; senadores de 2018 (outro lote do TSE). Lista comp
 9. **Faixa de `IdExterno` repetida** entre testes de integração derruba a suíte inteira.
 10. **Datas**: data de documento chega como meia-noite UTC — usar `formatarDataDoDocumento`
     (UTC); instantes usam `formatarMomento` (Brasília).
+11. **Segredo de build do compose lê o ambiente do processo, não o `.env`.** Sem `set -a; .
+    ./.env`, o build do frontend sai sem a chave interna e quebra com 429. O `atualizar.sh` já
+    exporta.
+12. **`npm audit fix --omit=dev` apaga as dependências de desenvolvimento** do `node_modules`
+    (o TypeScript some). `npm install` devolve.
+13. **O `bash` do painel de preview é o do WSL**, e o Git Bash converte `/tmp/...` em caminho
+    do Windows em `docker exec` — use `MSYS_NO_PATHCONV=1`.
+14. **Nome de fornecedor MEI traz o CPF do dono** ("NOME 12345678901"). `CpfEmTexto` mascara
+    na criação; qualquer texto novo que venha da Receita ou da Câmara passa por ele.
 
 ---
 

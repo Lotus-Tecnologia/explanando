@@ -46,6 +46,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 13 | Quem contrata com quem — 224 parlamentares em 49 ilhas de fornecedor em comum | ✅ Concluída | [etapa-13-mapa-de-fornecedores.md](etapa-13-mapa-de-fornecedores.md) |
 | 14 | O mapa de poder — 139 cadeiras de comando, de quatro fontes | ✅ Concluída | [etapa-14-mapa-de-poder.md](etapa-14-mapa-de-poder.md) |
 | 15 | O plano de execução, fases 1 a 6, e a auditoria tela a tela | ✅ Concluída | [etapa-15-plano-de-execucao.md](etapa-15-plano-de-execucao.md) |
+| 16 | O servidor empacotado, o Senado na base, a segunda auditoria e o card | ✅ Concluída | [etapa-16-empacotamento-e-auditoria.md](etapa-16-empacotamento-e-auditoria.md) |
 
 ## Incidentes
 

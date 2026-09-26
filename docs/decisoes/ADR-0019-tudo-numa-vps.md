@@ -152,3 +152,20 @@ dela.
 [ADR-0015](ADR-0015-frontend-no-cloudflare.md) passa a valer só pela metade: o diagnóstico
 sobre a Vercel continua correto e é por isso que não voltamos para lá; a escolha do Workers
 como runtime é o que esta decisão substitui.
+
+---
+
+## Adendo — 2026-09-26, depois de empacotar e testar
+
+Duas afirmações acima não sobreviveram ao teste do compose de produção (Etapa 16):
+
+- **§5, o segundo efeito, está errado.** O Postgres só ocupa a memória das páginas que de fato
+  leu: com a base de 458 MB, a pilha inteira ociosa usou **~500 MB — 4% de 12 GB**. Um
+  `shared_buffers` generoso não mantém a instância fora do critério de ociosidade. A proteção
+  tem de vir de outro lugar; a recomendação está no [desdobramento.md](../desdobramento.md) §9.
+  O `shared_buffers` de 3 GB continua certo **por mérito**, que era o primeiro argumento.
+- **§3, "o proxy também é o que torna seguro o `AtrasDeProxy`", ficou mais forte.** A entrada é
+  pelo **Cloudflare Tunnel**, e não por portas abertas com a nuvem laranja: não há porta
+  nenhuma, e nenhum pedido chega à API sem passar pela Cloudflare. O "abrir 80/443 na Security
+  List e no iptables" deixou de ser passo.
+

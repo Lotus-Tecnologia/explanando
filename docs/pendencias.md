@@ -17,22 +17,21 @@ decidido e **não foi abandonado** — está esperando.
 
 ## 1. O que trava o produto de sair do degradado
 
-**Depende de credencial do Gustavo, não de código.** Nada aqui é trabalho meu bloqueado por
-trabalho meu; é tudo `login`.
+**A VPS da Oracle** ([ADR-0019](decisoes/ADR-0019-tudo-numa-vps.md)). O servidor está empacotado
+e testado de ponta a ponta nesta máquina (Etapa 16); o roteiro completo, da máquina vazia ao
+site indexado, está em [desdobramento.md](desdobramento.md). O que falta é tudo conta ou
+credencial do Gustavo:
 
-| Passo | O que falta |
+| Passo | Onde no roteiro |
 |---|---|
-| API no Cloud Run | `gcloud auth login`, projeto com faturamento, push da imagem |
-| `api.explanando.com.br` | DNS na Cloudflare, **nuvem laranja** — só com o proxy na frente é que `RateLimit__AtrasDeProxy=true` é seguro |
-| `explanando.com.br` e `www` | DNS → o Worker |
-| Chave interna no Worker | `wrangler secret put EXPLANANDO_CHAVE_INTERNA` |
-| Publicar o frontend | Rodar o workflow manual → sitemap vai a **639** |
-| Indexação | `NEXT_PUBLIC_INDEXAVEL=true`, **só depois de olhar o site no ar** |
-| Ciclo mensal | Cloud Scheduler, `0 3 1 * *`, timeout ≥ 14 h |
-
-> **A ordem importa.** Rode o job do worker **antes** de publicar a API: ela não aplica
-> migrations de propósito, e subir contra banco vazio dá HTTP 500 — já aconteceu uma vez.
-> Ver [desdobramento.md](desdobramento.md) §6.1.
+| Criar a instância A1 (São Paulo sem capacidade em 25/09) | §3.1 |
+| Deploy key só de leitura no GitHub | §3.3 |
+| Domínio no Registro.br → DNS na Cloudflare | §2 |
+| Túnel da Cloudflare e o token no `.env` | §6.1 |
+| Balde `explanando-backup` no R2 e o token só de objeto | §7.1 |
+| (Opcional) dois checks no healthchecks.io | §7.2 |
+| Regra de rate limiting na Cloudflare | §6.2 |
+| `INDEXAVEL=true`, só depois de olhar o site no ar | §10 |
 
 ## 2. O banho de UI, parado no meio
 
@@ -57,6 +56,15 @@ quem quer o detalhe abre.
 | **Revisão jurídica** da política publicada | As decisões estão tomadas e implementadas; o parecer confirma que a redação as reflete |
 | **Opacidade da fonte × índice do PEP** | Em aberto no [ADR-0014](decisoes/ADR-0014-lacuna-camada-2-e-base-legal.md). Não implementado por colidir com o ADR-0007 |
 | **Tabela CNAE × tipo do Senado** | Curada na Etapa 10 com medição. Vale uma revisão sua, já que as escolhas foram minhas |
+| **Ociosidade da Oracle** (Etapa 16) | Sem tráfego, a VPS se qualifica como ociosa: a pilha usa ~4% da memória, e o ADR-0019 §5 contava com o Postgres passar de 20%. **Recomendo converter a conta para Pay As You Go** ao criar a instância (roteiro §9) |
+| **CPF do fornecedor pessoa física gravado inteiro** (Etapa 16) | 325 CPFs, 5.748 despesas. A tela e a API já mascaram; o banco e o backup no R2 guardam inteiro. **Recomendo mascarar na ingestão**, como no TSE. Custo: o CPF entra no hash de deduplicação, então é migração que recalcula o hash, e a chave do fornecedor PF vira máscara + nome |
+| **`REG_TX_001` em passagens do Senado** (atualiza a linha acima) | Com o Senado inteiro: 64% das 1.474 flags da regra no Senado são passagens (a agência fatura bilhete a bilhete) e somam 28,7% do peso do índice da casa. **Recomendo tirar a rubrica de passagens do Senado desta regra** |
+| **`REG_KYB_001` em aluguel pago a holding** | 198 das 396 flags da regra no Senado são aluguel; o 1º do ranking de índice do Senado tem 89% do índice vindo de aluguel pago a uma holding (CNAE 6462). Holding patrimonial dona do imóvel é comum. **Recomendo aceitar 6462/6463 como compatíveis com aluguel** |
+| **O denominador do índice** | Estorno e despesa sem fornecedor contam como avaliadas; 92 deputados ranqueados têm mais da metade das despesas sem dado para `REG_KYB_001`. Índice baixo pode ser pouca verificação. **Recomendo mostrar a cobertura ao lado do índice no ranking** e um piso de cobertura para entrar nele |
+| **"Alerta de compliance:" e "Fator de risco elevado:"** | Abrem 10.454 e 2.604 descrições de achado (de 25.132), que vão inteiras para o RSS. Não imputam conduta, mas soam como veredito. **Recomendo abrir só com o fato** ("4 notas fiscais de…") |
+| **"Prevenção à fraude" na política de privacidade** | Declarada como finalidade do tratamento. Colide com o ADR-0004 e não é o que o produto faz. **Recomendo "transparência e controle social"**, na revisão jurídica |
+| **O lote do TSE de 2018** | Só 30 dos 118 senadores ligam à eleição de 2022; os de 2018 estão em outro lote. Download por navegador, como os de 2022 |
+| **O grafo do Estado no celular** | A 375 px os rótulos têm ~5 px e os nós 11 px. **Recomendo abrir na lista, e não no desenho, em tela pequena** |
 
 ## 4. Minhas, pequenas, sem bloqueio
 
@@ -65,7 +73,7 @@ quem quer o detalhe abre.
 - ~~**A corrida do supervisor.**~~ ✅ **Feito em 2026-09-24.** `EsperarOLogAssentar` espera o log parar de crescer — e não um `Start-Sleep` fixo, que seria chute demais numa coleta que já terminou e de menos num disco lento.
 - ~~**Catalogar os 4 tipos de despesa.**~~ ✅ **Feito em 2026-09-24.** Entraram nos códigos 24–27, no fim da lista: os índices estão persistidos em `despesas`, e inserir no meio trocaria o tipo de tudo que já foi ingerido — há teste guardando isso agora. Os outros quatro da CEAP seguem esperando aparecer numa coleta, porque só conhecemos a forma normalizada deles.
 - **As 62 despesas rejeitadas por glosa inconsistente** — investigar se é origem ou rigidez nossa.
-- **O card viral compartilhável.** Client-side, `html2canvas`, com o disclaimer na imagem e QR de volta. Não depende de backend, e é uma engrenagem de crescimento do Business Model Canvas.
+- ~~**O card viral compartilhável.**~~ ✅ **Feito na Etapa 16**, como `opengraph-image` do perfil (a imagem que o WhatsApp e o X mostram), com a ressalva na própria imagem. Sem QR: o endereço vai escrito.
 - **O lint e o `.open-next`.** Já resolvido; fica só o registro, porque a armadilha volta a morder quem mexer na config: a config achatada do ESLint **não lê o `.gitignore`**, e a lista dele substitui os padrões do `eslint-config-next` em vez de somar.
 
 ## 5. O grafo do Estado — o que ficou de fora da Etapa 11
