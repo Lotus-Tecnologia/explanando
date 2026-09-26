@@ -116,6 +116,62 @@ public sealed class CoberturaTests
         De(resultado, "REG_GEO_002").Situacao.ShouldBe(SituacaoDaRegra.SemDado);
     }
 
+    [Fact]
+    public void Despesa_sem_documento_do_fornecedor_deixa_as_regras_por_fornecedor_sem_dado()
+    {
+        // Auditoria de 2026-09-25: 184.280 passagens aéreas da Câmara (26% da base) vêm sem
+        // documento do fornecedor. REG_TX_001 e REG_TX_003 agrupam por fornecedor e as
+        // descartavam, mas declaravam Exige=Nenhum — e a página dizia "examinou tudo e não
+        // achou nada" sobre despesas que a regra nunca olhou.
+        var contexto = new CenarioDeAvaliacao()
+            .ComDespesa(500m, cnpj: "")
+            .Construir();
+
+        var resultado = MotorDeRegras.Padrao().Avaliar(contexto);
+
+        foreach (var codigo in new[] { "REG_TX_001", "REG_TX_003" })
+        {
+            var regra = De(resultado, codigo);
+            regra.Situacao.ShouldBe(SituacaoDaRegra.SemDado, codigo);
+            regra.SilencioEhConclusivo.ShouldBeFalse(codigo);
+            regra.DadoAusente.HasFlag(DadoExigido.DocumentoDoFornecedor).ShouldBeTrue(codigo);
+        }
+    }
+
+    [Fact]
+    public void Rubrica_do_Senado_que_junta_estadia_e_combustivel_deixa_o_recesso_sem_dado()
+    {
+        // REG_GEO_003 se abstém da rubrica 17 do Senado (não dá para saber se foi hotel ou
+        // gasolina) — e declarava Exige=Nenhum. Resultado medido: "sem achados" para os 118
+        // senadores, sobre 34.073 despesas que a regra não pôde examinar.
+        var contexto = new CenarioDeAvaliacao()
+            .ParlamentarDoSenado("AP")
+            .ComDespesa(5_000m, mes: 1, dia: 10,
+                tipo: "Locomoção, hospedagem, alimentação, combustíveis e lubrificantes")
+            .Construir();
+
+        var recesso = De(MotorDeRegras.Padrao().Avaliar(contexto), "REG_GEO_003");
+
+        recesso.Situacao.ShouldBe(SituacaoDaRegra.SemDado);
+        recesso.SilencioEhConclusivo.ShouldBeFalse();
+        recesso.DadoAusente.HasFlag(DadoExigido.NaturezaDaDespesa).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Numeracao_inicial_sem_cadastro_do_fornecedor_fica_sem_dado()
+    {
+        // REG_KYB_005 só olha despesa cujo fornecedor está no cadastro, e declarava
+        // Exige=Nenhum.
+        var contexto = new CenarioDeAvaliacao()
+            .ComDespesa(500m)
+            .Construir();
+
+        var inicial = De(MotorDeRegras.Padrao().Avaliar(contexto), "REG_KYB_005");
+
+        inicial.Situacao.ShouldBe(SituacaoDaRegra.SemDado);
+        inicial.DadoAusente.HasFlag(DadoExigido.CadastroDoFornecedor).ShouldBeTrue();
+    }
+
     // ------------------------------------------------------------------
     //  Silêncio conclusivo
     // ------------------------------------------------------------------

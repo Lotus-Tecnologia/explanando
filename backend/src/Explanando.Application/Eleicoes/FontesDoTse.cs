@@ -70,6 +70,13 @@ public interface IRepositorioDoTse
     /// <summary>Apaga o que uma importação anterior do mesmo ano gravou. A carga é do zero.</summary>
     Task LimparAnoAsync(int ano, CancellationToken cancelamento = default);
 
+    /// <summary>
+    /// Roda o apagar-e-gravar do ano numa transação só: ou a carga inteira entra, ou a
+    /// anterior continua lá. Pode ser repetido pela estratégia de retentativa do banco, então
+    /// o trabalho precisa ser refazível do começo.
+    /// </summary>
+    Task EmUmaTransacaoAsync(Func<CancellationToken, Task> trabalho, CancellationToken cancelamento = default);
+
     void Adicionar(CandidaturaDoParlamentar candidatura);
 
     void Adicionar(VotosNoMunicipio votos);

@@ -213,7 +213,7 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         var composicao = ComposicaoDoIndice.Montar(
             achados.Select(linha => new AchadosAgrupados(
                 linha.CodigoRegra, linha.Gravidade, linha.Quantidade, linha.Peso)),
-            score?.DespesasAvaliadas ?? 0);
+            temAmostra ? score!.DespesasAvaliadas : null);
 
         return new PerfilDoParlamentar
         {
@@ -245,12 +245,22 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         };
     }
 
-    public async Task<Pagina<ItemDeDespesa>> ListarDespesasAsync(
+    public async Task<Pagina<ItemDeDespesa>?> ListarDespesasAsync(
         Guid parlamentarId,
         FiltroDeDespesas filtro,
         CancellationToken cancelamento = default)
     {
         ArgumentNullException.ThrowIfNull(filtro);
+
+        var existe = await contexto.Parlamentares
+            .AsNoTracking()
+            .AnyAsync(parlamentar => parlamentar.Id == parlamentarId, cancelamento)
+            .ConfigureAwait(false);
+
+        if (!existe)
+        {
+            return null;
+        }
 
         var (numero, tamanho) = Normalizar(filtro.Pagina, filtro.ItensPorPagina);
 
@@ -919,6 +929,16 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             faltando.Add("a situação cadastral do fornecedor é desconhecida");
         }
 
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.DocumentoDoFornecedor))
+        {
+            faltando.Add("a fonte não informa o fornecedor da despesa");
+        }
+
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.NaturezaDaDespesa))
+        {
+            faltando.Add("a rubrica junta estadia com combustível e não diz qual dos dois foi");
+        }
+
         if (faltando.Count == 0)
         {
             return cobertura.DespesasSemDado > 0
@@ -937,6 +957,16 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
     /// Página e tamanho válidos. Teto porque a paginação é a superfície mais fácil de
     /// abusar numa API pública sem autenticação.
     /// </summary>
-    private static (int Numero, int Tamanho) Normalizar(int pagina, int itensPorPagina) =>
-        (Math.Max(1, pagina), Math.Clamp(itensPorPagina, 1, MaximoDeItensPorPagina));
+    /// <summary>
+    /// Página e tamanho dentro do que a consulta aguenta. A página tem teto porque
+    /// <c>(pagina - 1) × tamanho</c> estourava o int com <c>pagina=2147483647</c> e virava
+    /// OFFSET negativo — 500 no Postgres (auditoria de 2026-09-25). No teto, a página
+    /// simplesmente vem vazia, como qualquer página além da última.
+    /// </summary>
+    private static (int Numero, int Tamanho) Normalizar(int pagina, int itensPorPagina)
+    {
+        var tamanho = Math.Clamp(itensPorPagina, 1, MaximoDeItensPorPagina);
+
+        return (Math.Clamp(pagina, 1, (int.MaxValue / tamanho) - 1), tamanho);
+    }
 }

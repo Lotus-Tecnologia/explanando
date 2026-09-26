@@ -53,6 +53,18 @@ public enum DadoExigido
 
     /// <summary>O parlamentar tem campanha ligada na base do TSE.</summary>
     CampanhaDoParlamentar = 512,
+
+    /// <summary>
+    /// A despesa traz o documento do fornecedor. Não traz em 184.280 passagens aéreas da
+    /// Câmara (medido em 2026-09-25), e sem ele não há como agrupar por fornecedor.
+    /// </summary>
+    DocumentoDoFornecedor = 1024,
+
+    /// <summary>
+    /// O tipo de despesa diz o que foi comprado. Não diz na rubrica do Senado que junta
+    /// locomoção, hospedagem, alimentação e combustível: ali não se sabe se foi hotel ou posto.
+    /// </summary>
+    NaturezaDaDespesa = 2048,
 }
 
 /// <summary>O que aconteceu com uma regra numa passada.</summary>
@@ -207,6 +219,16 @@ internal static class DisponibilidadeDeDados
         if (contexto.DoacoesDaCampanha is not null)
         {
             disponivel |= DadoExigido.CampanhaDoParlamentar;
+        }
+
+        if (!despesa.DocumentoFornecedor.EhVazio)
+        {
+            disponivel |= DadoExigido.DocumentoDoFornecedor;
+        }
+
+        if (!TiposPresenciais.EhRubricaAmbigua(despesa.TipoDespesa))
+        {
+            disponivel |= DadoExigido.NaturezaDaDespesa;
         }
 
         if (contexto.FornecedorDe(despesa) is not { } fornecedor)

@@ -42,8 +42,11 @@ public interface IConsultasPublicas
         Guid parlamentarId,
         CancellationToken cancelamento = default);
 
-    /// <summary>As despesas do parlamentar, filtradas e paginadas.</summary>
-    Task<Pagina<ItemDeDespesa>> ListarDespesasAsync(
+    /// <summary>
+    /// As despesas do parlamentar, filtradas e paginadas — ou nulo se o parlamentar não
+    /// existe. Lista vazia diria "não gastou" sobre alguém que não existe (ADR-0007).
+    /// </summary>
+    Task<Pagina<ItemDeDespesa>?> ListarDespesasAsync(
         Guid parlamentarId,
         FiltroDeDespesas filtro,
         CancellationToken cancelamento = default);

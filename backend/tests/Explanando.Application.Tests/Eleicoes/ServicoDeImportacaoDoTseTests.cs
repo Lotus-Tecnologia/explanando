@@ -57,6 +57,25 @@ public class ServicoDeImportacaoDoTseTests
         };
 
     [Fact]
+    public async Task Apagar_o_ano_e_gravar_de_novo_acontecem_numa_transacao_so()
+    {
+        // Auditoria de 2026-09-25: o ano era apagado, as candidaturas gravadas e as doações
+        // entravam em lotes — sem transação. Uma falha no meio (o CDN do TSE recusa cliente
+        // automatizado) deixava campanha com doações parciais, e a cobertura a declarava
+        // disponível: REG_NET_001 concluía "nada encontrado" com dado faltando (ADR-0007).
+        var gleisi = Deputado("Gleisi Hoffmann", "GLEISI HELENA HOFFMANN", "PR");
+        var cenario = new Cenario(
+            [gleisi],
+            [Candidato(10, "GLEISI HELENA HOFFMANN", "GLEISI", "PR")],
+            [Receita(1, 10, "FULANO", "52998224725")]);
+
+        await cenario.Importar();
+
+        cenario.Repositorio.Transacoes.ShouldBe(1);
+        cenario.Repositorio.GravacoesForaDaTransacao.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Liga_pelo_nome_civil_quando_o_de_urna_e_outro()
     {
         // "GLEISI" na urna, nome parlamentar diferente: só o civil liga.
@@ -268,18 +287,60 @@ public class ServicoDeImportacaoDoTseTests
         public Task<IReadOnlySet<ChaveDeSocio>> ObterChavesDeSociosAsync(CancellationToken cancelamento = default) =>
             Task.FromResult<IReadOnlySet<ChaveDeSocio>>(Socios);
 
+        public int Transacoes { get; private set; }
+        public List<string> GravacoesForaDaTransacao { get; } = [];
+        private bool _dentro;
+
+        public async Task EmUmaTransacaoAsync(
+            Func<CancellationToken, Task> trabalho,
+            CancellationToken cancelamento = default)
+        {
+            Transacoes++;
+            _dentro = true;
+            try
+            {
+                await trabalho(cancelamento);
+            }
+            finally
+            {
+                _dentro = false;
+            }
+        }
+
+        private void Anotar(string operacao)
+        {
+            if (!_dentro)
+            {
+                GravacoesForaDaTransacao.Add(operacao);
+            }
+        }
+
         public Task LimparAnoAsync(int ano, CancellationToken cancelamento = default)
         {
+            Anotar("limpar");
             AnosLimpos.Add(ano);
             return Task.CompletedTask;
         }
 
-        public void Adicionar(CandidaturaDoParlamentar candidatura) => Candidaturas.Add(candidatura);
+        public void Adicionar(CandidaturaDoParlamentar candidatura)
+        {
+            Anotar("candidatura");
+            Candidaturas.Add(candidatura);
+        }
 
-        public void Adicionar(VotosNoMunicipio votos) => Votos.Add(votos);
+        public void Adicionar(VotosNoMunicipio votos)
+        {
+            Anotar("votos");
+            Votos.Add(votos);
+        }
 
-        public void Adicionar(DoacaoEleitoral doacao) => Doacoes.Add(doacao);
+        public void Adicionar(DoacaoEleitoral doacao)
+        {
+            Anotar("doacao");
+            Doacoes.Add(doacao);
+        }
 
+        // O salvar do nome civil (antes da carga) é legítimo fora: não apaga nada do ano.
         public Task SalvarAsync(CancellationToken cancelamento = default) => Task.CompletedTask;
     }
 }

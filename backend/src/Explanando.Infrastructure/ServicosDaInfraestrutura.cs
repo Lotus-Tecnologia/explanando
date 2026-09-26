@@ -1,3 +1,4 @@
+using Explanando.Infrastructure.Integracoes.Senado;
 using Explanando.Application.Cadeiras;
 using Explanando.Application.Ciclo;
 using Explanando.Application.Auditoria;
@@ -124,6 +125,27 @@ public static class ServicosDaInfraestrutura
         // varredura mais antiga em scores_risco, que a propria varredura grava.
         servicos.AddScoped<IRepositorioDoCiclo, RepositorioDoCiclo>();
         servicos.AddScoped<AgendaDoCicloMensal>();
+
+        // As duas casas. A coleta registrada como ServicoDeColeta e' a da Camara (a fonte
+        // padrao de IFonteDeParlamentares); a do Senado e' montada aqui sobre o ClienteDoSenado,
+        // do mesmo jeito que o comando `coletar-senado` a monta.
+        servicos.AddScoped(provedor =>
+        {
+            var senado = provedor.GetRequiredService<ClienteDoSenado>();
+
+            return new ColetasDoCiclo(
+            [
+                provedor.GetRequiredService<ServicoDeColeta>(),
+                new ServicoDeColeta(
+                    senado,
+                    new ServicoDeIngestao(
+                        senado,
+                        provedor.GetRequiredService<IFonteDeCadastroEmpresarial>(),
+                        provedor.GetRequiredService<IRepositorioDeIngestao>()),
+                    provedor.GetRequiredService<IRepositorioDeCheckpoints>(),
+                    provedor.GetRequiredService<IRelogio>()),
+            ]);
+        });
         servicos.AddScoped<ServicoDeCicloMensal>();
 
         // O lado de leitura, com cache por cima. Registrado aqui e nao no projeto Api

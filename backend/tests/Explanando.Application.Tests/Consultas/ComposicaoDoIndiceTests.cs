@@ -40,7 +40,7 @@ public class ComposicaoDoIndiceTests
         // A mesma conta do ScoreRiscoParlamentar: peso total / despesas × 100.
         var indice = 118m / 2_878m * 100m;
 
-        composicao.Sum(parcela => parcela.PontosNoIndice).ShouldBe(indice, 0.000_001m);
+        composicao.Sum(parcela => parcela.PontosNoIndice!.Value).ShouldBe(indice, 0.000_001m);
         Math.Round(indice, 2).ShouldBe(4.10m);
     }
 
@@ -122,5 +122,21 @@ public class ComposicaoDoIndiceTests
 
         parcela.PontosNoIndice.ShouldBe(0m);
         parcela.Fatia.ShouldBe(1m);
+    }
+
+    [Fact]
+    public void Abaixo_do_piso_as_parcelas_nao_tem_pontos__so_fatia()
+    {
+        // Auditoria de 2026-09-25: o perfil publica índice nulo abaixo do piso de 100
+        // despesas (ADR-0009), mas as parcelas continuavam com os pontos — e somá-las
+        // reconstruía na API pública o índice que a própria API se recusa a publicar. Em 31
+        // parlamentares. A fatia do peso continua: ela descreve os achados, não o índice.
+        var parcela = ComposicaoDoIndice
+            .Montar([new("REG_TX_001", Gravidade.Media, 3, 6m)], despesasAvaliadas: null)
+            .ShouldHaveSingleItem();
+
+        parcela.PontosNoIndice.ShouldBeNull();
+        parcela.Fatia.ShouldBe(1m);
+        parcela.Peso.ShouldBe(6m);
     }
 }

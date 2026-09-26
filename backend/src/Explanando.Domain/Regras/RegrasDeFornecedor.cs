@@ -230,9 +230,10 @@ public sealed class RegraNotaFiscalInicial : IRegraAnomalia
     public string Descricao => "Notas com numeração inicial, sugerindo cliente pioneiro.";
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
-    // O numero da nota vem na propria despesa.
+    // O numero da nota vem na propria despesa, mas a regra so' olha fornecedor que esta
+    // no cadastro (FornecedorDe nao nulo) — e isso e' dado externo.
     public DadoExigido Exige =>
-        DadoExigido.Nenhum;
+        DadoExigido.CadastroDoFornecedor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

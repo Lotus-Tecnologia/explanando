@@ -15,9 +15,10 @@ public sealed class RegraFracionamento : IRegraAnomalia
     public string Descricao => "Múltiplas notas do mesmo fornecedor no mesmo mês.";
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
-    // Compara despesas entre si; nao depende de fonte externa.
+    // Compara despesas entre si, agrupadas por fornecedor: despesa sem documento do
+    // fornecedor fica de fora do agrupamento, e a cobertura precisa dizer isso.
     public DadoExigido Exige =>
-        DadoExigido.Nenhum;
+        DadoExigido.DocumentoDoFornecedor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
@@ -124,9 +125,10 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
     public string Descricao => "Valor idêntico ao centavo por meses consecutivos.";
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
-    // Serie historica do proprio parlamentar.
+    // Serie historica do proprio parlamentar, por fornecedor — sem o documento do
+    // fornecedor nao ha serie a montar.
     public DadoExigido Exige =>
-        DadoExigido.Nenhum;
+        DadoExigido.DocumentoDoFornecedor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

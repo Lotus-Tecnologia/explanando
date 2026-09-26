@@ -52,11 +52,22 @@ internal static class TiposPresenciais
     private static readonly string[] MarcadoresQueTornamAmbiguo = ["COMBUST"];
 
     public static bool EhAlimentacaoOuHospedagem(string tipoDespesa) =>
+        TemEstadia(tipoDespesa) && !EhRubricaAmbigua(tipoDespesa);
+
+    /// <summary>
+    /// A rubrica fala de estadia, mas junta com o que não é estadia — a do Senado. Não é
+    /// ausência de achado: é despesa que a regra não tem como examinar, e a cobertura precisa
+    /// dizer isso (DadoExigido.NaturezaDaDespesa).
+    /// </summary>
+    public static bool EhRubricaAmbigua(string tipoDespesa) =>
+        TemEstadia(tipoDespesa)
+        && Array.Exists(
+            MarcadoresQueTornamAmbiguo,
+            marcador => tipoDespesa.Contains(marcador, StringComparison.OrdinalIgnoreCase));
+
+    private static bool TemEstadia(string tipoDespesa) =>
         Array.Exists(
             MarcadoresDeEstadia,
-            marcador => tipoDespesa.Contains(marcador, StringComparison.OrdinalIgnoreCase))
-        && !Array.Exists(
-            MarcadoresQueTornamAmbiguo,
             marcador => tipoDespesa.Contains(marcador, StringComparison.OrdinalIgnoreCase));
 }
 
@@ -130,9 +141,10 @@ public sealed class RegraGastoEmRecesso : IRegraAnomalia
     public string Descricao => "Alimentação ou hospedagem expressiva durante o recesso.";
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
-    // Calendario legislativo e data da nota, so'.
+    // Calendario legislativo e data da nota — e saber se a despesa foi estadia, que a
+    // rubrica agrupada do Senado nao diz (auditoria de 2026-09-25).
     public DadoExigido Exige =>
-        DadoExigido.Nenhum;
+        DadoExigido.NaturezaDaDespesa;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {

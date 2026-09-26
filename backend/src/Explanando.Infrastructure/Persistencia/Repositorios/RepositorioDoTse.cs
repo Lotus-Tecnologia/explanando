@@ -41,6 +41,34 @@ public sealed class RepositorioDoTse(ExplanandoDbContext contexto) : IRepositori
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A transação roda DENTRO da estratégia de execução — a conexão usa
+    /// <c>EnableRetryOnFailure</c>, e o Npgsql recusa transação aberta fora dela (ver
+    /// RepositorioDeCadeiras). Numa retentativa o trabalho recomeça do zero, então o
+    /// rastreamento é esvaziado antes: sobra de uma tentativa que caiu viraria duplicata.
+    /// </summary>
+    public async Task EmUmaTransacaoAsync(
+        Func<CancellationToken, Task> trabalho,
+        CancellationToken cancelamento = default)
+    {
+        ArgumentNullException.ThrowIfNull(trabalho);
+
+        var estrategia = contexto.Database.CreateExecutionStrategy();
+
+        await estrategia.ExecuteAsync(async () =>
+        {
+            contexto.ChangeTracker.Clear();
+
+            await using var transacao = await contexto.Database
+                .BeginTransactionAsync(cancelamento)
+                .ConfigureAwait(false);
+
+            await trabalho(cancelamento).ConfigureAwait(false);
+
+            await transacao.CommitAsync(cancelamento).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
     public void Adicionar(CandidaturaDoParlamentar candidatura) => contexto.Candidaturas.Add(candidatura);
 
     public void Adicionar(VotosNoMunicipio votos) => contexto.VotosPorMunicipio.Add(votos);

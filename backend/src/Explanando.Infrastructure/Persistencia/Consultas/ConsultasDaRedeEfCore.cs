@@ -112,7 +112,10 @@ public sealed class ConsultasDaRedeEfCore(ExplanandoDbContext contexto) : IConsu
 
             ligacoes.Add(new LigacaoDaRede
             {
-                Documento = candidato.Documento.Numero,
+                // Formatado, nunca Numero: o CPF de fornecedor pessoa física chega inteiro da
+                // Câmara, e o Formatado é o único lugar que o mascara. Com Numero, os 11
+                // dígitos iam para o JSON público (auditoria de 2026-09-25).
+                Documento = candidato.Documento.Formatado,
                 Fornecedor = candidato.Nome,
                 Parlamentares = envolvidos,
                 Valor = candidato.Valor,

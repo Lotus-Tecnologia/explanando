@@ -144,6 +144,35 @@ public sealed class MapaDaRedeNoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task Fornecedor_pessoa_fisica_sai_com_o_CPF_mascarado__nunca_inteiro()
+    {
+        // Achado da auditoria de 2026-09-25: a Câmara publica o CPF do fornecedor pessoa
+        // física inteiro, e o mapa projetava `Documento.Numero` — os 11 dígitos iam para o
+        // JSON público. Na base real, um fornecedor PF passava no critério (2 gabinetes,
+        // R$ 83 mil). O produto nunca expõe CPF completo (estado_atual_projeto.md §3.4).
+        await LimparAsync();
+
+        const string cpf = "52998224725";
+        var um = Deputado();
+        var outro = Deputado();
+
+        await using (var contexto = banco.CriarContexto())
+        {
+            contexto.Parlamentares.AddRange(um, outro);
+            contexto.Despesas.AddRange(
+                NotaDe(um.Id, cpf, "FULANO DE TAL", 40_000m),
+                NotaDe(outro.Id, cpf, "FULANO DE TAL", 30_000m));
+
+            await contexto.SaveChangesAsync();
+        }
+
+        var ligacao = Assert.Single((await Consultas().ObterMapaAsync()).Ligacoes);
+
+        Assert.DoesNotContain(cpf, ligacao.Documento, StringComparison.Ordinal);
+        Assert.Equal("***.982.247-**", ligacao.Documento);
+    }
+
+    [Fact]
     public async Task O_cadastro_do_CNPJ_chega_junto__CNAE_municipio_e_abertura()
     {
         await LimparAsync();

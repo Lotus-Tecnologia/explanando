@@ -234,9 +234,10 @@ public sealed record ParcelaDoIndice
 
     /// <summary>
     /// Quanto desta regra entra no índice, na mesma unidade dele: pontos por 100 despesas.
-    /// A soma das parcelas é o índice.
+    /// A soma das parcelas é o índice. Nulo quando o parlamentar está abaixo do piso
+    /// amostral e não tem índice publicado (ADR-0009).
     /// </summary>
-    public decimal PontosNoIndice { get; init; }
+    public decimal? PontosNoIndice { get; init; }
 
     public int Altas { get; init; }
 

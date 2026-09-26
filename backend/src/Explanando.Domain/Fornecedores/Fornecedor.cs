@@ -111,8 +111,9 @@ public sealed class Fornecedor : Entidade
         var fornecedor = new Fornecedor
         {
             Documento = dados.Documento,
-            RazaoSocial = dados.RazaoSocial.Trim(),
-            NomeFantasia = dados.NomeFantasia?.Trim(),
+            // A razão social do MEI traz o CPF do dono; entra mascarada (ver CpfEmTexto).
+            RazaoSocial = CpfEmTexto.Mascarar(dados.RazaoSocial.Trim()),
+            NomeFantasia = dados.NomeFantasia is null ? null : CpfEmTexto.Mascarar(dados.NomeFantasia.Trim()),
             CnaePrincipal = NormalizarCnae(dados.CnaePrincipal),
             SituacaoCadastral = dados.SituacaoCadastral,
             DataSituacaoCadastral = dados.DataSituacaoCadastral,

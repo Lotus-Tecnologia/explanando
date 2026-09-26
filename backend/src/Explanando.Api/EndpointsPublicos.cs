@@ -230,6 +230,16 @@ public static class EndpointsPublicos
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
+        // O ano era aceito sem teste e Competencia.Criar estourava la' dentro: 500 para um
+        // erro de quem pediu (auditoria de 2026-09-25).
+        if (ano is { } a && a is < 1900 or > 9999)
+        {
+            return Results.Problem(
+                title: "Ano inválido",
+                detail: $"O ano precisa estar entre 1900 e 9999; recebido {a}.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
         // Mes sem ano nao identifica competencia nenhuma: "julho" de que ano? Aceitar em
         // silencio devolveria a lista inteira e o leitor acharia que filtrou.
         if (mes is not null && ano is null)
@@ -254,7 +264,7 @@ public static class EndpointsPublicos
             .ListarDespesasAsync(id, filtro, cancelamento)
             .ConfigureAwait(false);
 
-        return Results.Ok(resultado);
+        return resultado is null ? Results.NotFound() : Results.Ok(resultado);
     }
 
     private static async Task<IResult> ObterDespesaAsync(

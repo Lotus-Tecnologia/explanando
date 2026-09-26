@@ -14,5 +14,10 @@
 # permanece para quem clonar fora do OneDrive.
 artifacts/
 
+# Segredo local (a string da Neon). O Dockerfile não copia a raiz inteira, então ele não
+# chegaria à imagem — mas chegaria ao contexto de build, e um `COPY . .` futuro o levaria
+# junto sem ninguém perceber.
+.env*
+
 Dockerfile
 .dockerignore

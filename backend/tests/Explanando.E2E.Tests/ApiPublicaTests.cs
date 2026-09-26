@@ -264,7 +264,7 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
         perfil.Composicao.ShouldNotBeEmpty();
 
         perfil.Composicao.Sum(parcela => parcela.Fatia).ShouldBe(1m, 0.000_001m);
-        perfil.Composicao.Sum(parcela => parcela.PontosNoIndice)
+        perfil.Composicao.Sum(parcela => parcela.PontosNoIndice!.Value)
             .ShouldBe(perfil.IndiceDeRisco!.Value, 0.000_1m);
 
         perfil.Composicao.ShouldAllBe(parcela => !string.IsNullOrWhiteSpace(parcela.Descricao));
@@ -540,6 +540,58 @@ public sealed class ApiPublicaTests(ApiDeTestes api)
             $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas?ano=2026&mes=13");
 
         resposta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-5)]
+    [InlineData(2_147_483_647)]
+    public async Task Ano_fora_da_faixa_devolve_400_e_nao_500(int ano)
+    {
+        // Auditoria de 2026-09-25: o mês era validado e o ano não, e Competencia.Criar
+        // estourava lá dentro — 500 para um erro de quem pediu.
+        var resposta = await Cliente.GetAsync(
+            $"/api/v1/parlamentares/{api.ParlamentarRanqueado}/despesas?ano={ano}");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/parlamentares?casa=deputados&pagina=2147483647")]
+    [InlineData("/api/v1/parlamentares/{0}/despesas?pagina=2147483647")]
+    public async Task Pagina_enorme_devolve_lista_vazia_e_nao_500(string modelo)
+    {
+        // (pagina - 1) × itens estourava o int e virava OFFSET negativo no Postgres.
+        var resposta = await Cliente.GetAsync(string.Format(
+            System.Globalization.CultureInfo.InvariantCulture, modelo, api.ParlamentarRanqueado));
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Toda_resposta_sai_com_os_cabecalhos_de_seguranca()
+    {
+        // Auditoria de 2026-09-25: nenhum cabeçalho de segurança, nem na API nem no site.
+        // Numa API que só devolve JSON, a política pode ser a mais fechada que existe.
+        var resposta = await Cliente.GetAsync(
+            $"/api/v1/parlamentares/{api.ParlamentarRanqueado}");
+
+        resposta.Headers.GetValues("X-Content-Type-Options").ShouldHaveSingleItem().ShouldBe("nosniff");
+        resposta.Headers.GetValues("X-Frame-Options").ShouldHaveSingleItem().ShouldBe("DENY");
+        resposta.Headers.GetValues("Referrer-Policy").ShouldHaveSingleItem().ShouldBe("no-referrer");
+        resposta.Headers.GetValues("Content-Security-Policy").ShouldHaveSingleItem()
+            .ShouldBe("default-src 'none'; frame-ancestors 'none'");
+    }
+
+    [Fact]
+    public async Task Despesas_de_parlamentar_inexistente_e_404_e_nao_lista_vazia()
+    {
+        // Lista vazia diz "este parlamentar não gastou" — sobre alguém que não existe. É a
+        // confusão entre ausência e zero do ADR-0007, e o perfil do mesmo id já dava 404.
+        var resposta = await Cliente.GetAsync(
+            $"/api/v1/parlamentares/{Guid.CreateVersion7()}/despesas");
+
+        resposta.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [Fact]

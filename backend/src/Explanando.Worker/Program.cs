@@ -18,12 +18,15 @@ using Explanando.Domain.Parlamentares;
 using Explanando.Worker;
 using Microsoft.EntityFrameworkCore;
 
-var conexao = Environment.GetEnvironmentVariable("EXPLANANDO_CONEXAO")
-    ?? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev";
-
 var comando = args.Length > 0 ? args[0].ToLowerInvariant() : "servico";
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// O padrao de desenvolvimento so' vale em Development — ver o mesmo trecho na API.
+var conexao = Environment.GetEnvironmentVariable("EXPLANANDO_CONEXAO")
+    ?? (builder.Environment.IsDevelopment()
+        ? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev"
+        : throw new InvalidOperationException("Sem conexao com o banco: defina EXPLANANDO_CONEXAO."));
 builder.Services.AdicionarInfraestrutura(conexao);
 builder.Services.AdicionarObservabilidade(builder.Configuration, "explanando-worker");
 
@@ -51,6 +54,16 @@ var legislatura = LerInteiro("--legislatura") ?? 57;
 
 switch (comando)
 {
+    case "migrar":
+        {
+            // So' o esquema. As migrations ja rodaram acima, na subida de qualquer comando;
+            // este existe para o compose de producao subir a API DEPOIS do esquema, sem
+            // pagar uma consolidacao ou uma coleta so' para isso (ver deploy/compose.yml e
+            // desdobramento.md: a API nao aplica migrations, de proposito).
+            Console.WriteLine("Esquema do banco em dia.");
+            return 0;
+        }
+
     case "coletar":
         {
             var limite = LerInteiro("--limite");
@@ -737,7 +750,7 @@ switch (comando)
             Console.WriteLine($"""
 
                 === CICLO MENSAL ===
-                Despesas novas      : {resultado.Coleta?.DespesasNovas ?? 0}
+                Despesas novas      : {resultado.DespesasNovas}
                 Parlamentares       : {resultado.ParlamentaresVarridos}
                 Flags emitidas      : {resultado.FlagsEmitidas}
                 Consolidados        : {resultado.Retencao?.ConsolidadosCriados ?? 0} criados, {resultado.Retencao?.ConsolidadosAtualizados ?? 0} atualizados
@@ -798,6 +811,7 @@ switch (comando)
 
             Uso:
               dotnet run -- servico                       roda como BackgroundService
+              dotnet run -- migrar                        so' aplica as migrations e sai
               dotnet run -- coletar [--legislatura 57] [--limite N]
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada

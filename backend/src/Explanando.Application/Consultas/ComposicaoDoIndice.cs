@@ -14,9 +14,14 @@ public sealed record AchadosAgrupados(string Codigo, Gravidade Gravidade, int Qu
 /// </summary>
 public static class ComposicaoDoIndice
 {
+    /// <param name="despesasAvaliadas">
+    /// O denominador do índice — ou nulo quando o parlamentar está abaixo do piso amostral e
+    /// não tem índice. Aí as parcelas saem sem pontos: somá-las reconstruiria o índice que o
+    /// perfil se recusa a publicar (ADR-0009).
+    /// </param>
     public static IReadOnlyList<ParcelaDoIndice> Montar(
         IEnumerable<AchadosAgrupados> achados,
-        int despesasAvaliadas)
+        int? despesasAvaliadas)
     {
         ArgumentNullException.ThrowIfNull(achados);
 
@@ -49,9 +54,12 @@ public static class ComposicaoDoIndice
                 Fatia = pesoTotal == 0m ? 0m : regra.Peso / pesoTotal,
 
                 // Mesma conta do ScoreRiscoParlamentar, parcela a parcela.
-                PontosNoIndice = despesasAvaliadas == 0
-                    ? 0m
-                    : regra.Peso / despesasAvaliadas * 100m,
+                PontosNoIndice = despesasAvaliadas switch
+                {
+                    null => null,
+                    0 => 0m,
+                    var total => regra.Peso / total.Value * 100m,
+                },
 
                 Altas = regra.Altas,
                 Medias = regra.Medias,

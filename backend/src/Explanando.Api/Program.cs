@@ -15,9 +15,15 @@ if (Environment.GetEnvironmentVariable("PORT") is { Length: > 0 } porta)
     builder.WebHost.UseUrls($"http://+:{porta}");
 }
 
+// O padrao de desenvolvimento so' vale em Development. Em producao, variavel faltando ou
+// com nome errado fazia a API subir contra localhost com a senha de dev — sem erro, e com o
+// sintoma aparecendo longe da causa. Melhor nao subir (auditoria de 2026-09-25).
 var conexao = builder.Configuration.GetConnectionString("Explanando")
     ?? Environment.GetEnvironmentVariable("EXPLANANDO_CONEXAO")
-    ?? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev";
+    ?? (builder.Environment.IsDevelopment()
+        ? "Host=localhost;Port=5432;Database=explanando;Username=explanando;Password=explanando_dev"
+        : throw new InvalidOperationException(
+            "Sem conexao com o banco: defina EXPLANANDO_CONEXAO (ou ConnectionStrings__Explanando)."));
 
 builder.Services.AdicionarInfraestrutura(conexao);
 builder.Services.AdicionarObservabilidade(builder.Configuration, "explanando-api");
@@ -47,6 +53,20 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+// Cabecalhos de seguranca em toda resposta, inclusive erro e 429. A API so' devolve JSON,
+// entao a politica pode ser a mais fechada que existe: nada carrega, nada emoldura. O HSTS
+// fica na Cloudflare, que e' onde o HTTPS termina (auditoria de 2026-09-25).
+app.Use(async (contexto, proximo) =>
+{
+    var cabecalhos = contexto.Response.Headers;
+    cabecalhos.XContentTypeOptions = "nosniff";
+    cabecalhos.XFrameOptions = "DENY";
+    cabecalhos["Referrer-Policy"] = "no-referrer";
+    cabecalhos.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
+
+    await proximo(contexto).ConfigureAwait(false);
+});
 app.UseCors();
 
 // Depois do CORS: o preflight do navegador nao deve consumir cota de leitura.

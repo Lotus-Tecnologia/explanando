@@ -50,7 +50,11 @@ public sealed record ResultadoDoCiclo
     /// <summary>Falso quando a base ainda estava fresca e nada foi feito.</summary>
     public bool Executou { get; init; }
 
-    public ResultadoDaColeta? Coleta { get; init; }
+    /// <summary>Uma por casa, na ordem de <see cref="ColetasDoCiclo"/>.</summary>
+    public IReadOnlyList<ResultadoDaColeta> Coletas { get; init; } = [];
+
+    public int DespesasNovas => Coletas.Sum(coleta => coleta.DespesasNovas);
+
     public int ParlamentaresVarridos { get; init; }
     public int FlagsEmitidas { get; init; }
     public IReadOnlyList<FalhaDeRegra> Falhas { get; init; } = [];
@@ -68,6 +72,17 @@ public sealed record ResultadoDoCiclo
 }
 
 /// <summary>
+/// As coletas que a passada mensal roda — uma por casa.
+///
+/// <para>Existe porque a passada coletava só a Câmara: a coleta injetada era a dela, e a do
+/// Senado só era montada à mão dentro do comando <c>coletar-senado</c>. Com o agendador da
+/// VPS disparando só o ciclo, a despesa nova dos senadores nunca entraria sozinha (achado ao
+/// empacotar o servidor, 2026-09-25). Quem monta a lista é a infraestrutura, que conhece
+/// as duas fontes.</para>
+/// </summary>
+public sealed record ColetasDoCiclo(IReadOnlyList<ServicoDeColeta> PorCasa);
+
+/// <summary>
 /// A passada completa e gratuita de toda a base, que o <c>ADR-0010</c> §4 exige uma vez por
 /// mês: coleta, varredura por parlamentar, passada de rede e consolidação.
 ///
@@ -78,7 +93,7 @@ public sealed record ResultadoDoCiclo
 /// </summary>
 public sealed class ServicoDeCicloMensal(
     AgendaDoCicloMensal agenda,
-    ServicoDeColeta coleta,
+    ColetasDoCiclo coletas,
     ServicoDeVarredura varredura,
     ServicoDeVarreduraDeRede rede,
     ServicoDeRetencao retencao,
@@ -100,9 +115,17 @@ public sealed class ServicoDeCicloMensal(
         int legislatura,
         CancellationToken cancelamento = default)
     {
-        var resultadoDaColeta = await coleta
-            .ColetarTudoAsync(legislatura, maxDeputados: null, cancelamento)
-            .ConfigureAwait(false);
+        // Uma casa depois da outra, e a falha de uma não impede a outra: cada resultado diz
+        // o próprio estado, e o ciclo inteiro sai marcado como incompleto se qualquer uma
+        // parou no meio.
+        var resultadosDaColeta = new List<ResultadoDaColeta>();
+
+        foreach (var coleta in coletas.PorCasa)
+        {
+            resultadosDaColeta.Add(await coleta
+                .ColetarTudoAsync(legislatura, maxDeputados: null, cancelamento)
+                .ConfigureAwait(false));
+        }
 
         var ids = await repositorio.IdsDosParlamentaresAsync(cancelamento).ConfigureAwait(false);
 
@@ -137,16 +160,16 @@ public sealed class ServicoDeCicloMensal(
         return new ResultadoDoCiclo
         {
             Executou = true,
-            Coleta = resultadoDaColeta,
+            Coletas = resultadosDaColeta,
             ParlamentaresVarridos = ids.Count,
             FlagsEmitidas = flags,
             Falhas = falhas,
             Rede = resultadoDeRede,
             Retencao = resultadoDaRetencao,
-            ColetaIncompleta =
-                resultadoDaColeta.ListagemIncompleta
-                || resultadoDaColeta.InterrompidaPorFonteSuspeita
-                || resultadoDaColeta.Falhas.Count > 0,
+            ColetaIncompleta = resultadosDaColeta.Exists(coleta =>
+                coleta.ListagemIncompleta
+                || coleta.InterrompidaPorFonteSuspeita
+                || coleta.Falhas.Count > 0),
         };
     }
 }

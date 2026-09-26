@@ -39,14 +39,28 @@ public sealed class ServicoDeImportacaoDoTse(
 
         var completados = await CompletarNomesCivisAsync(parlamentares, cancelamento).ConfigureAwait(false);
 
-        await repositorio.LimparAnoAsync(ano, cancelamento).ConfigureAwait(false);
+        Ligacao ligacao = null!;
+        (int Lidas, int ParaParlamentares, int DeSocios) doacoes = default;
 
-        var ligacao = await LigarCandidaturasAsync(ano, parlamentares, cancelamento).ConfigureAwait(false);
+        // Apagar o ano e gravar de novo numa transação só. Sem ela, uma falha no meio da
+        // leitura deixava campanha com doações parciais — e a cobertura a declarava
+        // disponível, fazendo REG_NET_001 concluir "nada encontrado" com dado faltando
+        // (auditoria de 2026-09-25). Assim, ou a carga nova entra inteira, ou a anterior fica.
+        await repositorio.EmUmaTransacaoAsync(
+            async transacao =>
+            {
+                await repositorio.LimparAnoAsync(ano, transacao).ConfigureAwait(false);
 
-        var socios = await repositorio.ObterChavesDeSociosAsync(cancelamento).ConfigureAwait(false);
+                ligacao = await LigarCandidaturasAsync(ano, parlamentares, transacao).ConfigureAwait(false);
 
-        var (lidas, paraParlamentares, deSocios) =
-            await ImportarDoacoesAsync(ano, ligacao.PorSequencial, socios, cancelamento).ConfigureAwait(false);
+                var socios = await repositorio.ObterChavesDeSociosAsync(transacao).ConfigureAwait(false);
+
+                doacoes = await ImportarDoacoesAsync(ano, ligacao.PorSequencial, socios, transacao)
+                    .ConfigureAwait(false);
+            },
+            cancelamento).ConfigureAwait(false);
+
+        var (lidas, paraParlamentares, deSocios) = doacoes;
 
         return new ResultadoDaImportacaoDoTse
         {

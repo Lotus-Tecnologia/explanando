@@ -224,7 +224,8 @@ public sealed class Despesa : Entidade
         {
             ParlamentarId = dados.ParlamentarId,
             DocumentoFornecedor = dados.DocumentoFornecedor,
-            NomeFornecedor = dados.NomeFornecedor.Trim(),
+            // O nome do MEI traz o CPF do dono; entra mascarado (ver CpfEmTexto).
+            NomeFornecedor = CpfEmTexto.Mascarar(dados.NomeFornecedor.Trim()),
             Competencia = dados.Competencia,
             CodigoDocumento = dados.CodigoDocumento.Trim(),
             NumeroDocumento = dados.NumeroDocumento.Trim(),

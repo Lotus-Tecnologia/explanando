@@ -124,7 +124,7 @@ public sealed partial class Worker(
                 logger,
                 resultado.ParlamentaresVarridos,
                 resultado.FlagsEmitidas,
-                resultado.Coleta?.DespesasNovas ?? 0);
+                resultado.DespesasNovas);
 
             // Coleta incompleta não pode passar em silêncio. A análise é válida sobre o que
             // está no banco, mas o dado ficou mais velho do que o resultado sugere — e foi
@@ -132,7 +132,7 @@ public sealed partial class Worker(
             // 2026-08-21, quando a fonte respondeu 200 com lista vazia 497 vezes.
             if (resultado.ColetaIncompleta)
             {
-                ColetaIncompleta(logger, resultado.Coleta?.Falhas.Count ?? 0);
+                ColetaIncompleta(logger, resultado.Coletas.Sum(coleta => coleta.Falhas.Count));
             }
         }
         catch (Exception erro) when (erro is not OperationCanceledException)
