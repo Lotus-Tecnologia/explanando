@@ -133,3 +133,23 @@ e pondera como sua metodologia mandar.
   domínio de usuários e uma tabela.
 - **Nada aqui dispensa revisão jurídica antes de publicar.** As decisões estão tomadas e serão
   implementadas como decididas; o parecer confirma que a redação publicada as reflete.
+
+---
+
+## Adendo — 2026-09-26: a finalidade declarada
+
+**Decisão do Gustavo, por recomendação da segunda auditoria (Etapa 16):** a finalidade do
+legítimo interesse passa de "prevenção à fraude e controle social" para **"transparência e
+controle social"** do uso de recursos públicos.
+
+- **A base legal não muda:** continua o art. 7º, IX.
+- **O motivo de a expressão antiga ter entrado não se sustentou.** Ela foi escolhida como "o
+  termo da LGPD para o legítimo interesse". Conferido no texto da lei (planalto.gov.br, em
+  2026-09-26): "prevenção à fraude" só aparece no **art. 11, II, "g"**, que trata de dado
+  **sensível** em processos de identificação e autenticação de cadastro. O art. 7º, IX e o
+  art. 10, que regem o legítimo interesse, não a usam.
+- **E ela colidia com o ADR-0004:** o produto tira "fraude" de toda a interface, e a política
+  declarava que o tratamento existe para prevenir fraude — é juízo implícito sobre quem aparece.
+
+A revisão jurídica da política, já pendente, confirma a redação.
+

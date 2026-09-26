@@ -143,3 +143,24 @@ juízo de conduta." O texto vem de `lib/cartao.ts`, testado. A rota sai dinâmic
 | Despesas | 790.303 · R$ 923.924.734,56 |
 | Flags | 25.117 |
 | Base | 458 MB |
+
+## 8. Depois do relatório: as decisões de 26/09
+
+O Gustavo seguiu a recomendação em todas as decisões, menos a ociosidade da Oracle, que ficou
+para avaliar depois. Tudo entrou no mesmo dia, com a base re-varrida (**motor versão 6**):
+
+| Decisão | Medido depois |
+|---|---|
+| **CPF do fornecedor PF guardado mascarado** (`***NNNNNN**`), validado com os 11 dígitos só na leitura | 5.748 despesas, 325 CPFs → 325 máscaras distintas. O CPF entra no hash de deduplicação, então a migração o recalcula; antes, a fórmula em SQL foi conferida contra o hash do C# nas **790.303** despesas — 790.303 iguais — e os hashes novos continuam todos únicos |
+| `REG_TX_001` não olha passagem | 2.009 → **942** flags |
+| `REG_KYB_001` aceita holding (6462/6463) no aluguel do Senado | 6.927 → **6.854**; o topo do ranking de índice do Senado mudou |
+| **Cobertura de fornecedor** ao lado do índice; piso de 50% para o ranking por índice | Câmara: **406 de 498** no ranking por índice (os outros seguem no de volume, com a fração na tabela); Senado: 86 de 86 |
+| Descrições abrem com o fato | Zero "Alerta de compliance" / "Fator de risco" |
+| Política: "transparência e controle social" | Conferido na lei: "prevenção à fraude" só existe no art. 11, II, "g" (dado sensível). Base legal inalterada. Adendo no ADR-0014 |
+| Grafo no celular | Abre na lista abaixo de `sm` |
+
+Total de flags: 25.117 → **23.977**. Testes: backend **1.055**, frontend **312**.
+
+**A instância que saiu em 26/09 foi uma `VM.Standard.E2.1.Micro`** (1/8 OCPU, 1 GB, x86) — não
+serve para a produção (roteiro §3.1), e foi criada com outra chave SSH. A A1 segue sendo tentada.
+

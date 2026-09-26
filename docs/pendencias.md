@@ -24,9 +24,10 @@ credencial do Gustavo:
 
 | Passo | Onde no roteiro |
 |---|---|
-| Criar a instância A1 (São Paulo sem capacidade em 25/09) | §3.1 |
+| Criar a instância A1 (São Paulo sem capacidade em 25 e 26/09). **Com a chave `oracle_explanando.pub`** — a Micro de 26/09 foi criada com outra e o SSH recusa | §3.1 |
 | Deploy key só de leitura no GitHub | §3.3 |
-| Domínio no Registro.br → DNS na Cloudflare | §2 |
+| Domínio no Registro.br → nameservers da Cloudflare (passo a passo dado em 26/09) | §2 |
+| **Email Routing** na Cloudflare: `privacidade@explanando.com.br` → caixa do Gustavo. A política publica esse endereço como contato do encarregado, e a LGPD exige que ele funcione | §2 |
 | Túnel da Cloudflare e o token no `.env` | §6.1 |
 | Balde `explanando-backup` no R2 e o token só de objeto | §7.1 |
 | (Opcional) dois checks no healthchecks.io | §7.2 |
@@ -50,21 +51,25 @@ quem quer o detalhe abre.
 
 | Decisão | O que está em jogo |
 |---|---|
-| **`REG_TX_001` no Senado** | Dispara 25× mais que na Câmara, e **946 das 1.467 são passagens** — várias notas da mesma agência no mês. Não é calibragem: a regra agrupa por fornecedor e mês e descreve corretamente o que vê. Comprar dez passagens da mesma agência é padrão real de contratação. **Vale mostrar como achado, ou não?** |
 | **Limites da CEAP 2023–2025 e da CEAPS por UF** | Curadoria dos Atos da Mesa; não vem em API. Enquanto não vierem, `REG_TX_002` responde `SemDado` nas 791 mil despesas das duas casas |
 | **Avaliação de legítimo interesse documentada** | A ANPD pode solicitá-la quando a base é o art. 7º, IX. A política está publicada; a avaliação que a sustenta, não |
 | **Revisão jurídica** da política publicada | As decisões estão tomadas e implementadas; o parecer confirma que a redação as reflete |
 | **Opacidade da fonte × índice do PEP** | Em aberto no [ADR-0014](decisoes/ADR-0014-lacuna-camada-2-e-base-legal.md). Não implementado por colidir com o ADR-0007 |
 | **Tabela CNAE × tipo do Senado** | Curada na Etapa 10 com medição. Vale uma revisão sua, já que as escolhas foram minhas |
-| **Ociosidade da Oracle** (Etapa 16) | Sem tráfego, a VPS se qualifica como ociosa: a pilha usa ~4% da memória, e o ADR-0019 §5 contava com o Postgres passar de 20%. **Recomendo converter a conta para Pay As You Go** ao criar a instância (roteiro §9) |
-| **CPF do fornecedor pessoa física gravado inteiro** (Etapa 16) | 325 CPFs, 5.748 despesas. A tela e a API já mascaram; o banco e o backup no R2 guardam inteiro. **Recomendo mascarar na ingestão**, como no TSE. Custo: o CPF entra no hash de deduplicação, então é migração que recalcula o hash, e a chave do fornecedor PF vira máscara + nome |
-| **`REG_TX_001` em passagens do Senado** (atualiza a linha acima) | Com o Senado inteiro: 64% das 1.474 flags da regra no Senado são passagens (a agência fatura bilhete a bilhete) e somam 28,7% do peso do índice da casa. **Recomendo tirar a rubrica de passagens do Senado desta regra** |
-| **`REG_KYB_001` em aluguel pago a holding** | 198 das 396 flags da regra no Senado são aluguel; o 1º do ranking de índice do Senado tem 89% do índice vindo de aluguel pago a uma holding (CNAE 6462). Holding patrimonial dona do imóvel é comum. **Recomendo aceitar 6462/6463 como compatíveis com aluguel** |
-| **O denominador do índice** | Estorno e despesa sem fornecedor contam como avaliadas; 92 deputados ranqueados têm mais da metade das despesas sem dado para `REG_KYB_001`. Índice baixo pode ser pouca verificação. **Recomendo mostrar a cobertura ao lado do índice no ranking** e um piso de cobertura para entrar nele |
-| **"Alerta de compliance:" e "Fator de risco elevado:"** | Abrem 10.454 e 2.604 descrições de achado (de 25.132), que vão inteiras para o RSS. Não imputam conduta, mas soam como veredito. **Recomendo abrir só com o fato** ("4 notas fiscais de…") |
-| **"Prevenção à fraude" na política de privacidade** | Declarada como finalidade do tratamento. Colide com o ADR-0004 e não é o que o produto faz. **Recomendo "transparência e controle social"**, na revisão jurídica |
-| **O lote do TSE de 2018** | Só 30 dos 118 senadores ligam à eleição de 2022; os de 2018 estão em outro lote. Download por navegador, como os de 2022 |
-| **O grafo do Estado no celular** | A 375 px os rótulos têm ~5 px e os nós 11 px. **Recomendo abrir na lista, e não no desenho, em tela pequena** |
+| **Ociosidade da Oracle** (Etapa 16) — **o Gustavo avalia depois** | Sem tráfego, a VPS se qualifica como ociosa: a pilha usa ~4% da memória, e o ADR-0019 §5 contava com o Postgres passar de 20%. Recomendação registrada: converter a conta para Pay As You Go (roteiro §9). Decisão adiada em 26/09 |
+| **O lote do TSE de 2018** | Só 30 dos 118 senadores ligam à eleição de 2022; os de 2018 estão em outro lote. **Aceito em 26/09; espera a autorização do download** (`votacao_candidato_munzona_2018.zip`, 395 MB, e as duas prestações de contas, de `cdn.tse.jus.br`, pelo `ferramentas/baixar-tse.mjs`) |
+
+### Decididas em 26/09/2026 — todas pela recomendação, e implementadas
+
+| Decisão | O que entrou |
+|---|---|
+| CPF do fornecedor pessoa física | Guardado mascarado (`***NNNNNN**`), validado com os 11 dígitos só na leitura da fonte. Migração `MascararCpfDoFornecedor`: 5.748 despesas, 325 CPFs, hash de deduplicação recalculado — a fórmula em SQL foi conferida contra o hash do C# nas 790.303 despesas antes. CPF não vai mais à consulta de CNPJ |
+| `REG_TX_001` e passagens | A regra não olha mais passagem (motor versão 6). 2.009 → 942 flags |
+| `REG_KYB_001` e holding | 6462/6463 aceitos no aluguel do Senado. 6.927 → 6.854 flags; o topo do ranking de índice do Senado mudou |
+| Denominador do índice | Cobertura de fornecedor ao lado do índice no ranking e no perfil; abaixo de 50% o parlamentar sai do ranking por índice (fica no de volume). Câmara: 406 de 498 no ranking por índice |
+| "Alerta de compliance:" / "Fator de risco elevado:" | As descrições abrem com o fato. Zero restantes depois da re-varredura |
+| "Prevenção à fraude" na política | Virou "transparência e controle social"; base legal inalterada (art. 7º, IX). Adendo no ADR-0014 |
+| O grafo no celular | Abaixo de `sm` o mapa abre na lista; o desenho fica a um toque |
 
 ## 4. Minhas, pequenas, sem bloqueio
 

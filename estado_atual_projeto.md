@@ -57,7 +57,7 @@ medido. Resumo do que existe na tela hoje:
 |---|---|
 | Parlamentares | **631** — 513 deputados + **118 senadores** (Senado carregado em 25/09) |
 | Despesas | 790.303 · R$ 923.924.734,56 (Câmara 711.796 · Senado 78.507) |
-| Flags | 25.132 · motor **versão 5**, 12 regras + REG_NET_004 na passada de rede |
+| Flags | 23.977 · motor **versão 6** (decisões de 26/09), 12 regras + REG_NET_004 na passada de rede |
 | REG_NET_001 | 76 achados |
 | Candidaturas 2022 ligadas | **540** — 510 deputados e **só 30 senadores** (os de 2018 estão em outro lote do TSE) |
 | Grafo do Estado | 96.658 unidades · 759.351 vínculos de pessoal · 140 cadeiras |
@@ -66,8 +66,8 @@ medido. Resumo do que existe na tela hoje:
 > **A base local agora é a mais completa que existe** — tem tudo o que a Neon tinha e mais. A
 > carga da VPS é um dump dela (roteiro §4); a Neon não serve mais para nada.
 
-**Testes:** backend **1.041** (582 domínio, 132 aplicação, 10 arquitetura, 222 integração,
-95 ponta a ponta) + frontend **306**. Build de produção em contêiner: 982 páginas, ~2,5 min.
+**Testes:** backend **1.055** (595 domínio, 132 aplicação, 10 arquitetura, 223 integração,
+95 ponta a ponta) + frontend **312**. Build de produção em contêiner: 982 páginas, ~2,5 min.
 
 ### 2.3 Rodando local
 
@@ -129,9 +129,9 @@ publica), confiança máxima 0,85, e a tela diz "compatível", nunca "é".
 - **Não coletamos o CPF do parlamentar** (a política de privacidade promete).
 - **CPF dentro de nome** (a razão social do MEI é "NOME 12345678901") é mascarado na criação
   da despesa e do fornecedor (`CpfEmTexto`) — 641 fornecedores e 2.885 despesas em 25/09.
-- **CPF do fornecedor pessoa física** (325, publicados inteiros pela Câmara) sai **sempre
-  mascarado** na tela e na API (`CpfCnpj.Formatado`), mas ainda é **gravado inteiro** —
-  decisão aberta do Gustavo (pendências §3).
+- **CPF do fornecedor pessoa física** (325, publicados inteiros pela Câmara) é validado com os
+  11 dígitos na leitura e **guardado mascarado** (`***NNNNNN**`) desde 26/09 — no banco, no
+  hash de deduplicação e no backup. `CpfCnpj.Numero` de um CPF nunca tem os 11 dígitos.
 - Nome de sócio aparece **só** no bloco "Sócios em comum"; nome de doador, **só** quando ele é
   compatível com sócio de fornecedor pago pelo mesmo parlamentar.
 
@@ -145,7 +145,7 @@ O Senado não publica comprovante.
 Vermelho só para gravidade **alta**. Toda gravidade tem cor + forma + rótulo. Barras de
 composição, escada e votação **não têm cor de alerta** — crescer ou gastar na base não é achado.
 
-### 3.7 As regras do motor (versão 5)
+### 3.7 As regras do motor (versão 6)
 
 Por parlamentar: `REG_KYB_001` a `005`, `REG_TX_001` a `004`, `REG_GEO_002`, `REG_GEO_003`,
 **`REG_NET_001`** (sócio do fornecedor ↔ doador da campanha, uma flag por fornecedor).
@@ -198,11 +198,18 @@ compose.local.yml --env-file <arquivo> ...` a partir de `deploy/` — **o `-p` n
 - ADR-0021: narrativa por IA **só com receita** ≥ 3× o custo projetado, por 3 meses.
 - Publicar o nome do sócio em comum. Baixar e carregar o TSE.
 
+### Tomadas pelo Gustavo em 26/09 — e implementadas
+- Todas as recomendações da auditoria de 25/09, menos a ociosidade: CPF do fornecedor PF
+  mascarado no banco, passagens fora da `REG_TX_001`, holding no aluguel, cobertura de
+  fornecedor com piso de 50% no ranking por índice, descrições sem veredito, "transparência e
+  controle social" na política, grafo que abre na lista no celular. Detalhe no
+  [registro da Etapa 16 §8](docs/registro/etapa-16-empacotamento-e-auditoria.md).
+
 ### Abertas, dele
-- **As nove da auditoria de 25/09** ([pendências §3](docs/pendencias.md)): ociosidade da Oracle
-  (PAYG), CPF do fornecedor PF gravado inteiro, `REG_TX_001` em passagens do Senado,
-  `REG_KYB_001` em aluguel a holding, denominador do índice, "Alerta de compliance" nas
-  descrições, "prevenção à fraude" na política, lote do TSE de 2018, grafo no celular.
+- **Ociosidade da Oracle** (converter para PAYG) — ele avalia depois.
+- **Autorizar o download do TSE de 2018** (liga os senadores eleitos em 2018).
+- **VPS:** A1 ainda sem capacidade; DNS do Registro.br para a Cloudflare; túnel, R2, Email
+  Routing de `privacidade@` ([pendências §1](docs/pendencias.md)).
 - Alerta de "gasto em reduto eleitoral" (o dado existe; pagar fornecedor da base não é achado).
 - `REG_TX_001` no Senado; limites da CEAP 2023–2025 e da CEAPS por UF (`REG_TX_002` segue
   `SemDado`); avaliação de legítimo interesse; revisão jurídica da política.

@@ -40,7 +40,7 @@ conexão de *saída* da VPS até a Cloudflare. Três consequências:
 | Serviço | Para quê | Custo |
 |---|---|---|
 | **Oracle Cloud** | A VPS (Ampere A1, Always Free) | Zero dentro do Always Free |
-| **Registro.br** | `explanando.com.br` | ~R$ 40/ano |
+| **Registro.br** | `explanando.com.br` — os nameservers passam a ser os da Cloudflare | ~R$ 40/ano |
 | **Cloudflare** | DNS, CDN, WAF, **Tunnel** e **R2** (backup) | Zero no plano gratuito; R2 grátis até 10 GB |
 | **healthchecks.io** (opcional, recomendado) | Aviso quando o backup ou a conferência param | Zero no plano gratuito |
 
@@ -59,8 +59,15 @@ Resend, Mercado Pago e INLABS entram com os blocos que dependem deles (Fase 8 e 
 - **Disco de boot:** 100 GB (o Always Free dá 200 GB de block volume no total).
 - **Rede:** IP público efêmero basta — ele só serve para o SSH. Não é preciso reservar IP nem
   abrir 80/443. Na Security List, deixe só a 22, de preferência restrita ao seu IP.
-- **Chave SSH:** a que já existe em `$HOME\.ssh\oracle_explanando`.
+- **Chave SSH:** a que já existe em `$HOME\.ssh\oracle_explanando` — em "Add SSH keys",
+  **"Upload public key files"** com o `.pub` (impressão digital `SHA256:z+6ODvK4…`). A chave
+  que o assistente gera sozinho não é a que está nesta máquina.
 
+> **A Micro (`VM.Standard.E2.1.Micro`) não serve para a produção.** É 1/8 de OCPU e 1 GB,
+> x86: a pilha ociosa já usa ~500 MB, o build do Next não roda em 1 GB, e a varredura mensal
+> se arrastaria. Ela pode ficar (o Always Free permite as duas Micro junto com a A1), mas o
+> site vai na A1.
+>
 > **"Out of capacity for shape VM.Standard.A1.Flex"** é comum em São Paulo. Tentar de madrugada
 > funciona com frequência; converter a conta para Pay As You Go também costuma destravar — ver
 > §9 sobre o que mais essa conversão resolve.
