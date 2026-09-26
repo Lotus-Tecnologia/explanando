@@ -1,3 +1,4 @@
+import { notaDaCobertura } from "@/lib/cobertura";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -203,7 +204,12 @@ export default async function Perfil({
           nota={
             perfil.indiceDeRisco === null
               ? "Menos de 100 despesas: a densidade seria ruído."
-              : "Peso dos achados a cada 100 despesas."
+              : [
+                  "Peso dos achados a cada 100 despesas.",
+                  notaDaCobertura(perfil.coberturaDeFornecedor, perfil.coberturaSuficiente),
+                ]
+                  .filter(Boolean)
+                  .join(" ")
           }
         />
         <Numero

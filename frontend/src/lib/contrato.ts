@@ -59,6 +59,13 @@ export interface ItemDoRanking {
   flagsMedias: number;
   flagsBaixas: number;
   amostraSuficiente: boolean;
+  /**
+   * Fração das despesas com fornecedor identificado, de 0 a 1 — quanto do gasto o índice
+   * descreve. Abaixo de 0,5, `coberturaSuficiente` é falso e o parlamentar sai do ranking por
+   * índice (decisão de 26/09/2026). Ver `lib/cobertura.ts`.
+   */
+  coberturaDeFornecedor: number | null;
+  coberturaSuficiente: boolean;
 }
 
 export interface CoberturaDeRegra {
@@ -127,6 +134,13 @@ export interface PerfilDoParlamentar {
   indiceDeRisco: number | null;
   indiceDeAltas: number | null;
   amostraSuficiente: boolean;
+  /**
+   * Fração das despesas com fornecedor identificado, de 0 a 1 — quanto do gasto o índice
+   * descreve. Abaixo de 0,5, `coberturaSuficiente` é falso e o parlamentar sai do ranking por
+   * índice (decisão de 26/09/2026). Ver `lib/cobertura.ts`.
+   */
+  coberturaDeFornecedor: number | null;
+  coberturaSuficiente: boolean;
 
   flagsAltas: number;
   flagsMedias: number;

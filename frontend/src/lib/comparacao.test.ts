@@ -44,6 +44,8 @@ function perfil(ajustes: Partial<PerfilDoParlamentar> = {}): PerfilDoParlamentar
     indiceDeRisco: 2,
     indiceDeAltas: 0,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
     flagsAltas: 0,
     flagsMedias: 3,
     flagsBaixas: 0,

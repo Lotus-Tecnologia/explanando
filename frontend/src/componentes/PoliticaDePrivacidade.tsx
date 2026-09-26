@@ -3,12 +3,12 @@ import { ENCARREGADO } from "@/lib/site";
 /**
  * A Política de Privacidade.
  *
- * <b>Nota sobre o vocabulário do ADR-0004:</b> a palavra "fraude" aparece aqui de propósito,
- * em "prevenção à fraude". Ela é o termo da própria LGPD para a finalidade que ampara o
- * legítimo interesse do art. 7º, IX — não é imputação sobre um parlamentar nomeado, que é o
- * que o ADR-0004 existe para impedir. É a mesma situação de "desvio padrão", que o documento
- * de Negócios lista como termo *obrigatório* contendo um termo *proibido*. Não "corrija" isto
- * para outra palavra: mudaria a base legal declarada.
+ * <b>A finalidade declarada é "transparência e controle social"</b> — decisão de 26/09/2026
+ * (adendo ao ADR-0014). A versão anterior dizia "prevenção à fraude", sob a ideia de que era o
+ * termo da LGPD para o legítimo interesse. Conferido no texto da lei: a expressão só aparece
+ * no art. 11, II, "g" (dado sensível, em identificação e autenticação de cadastro); o art. 7º,
+ * IX e o art. 10 não a usam. A base legal não muda — continua o art. 7º, IX —, e a finalidade
+ * passa a descrever o que o produto faz, sem a palavra que o ADR-0004 tira de todo o resto.
  */
 
 function Secao({
@@ -114,7 +114,7 @@ export function PoliticaDePrivacidade() {
         <p>
           O tratamento é amparado pelo <strong>legítimo interesse</strong> —{" "}
           <strong>art. 7º, IX</strong> da Lei nº 13.709/2018 —, com as finalidades de{" "}
-          <strong>prevenção à fraude</strong> e de <strong>controle social</strong> do uso de
+          <strong>transparência</strong> e de <strong>controle social</strong> do uso de
           recursos públicos.
         </p>
         <p>

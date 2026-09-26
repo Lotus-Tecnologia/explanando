@@ -43,22 +43,55 @@ export function VistasDoEstado({
 
   const escolhido = poderes?.poderes.find((p) => p.chaveDoPoder === poder) ?? null;
 
+  /*
+    Em tela pequena o mapa abre na LISTA, e o desenho fica a um toque (decisão de
+    26/09/2026). Medido a 375 px na auditoria de 25/09: rótulos de ~5 px e nós de 11 px —
+    ilegível e pequeno demais para o dedo. A troca é por classe de CSS (`hidden sm:block`),
+    e não por medir a tela no navegador, para que o HTML já chegue certo e nada pisque na
+    hidratação. De `sm` para cima nada muda.
+  */
+  const [desenhoNoCelular, setDesenhoNoCelular] = useState(false);
+
   return (
     <div>
       <div className="relative">
         {vista === "instituicoes" ? (
-          <GrafoDoEstado
-            nos={nos}
-            temHistorico={temHistorico}
-            aoEscolherPoder={
-              poderes === null
-                ? undefined
-                : (chave) => {
-                    setPoder(chave);
-                    setVista("poder");
-                  }
-            }
-          />
+          <>
+            {!desenhoNoCelular ? (
+              <div className="rounded-cartao border border-borda-suave bg-surface p-5 text-sm text-texto sm:hidden">
+                <p>
+                  Numa tela pequena, o desenho das instituições fica miúdo demais para ler e
+                  tocar. A{" "}
+                  <a href="#orgaos-e-entidades" className="font-semibold text-titulo underline">
+                    lista de órgãos e entidades
+                  </a>{" "}
+                  traz o mesmo conteúdo.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDesenhoNoCelular(true)}
+                  className="mt-3 rounded-campo border border-borda-estrutural px-3 py-1.5 text-sm font-semibold text-titulo"
+                >
+                  Ver o desenho assim mesmo
+                </button>
+              </div>
+            ) : null}
+
+            <div className={desenhoNoCelular ? "block" : "hidden sm:block"}>
+              <GrafoDoEstado
+                nos={nos}
+                temHistorico={temHistorico}
+                aoEscolherPoder={
+                  poderes === null
+                    ? undefined
+                    : (chave) => {
+                        setPoder(chave);
+                        setVista("poder");
+                      }
+                }
+              />
+            </div>
+          </>
         ) : (
           <div>
             <AbasDePoder mapa={poderes} atual={poder} aoEscolher={(chave) => setPoder(chave)} />

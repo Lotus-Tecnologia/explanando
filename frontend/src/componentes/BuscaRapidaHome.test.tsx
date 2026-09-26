@@ -28,6 +28,8 @@ const parlamentaresMock: ItemDoRanking[] = [
     flagsMedias: 49,
     flagsBaixas: 20,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
   {
     id: "uuid-2",
@@ -45,6 +47,8 @@ const parlamentaresMock: ItemDoRanking[] = [
     flagsMedias: 31,
     flagsBaixas: 24,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
   {
     id: "uuid-3",
@@ -62,6 +66,8 @@ const parlamentaresMock: ItemDoRanking[] = [
     flagsMedias: 10,
     flagsBaixas: 15,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
 ];
 

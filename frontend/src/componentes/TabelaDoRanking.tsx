@@ -1,5 +1,6 @@
 "use client";
 
+import { notaDaCobertura, porcentagemDaCobertura } from "@/lib/cobertura";
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -146,8 +147,26 @@ function Linha({ item, posicao }: Linhado) {
             amostra insuficiente
           </span>
         ) : (
-          <span className="font-semibold text-texto">
-            {formatarDensidade(item.indiceDeRisco)}
+          <span className="flex flex-col items-end">
+            <span className="font-semibold text-texto">
+              {formatarDensidade(item.indiceDeRisco)}
+            </span>
+            {/*
+              Quanto do gasto o índice descreve (decisão de 26/09/2026). Abaixo da metade o
+              parlamentar não disputa posição por índice — a API já o tira dessa ordenação —,
+              e aqui, no ranking de volume, a fração aparece para ninguém comparar os dois
+              números como se medissem a mesma coisa.
+            */}
+            {item.coberturaDeFornecedor !== null ? (
+              <span
+                className={`text-[11px] font-normal ${
+                  item.coberturaSuficiente ? "text-texto-suave" : "text-abstencao-texto"
+                }`}
+                title={notaDaCobertura(item.coberturaDeFornecedor, item.coberturaSuficiente) ?? undefined}
+              >
+                {porcentagemDaCobertura(item.coberturaDeFornecedor)} c/ fornecedor
+              </span>
+            ) : null}
           </span>
         )}
       </td>

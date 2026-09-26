@@ -26,6 +26,8 @@ const MOCK_ITENS: ItemDoRanking[] = [
     flagsMedias: 30,
     flagsBaixas: 10,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
   {
     id: "p2",
@@ -43,6 +45,8 @@ const MOCK_ITENS: ItemDoRanking[] = [
     flagsMedias: 15,
     flagsBaixas: 5,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
   {
     id: "p3",
@@ -60,6 +64,8 @@ const MOCK_ITENS: ItemDoRanking[] = [
     flagsMedias: 5,
     flagsBaixas: 0,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   },
 ];
 

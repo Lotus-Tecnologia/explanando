@@ -45,6 +45,8 @@ function itemDoRanking(indice: number, prefixo = "parlamentar"): ItemDoRanking {
     flagsMedias: 0,
     flagsBaixas: 0,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
   };
 }
 
@@ -252,6 +254,8 @@ function perfil(ajustes: Partial<PerfilDoParlamentar> = {}): PerfilDoParlamentar
     indiceDeRisco: 3.21,
     indiceDeAltas: 0.16,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
     flagsAltas: 2,
     flagsMedias: 20,
     flagsBaixas: 18,

@@ -327,6 +327,8 @@ function doRanking(ajustes: Partial<ItemDoRanking> = {}): ItemDoRanking {
     flagsMedias: 2,
     flagsBaixas: 3,
     amostraSuficiente: true,
+    coberturaDeFornecedor: 1,
+    coberturaSuficiente: true,
     ...ajustes,
   };
 }
@@ -461,6 +463,8 @@ describe("TabelaDoRanking", () => {
         indiceDeRisco: null,
         indiceDeAltas: null,
         amostraSuficiente: false,
+        coberturaDeFornecedor: 1,
+        coberturaSuficiente: true,
       }),
       doRanking({ id: "c", nomeParlamentar: "COM DENSIDADE ALTA", indiceDeRisco: 9 }),
     ];
