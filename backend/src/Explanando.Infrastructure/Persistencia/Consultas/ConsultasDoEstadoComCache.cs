@@ -64,7 +64,10 @@ public sealed class ConsultasDoEstadoComCache(IConsultasDoEstado interno, Hybrid
         int? codigoUnidade = null,
         CancellationToken cancelamento = default) =>
         await cache.GetOrCreateAsync(
-            string.Create(CultureInfo.InvariantCulture, $"estado:serie:{codigoUnidade ?? 0}"),
+            // "todos" e não 0: a rota /estado/0/pessoal não pode ocupar a chave do Estado inteiro.
+            codigoUnidade is { } codigo
+                ? string.Create(CultureInfo.InvariantCulture, $"estado:serie:{codigo}")
+                : "estado:serie:todos",
             (Interno: interno, Codigo: codigoUnidade),
             static (estado, ct) =>
                 new ValueTask<IReadOnlyList<PontoDaSerie>>(
