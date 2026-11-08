@@ -461,5 +461,8 @@ public sealed class ServicoDeColetaTests
         public void Adicionar(Despesa despesa) => _despesas.Add(despesa);
 
         public Task SalvarAsync(CancellationToken c = default) => Task.CompletedTask;
+
+        public Task<int> LigarDespesasSemFornecedorAsync(Guid parlamentarId, CancellationToken c = default) =>
+            Task.FromResult(0);
     }
 }

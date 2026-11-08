@@ -254,6 +254,25 @@ public sealed class ServicoDeIngestaoTests
     }
 
     [Fact]
+    public async Task Despesa_que_ficou_sem_fornecedor_por_falha_e_religada_depois()
+    {
+        // Levantamento de 08/11/2026: uma despesa do Senado ficou com fornecedor_id nulo
+        // embora o fornecedor exista. A consulta falhou na primeira passada; na seguinte a
+        // despesa ja era conhecida pelo hash e era pulada, e nunca ganhava a ligacao.
+        var repositorio = new RepositorioFalso();
+        await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1")]), new CadastroFalso { Explode = true }, repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura);
+
+        await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), Despesa("2")]), new CadastroFalso(), repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura);
+
+        repositorio.Despesas.Count.ShouldBe(2);
+        repositorio.Despesas.ShouldAllBe(d => d.FornecedorId != null);
+    }
+
+    [Fact]
     public async Task Falha_de_enriquecimento_nao_e_cacheada()
     {
         // "Nao deu para consultar" e' diferente de "consultei e nao existe". Cachear a
@@ -437,5 +456,20 @@ public sealed class ServicoDeIngestaoTests
         public void Adicionar(Despesa despesa) => Despesas.Add(despesa);
 
         public Task SalvarAsync(CancellationToken c = default) => Task.CompletedTask;
+
+        public Task<int> LigarDespesasSemFornecedorAsync(Guid parlamentarId, CancellationToken c = default)
+        {
+            var ligadas = 0;
+            foreach (var despesa in Despesas.Where(d => d.ParlamentarId == parlamentarId && d.FornecedorId is null))
+            {
+                if (Fornecedores.Find(f => f.Documento == despesa.DocumentoFornecedor) is { } fornecedor)
+                {
+                    despesa.AssociarFornecedor(fornecedor.Id);
+                    ligadas++;
+                }
+            }
+
+            return Task.FromResult(ligadas);
+        }
     }
 }

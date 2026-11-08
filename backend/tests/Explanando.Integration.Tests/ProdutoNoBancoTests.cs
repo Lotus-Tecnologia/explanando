@@ -1,3 +1,4 @@
+using Explanando.Domain.Fornecedores;
 using System.Globalization;
 using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
@@ -560,6 +561,40 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
             .ObterPerfilAsync(deputado.Id);
 
         perfil!.FornecedoresDistintos.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Despesa_sem_fornecedor_e_ligada_ao_fornecedor_ja_cadastrado()
+    {
+        var deputado = NovoDeputado();
+        var orfa = NovaDespesaDe(deputado.Id, $"orfa-{ProximoIdExterno()}");
+        var fornecedor = Fornecedor.Criar(new NovoFornecedor
+        {
+            Documento = orfa.DocumentoFornecedor,
+            RazaoSocial = "AUTO POSTO BOMTEMPO LTDA",
+        });
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            if (!await escrita.Fornecedores.AnyAsync(f => f.Documento == orfa.DocumentoFornecedor))
+            {
+                escrita.Fornecedores.Add(fornecedor);
+            }
+
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(orfa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using (var ligacao = banco.CriarContexto())
+        {
+            var ligadas = await new Infrastructure.Persistencia.Repositorios.RepositorioDeIngestao(ligacao)
+                .LigarDespesasSemFornecedorAsync(deputado.Id);
+            ligadas.ShouldBe(1);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        (await leitura.Despesas.SingleAsync(d => d.Id == orfa.Id)).FornecedorId.ShouldNotBeNull();
     }
 
     private const int MotorDeRegrasVersao = 2;
