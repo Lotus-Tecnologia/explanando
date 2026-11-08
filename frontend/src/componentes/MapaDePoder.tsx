@@ -152,7 +152,7 @@ function Cadeira({
         )}
 
         {cadeira.curada ? (
-          <p className="mt-1 text-xs font-semibold text-acento">transcrito à mão</p>
+          <p className="mt-1 text-xs font-semibold text-texto-suave">transcrito à mão</p>
         ) : null}
       </figcaption>
     </figure>

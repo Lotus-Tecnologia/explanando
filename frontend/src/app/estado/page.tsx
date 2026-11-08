@@ -72,8 +72,8 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       <section className="border-b border-borda-suave bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
-          <p className="text-xs font-bold text-acento">
-            Estrutura organizacional · dados abertos
+          <p className="text-sm font-semibold text-texto-suave">
+            Estrutura organizacional, em dados abertos
           </p>
 
           <h1 className="mt-3 max-w-3xl font-display text-4xl font-bold tracking-tight text-balance text-titulo sm:text-5xl">

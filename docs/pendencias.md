@@ -34,18 +34,12 @@ credencial do Gustavo:
 | Regra de rate limiting na Cloudflare | §6.2 |
 | `INDEXAVEL=true`, só depois de olhar o site no ar | §10 |
 
-## 2. O banho de UI, parado no meio
+## 2. ~~O banho de UI, parado no meio~~ — fechado na Etapa 2 (08/11/2026)
 
-As etapas de redesenho entregaram cabeçalho com submenu, tema escuro, home com conteúdo,
-painel de distribuição e ranking paginado com ordenação por coluna. **Faltam dois.**
-
-**A página de perfil continua no visual antigo.** É a mais importante das duas: é onde o link
-compartilhado aterrissa. Precisa do retrato grande, dos cartões de número, do display nos
-títulos e do bloco de cobertura no vocabulário novo.
-
-**A revelação progressiva na lista de despesas.** É o padrão que a referência Zoryvn nomeia
-(*progressive reveal*) e a resposta ao problema de densidade: o cidadão vê o essencial, e
-quem quer o detalhe abre.
+O redesenho inteiro foi para a direção C, "cidadão", escolhida pelo Gustavo em 08/11. O
+perfil ganhou resumo de primeira tela e seções que abrem sob demanda (de 13.950px para
+5.939px no celular), e a lista de despesas virou revelação progressiva com `<details>`
+nativo. O registro está em `docs/registro/etapa-2-redesenho-direcao-c.md`.
 
 ## 3. Decisões que são suas
 
