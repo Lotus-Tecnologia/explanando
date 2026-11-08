@@ -70,16 +70,46 @@ public sealed class DespesaTests
     }
 
     [Fact]
-    public void Rejeita_glosa_inconsistente_com_os_valores()
+    public void Glosa_dentro_da_precisao_da_origem_e_aceita()
     {
-        var erro = Should.Throw<ArgumentException>(() => Despesa.Criar(Real(b =>
+        // A Camara publica valores com 6 digitos significativos: acima de R$ 10 mil o
+        // centavo some do documento e do liquido, mas a glosa vem com 2 casas.
+        var despesa = Despesa.Criar(Real(b =>
         {
-            b.ValorDocumento = 100m;
-            b.ValorLiquido = 90m;
-            b.ValorGlosa = 50m;   // deveria ser 10
-        })));
+            b.ValorDocumento = 10698.1m;
+            b.ValorLiquido = 10463.5m;
+            b.ValorGlosa = 234.62m;
+        }));
 
-        erro.Message.ShouldContain("glosa");
+        despesa.ValorGlosa.ShouldBe(234.62m);
+    }
+
+    [Fact]
+    public void Glosa_incoerente_alem_da_precisao_entra_como_desconhecida()
+    {
+        // Rejeitar tirava a despesa inteira do volume. A glosa que nao fecha vira
+        // "a origem nao informa de forma confiavel" (ADR-0012), e o gasto fica.
+        var despesa = Despesa.Criar(Real(b =>
+        {
+            b.ValorDocumento = 16291m;
+            b.ValorLiquido = 7028.39m;
+            b.ValorGlosa = 11m;
+        }));
+
+        despesa.ValorLiquido.ShouldBe(7028.39m);
+        despesa.ValorGlosa.ShouldBeNull();
+        despesa.GlosaConhecida.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(9999.99, 0.01)]
+    [InlineData(10000, 0.1)]
+    [InlineData(99999.9, 0.1)]
+    [InlineData(100000, 1)]
+    [InlineData(-12000, 0.1)]
+    public void Precisao_da_origem_tem_seis_digitos_significativos(decimal valor, decimal precisao)
+    {
+        Despesa.PrecisaoDaOrigem(valor).ShouldBe(precisao);
     }
 
     // ------------------------------------------------------------------
@@ -255,6 +285,31 @@ public sealed class DespesaTests
         var segunda = Despesa.Criar(Real(b => b.Parcela = 1));
 
         segunda.HashUnico.ShouldNotBe(primeira.HashUnico);
+    }
+
+    [Fact]
+    public void Hash_da_passagem_sigepa_nao_depende_do_documento_do_fornecedor()
+    {
+        // A15 (08/11/2026): a Camara publicava a passagem SIGEPA sem documento e passou a
+        // publicar o CNPJ da companhia. Com o documento no hash, a recoleta trazia as
+        // 184.280 passagens da base de novo, como despesas novas.
+        static Despesa Passagem(string documento) => Despesa.Criar(Real(b =>
+        {
+            b.TipoDespesa = "PASSAGEM AÉREA - SIGEPA";
+            b.DocumentoFornecedor = CpfCnpj.Criar(documento);
+        }));
+
+        Passagem("").CodigoTipoDespesa.ShouldNotBe(CatalogoDeTiposDeDespesa.NaoCatalogado);
+        Passagem("").HashUnico.ShouldBe(Passagem("36826246000164").HashUnico);
+    }
+
+    [Fact]
+    public void Hash_das_outras_despesas_continua_dependendo_do_documento()
+    {
+        var uma = Despesa.Criar(Real(b => b.DocumentoFornecedor = CpfCnpj.Criar("36826246000164")));
+        var outra = Despesa.Criar(Real(b => b.DocumentoFornecedor = CpfCnpj.Criar("11222333000181")));
+
+        uma.HashUnico.ShouldNotBe(outra.HashUnico);
     }
 
     [Fact]

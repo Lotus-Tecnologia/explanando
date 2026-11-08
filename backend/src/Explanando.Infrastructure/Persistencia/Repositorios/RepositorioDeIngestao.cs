@@ -63,4 +63,20 @@ public sealed class RepositorioDeIngestao(ExplanandoDbContext contexto) : IRepos
 
     public Task SalvarAsync(CancellationToken cancelamento = default) =>
         contexto.SaveChangesAsync(cancelamento);
+
+    public Task<int> LigarDespesasSemFornecedorAsync(
+        Guid parlamentarId,
+        CancellationToken cancelamento = default) =>
+        contexto.Despesas
+            .Where(despesa => despesa.ParlamentarId == parlamentarId
+                && despesa.FornecedorId == null
+                && contexto.Fornecedores.Any(fornecedor => fornecedor.Documento == despesa.DocumentoFornecedor))
+            .ExecuteUpdateAsync(
+                atualizacao => atualizacao.SetProperty(
+                    despesa => despesa.FornecedorId,
+                    despesa => contexto.Fornecedores
+                        .Where(fornecedor => fornecedor.Documento == despesa.DocumentoFornecedor)
+                        .Select(fornecedor => (Guid?)fornecedor.Id)
+                        .First()),
+                cancelamento);
 }

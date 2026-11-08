@@ -186,6 +186,29 @@ public sealed class RegrasDeTransacaoEGeografiaTests
             .ShouldBeEmpty("variacao de centavos ja descaracteriza o repasse fixo");
     }
 
+    [Fact]
+    public void Padrao_mensal_se_abstem_na_camara_acima_de_dez_mil()
+    {
+        // A Camara publica valores acima de R$ 10 mil sem centavo (seis digitos
+        // significativos): "sem variacao de centavos" ali seria afirmar o que a fonte apagou.
+        new CenarioDeAvaliacao()
+            .ComFornecedor()
+            .ComSerieMensal(18_970.4m, primeiroMes: 3, quantidadeDeMeses: 3)
+            .Rodar(new RegraPadraoMensalIdentico())
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Padrao_mensal_continua_no_senado_acima_de_dez_mil()
+    {
+        new CenarioDeAvaliacao()
+            .ParlamentarDoSenado()
+            .ComFornecedor()
+            .ComSerieMensal(18_970.4m, primeiroMes: 3, quantidadeDeMeses: 3)
+            .Rodar(new RegraPadraoMensalIdentico())
+            .Count.ShouldBe(1);
+    }
+
     // =====================================================================
     //  REG_TX_004 — pico de consumo
     // =====================================================================
@@ -271,6 +294,21 @@ public sealed class RegrasDeTransacaoEGeografiaTests
     }
 
     [Fact]
+    public void Fora_da_base_emite_uma_flag_por_fornecedor()
+    {
+        var cenario = new CenarioDeAvaliacao().ParlamentarDe("AP").ComFornecedor(uf: "GO");
+        cenario.ComDespesa(2_500m, mes: 3).ComDespesa(3_000m, mes: 4).ComDespesa(1_000m, mes: 5);
+        var contexto = cenario.Construir();
+
+        var flags = new RegraGastoForaDaBaseEleitoral().Avaliar(contexto).ToList();
+
+        flags.Count.ShouldBe(1);
+        flags[0].DespesaId.ShouldBe(contexto.Despesas.MaxBy(d => d.ValorLiquido)!.Id);
+        flags[0].Descricao.ShouldContain("3 despesas");
+        flags[0].Descricao.ShouldContain("R$ 6.500,00");
+    }
+
+    [Fact]
     public void Fora_da_base_se_cala_na_propria_uf()
     {
         new CenarioDeAvaliacao()
@@ -303,6 +341,46 @@ public sealed class RegrasDeTransacaoEGeografiaTests
             .ComDespesa(2_500m, tipo: CenarioDeAvaliacao.Consultoria)
             .Rodar(new RegraGastoForaDaBaseEleitoral())
             .ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("MANUTENÇÃO DE ESCRITÓRIO DE APOIO À ATIVIDADE PARLAMENTAR", false)]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE AERONAVES", false)]
+    [InlineData("Aquisição de material de consumo para uso no escritório político, inclusive aquisição ou locação de software, despesas postais, aquisição de publicações, locação de móveis e de equipamentos.", true)]
+    public void Fora_da_base_se_cala_para_rubrica_que_nao_e_presencial(string tipo, bool senado)
+    {
+        // Levantamento de 08/11/2026: "MANUTEN" e "LOCA" pegavam software, administradora
+        // de imoveis e frete de aeronave — 943 flags sobre compra que nao exige presenca.
+        var cenario = new CenarioDeAvaliacao();
+        if (senado)
+        {
+            cenario.ParlamentarDoSenado("AP");
+        }
+
+        cenario
+            .ComFornecedor(uf: "SP", cnaePrincipal: "6204000")
+            .ComDespesa(2_500m, tipo: tipo)
+            .Rodar(new RegraGastoForaDaBaseEleitoral())
+            .ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE VEÍCULOS AUTOMOTORES", false)]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE EMBARCAÇÕES", false)]
+    [InlineData("Locomoção, hospedagem, alimentação, combustíveis e lubrificantes", true)]
+    public void Fora_da_base_continua_para_rubrica_presencial(string tipo, bool senado)
+    {
+        var cenario = new CenarioDeAvaliacao();
+        if (senado)
+        {
+            cenario.ParlamentarDoSenado("AP");
+        }
+
+        cenario
+            .ComFornecedor(uf: "GO")
+            .ComDespesa(2_500m, tipo: tipo)
+            .Rodar(new RegraGastoForaDaBaseEleitoral())
+            .Count.ShouldBe(1);
     }
 
     [Fact]

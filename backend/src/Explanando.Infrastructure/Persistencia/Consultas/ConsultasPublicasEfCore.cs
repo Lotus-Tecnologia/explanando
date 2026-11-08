@@ -209,9 +209,12 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
+        // O documento vazio (passagem da Camara) nao e' fornecedor: contava +1 em 500 perfis.
+        var documentoVazio = CpfCnpj.Criar(string.Empty);
         var fornecedoresDistintos = await contexto.Despesas
             .AsNoTracking()
-            .Where(despesa => despesa.ParlamentarId == parlamentarId)
+            .Where(despesa => despesa.ParlamentarId == parlamentarId
+                && despesa.DocumentoFornecedor != documentoVazio)
             .Select(despesa => despesa.DocumentoFornecedor)
             .Distinct()
             .CountAsync(cancelamento)
@@ -951,6 +954,11 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
         if (cobertura.DadoAusente.HasFlag(DadoExigido.NaturezaDaDespesa))
         {
             faltando.Add("a rubrica junta estadia com combustível e não diz qual dos dois foi");
+        }
+
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.CentavosDoValor))
+        {
+            faltando.Add("a Câmara publica valores acima de R$ 10 mil sem os centavos");
         }
 
         if (faltando.Count == 0)

@@ -37,6 +37,12 @@ public interface IRepositorioDeIngestao
     void Adicionar(Despesa despesa);
 
     Task SalvarAsync(CancellationToken cancelamento = default);
+
+    /// <summary>
+    /// Liga ao fornecedor ja cadastrado as despesas do parlamentar que ficaram sem ele
+    /// (consulta que falhou numa passada anterior). Devolve quantas ligou.
+    /// </summary>
+    Task<int> LigarDespesasSemFornecedorAsync(Guid parlamentarId, CancellationToken cancelamento = default);
 }
 
 /// <summary>Uma despesa que a fonte trouxe mas que nao pode ser gravada, e por que.</summary>
@@ -87,9 +93,12 @@ public sealed class ServicoDeIngestao(
     IFonteDeCadastroEmpresarial fonteDeCadastro,
     IRepositorioDeIngestao repositorio)
 {
+    /// <param name="teto">Ultima competencia aceita; nulo aceita tudo. Para recoletar uma base
+    /// congelada sem dar a alguns parlamentares meses que os outros nao tem.</param>
     public async Task<ResultadoDaIngestao> IngerirDeputadoAsync(
         DeputadoDaFonte deputado,
         int legislatura,
+        Competencia? teto = null,
         CancellationToken cancelamento = default)
     {
         ArgumentNullException.ThrowIfNull(deputado);
@@ -127,6 +136,11 @@ public sealed class ServicoDeIngestao(
             {
                 // Uma nota malformada nao pode derrubar a coleta das outras.
                 rejeitadas.Add(new DespesaRejeitada(bruta.CodigoDocumento, erro.Message));
+                continue;
+            }
+
+            if (teto is { } limite && despesa.Competencia > limite)
+            {
                 continue;
             }
 
@@ -168,6 +182,10 @@ public sealed class ServicoDeIngestao(
         }
 
         await repositorio.SalvarAsync(cancelamento).ConfigureAwait(false);
+
+        // A despesa conhecida e' pulada pelo hash; se a consulta do fornecedor dela falhou
+        // numa passada anterior, so' aqui ela ganha a ligacao (levantamento de 08/11/2026).
+        await repositorio.LigarDespesasSemFornecedorAsync(parlamentar.Id, cancelamento).ConfigureAwait(false);
 
         if (vindasDaFonte == 0 && deputado.EmExercicio)
         {

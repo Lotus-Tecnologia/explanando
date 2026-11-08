@@ -191,12 +191,30 @@ public sealed class Despesa : Entidade
     /// </summary>
     public decimal ValorParaScore => ValorLiquido;
 
+    /// <summary>
+    /// O passo do valor como a Camara o publica: seis digitos significativos. Acima de
+    /// R$ 10 mil o centavo nao existe na origem; acima de R$ 100 mil, nem o decimo.
+    /// </summary>
+    public static decimal PrecisaoDaOrigem(decimal valor)
+    {
+        var precisao = 0.01m;
+
+        for (var limite = 10_000m; Math.Abs(valor) >= limite; limite *= 10m)
+        {
+            precisao *= 10m;
+        }
+
+        return precisao;
+    }
+
     public static Despesa Criar(NovaDespesa dados)
     {
         ArgumentNullException.ThrowIfNull(dados);
 
         // Nulo e' "a origem nao informa" e passa direto: nao ha o que validar sobre um
         // numero que ninguem publicou.
+        var glosaConfiavel = dados.ValorGlosa;
+
         if (dados.ValorGlosa is { } glosa)
         {
             // Valor negativo e' estorno e e' dado legitimo — ver EhEstorno. So' a glosa
@@ -209,14 +227,16 @@ public sealed class Despesa : Entidade
             // valores sao negativos e a aritmetica de corte nao se aplica.
             var ehLancamentoComum = dados.ValorDocumento >= 0m && dados.ValorLiquido >= 0m;
 
+            // A tolerancia segue a precisao que a origem publica (ver PrecisaoDaOrigem).
+            // Fora dela a glosa nao fecha e entra como desconhecida: rejeitar tirava a
+            // despesa inteira do volume (146 em 78 deputados, levantamento de 08/11/2026).
+            var tolerancia = (PrecisaoDaOrigem(dados.ValorDocumento)
+                + PrecisaoDaOrigem(dados.ValorLiquido)) / 2m + 0.01m;
+
             if (ehLancamentoComum && glosa != 0m
-                && Math.Abs(glosaEsperada - glosa) > 0.01m)
+                && Math.Abs(glosaEsperada - glosa) > tolerancia)
             {
-                throw new ArgumentException(
-                    $"Valor de glosa inconsistente: documento {dados.ValorDocumento} menos "
-                    + $"liquido {dados.ValorLiquido} da {glosaEsperada}, mas a origem "
-                    + $"informou {glosa}.",
-                    nameof(dados));
+                glosaConfiavel = null;
             }
         }
 
@@ -233,7 +253,7 @@ public sealed class Despesa : Entidade
             DataDocumento = dados.DataDocumento,
             ValorDocumento = dados.ValorDocumento,
             ValorLiquido = dados.ValorLiquido,
-            ValorGlosa = dados.ValorGlosa,
+            ValorGlosa = glosaConfiavel,
             CodigoLote = dados.CodigoLote,
             Parcela = dados.Parcela,
         };
@@ -280,12 +300,25 @@ public sealed class Despesa : Entidade
     /// nome de fornecedor e URL do documento mudam sem que a despesa seja outra, e se
     /// entrassem aqui uma correcao na origem viraria duplicata no banco.
     /// </summary>
+    /// <summary>
+    /// A15 (08/11/2026): a Camara publicava a passagem SIGEPA sem documento do fornecedor e
+    /// passou a publicar o CNPJ da companhia. Fora do hash nessa rubrica, a passagem ja
+    /// conhecida continua conhecida — as 184.280 da base foram gravadas com documento vazio,
+    /// entao o hash delas nao muda.
+    /// </summary>
+    private static readonly short CodigoDaPassagemSigepa =
+        CatalogoDeTiposDeDespesa.CodigoDe("PASSAGEM AÉREA - SIGEPA");
+
     private static byte[] CalcularHash(Despesa despesa)
     {
+        var documento = despesa.CodigoTipoDespesa == CodigoDaPassagemSigepa
+            ? string.Empty
+            : despesa.DocumentoFornecedor.Numero;
+
         var partes = string.Join(
             '|',
             despesa.ParlamentarId.ToString("N", CultureInfo.InvariantCulture),
-            despesa.DocumentoFornecedor.Numero,
+            documento,
             despesa.CodigoDocumento,
             despesa.NumeroDocumento,
             despesa.Competencia.ToString(),

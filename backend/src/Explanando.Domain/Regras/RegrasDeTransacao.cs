@@ -1,6 +1,7 @@
 using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
 using Explanando.Domain.Despesas;
+using Explanando.Domain.Parlamentares;
 
 namespace Explanando.Domain.Regras;
 
@@ -69,9 +70,10 @@ public sealed class RegraFracionamento : IRegraAnomalia
 /// <summary>
 /// REG_TX_002 — o gasto do mes encosta no teto da cota da UF do parlamentar.
 ///
-/// Se abstem quando o periodo nao esta coberto pela tabela de limites: as despesas de 2023
-/// a 2025 ainda nao tem teto configurado, e compara-las ao teto de 2026 seria inventar
-/// referencia.
+/// Se abstem quando o periodo nao esta coberto pela tabela de limites. Hoje isso e' sempre:
+/// a tabela nao e' semeada porque o valor mensal da CEAP nao e' teto do mes (o saldo
+/// acumula no exercicio) — ver <c>SementeDeLimitesCota</c>. A regra so' volta a falar
+/// redesenhada sobre o acumulado anual.
 /// </summary>
 public sealed class RegraGastoNoTetoDaCota : IRegraAnomalia
 {
@@ -80,8 +82,7 @@ public sealed class RegraGastoNoTetoDaCota : IRegraAnomalia
     public string Descricao => "Gasto mensal próximo do teto da cota da UF.";
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
-    // So' 17% das despesas da base real caem num periodo com teto configurado. A tabela
-    // da CEAP cobre 2026 em diante; 2023 a 2025 ainda nao.
+    // Sem teto configurado nao ha com o que comparar — e hoje nenhum periodo tem.
     public DadoExigido Exige =>
         DadoExigido.TetoDaCota;
 
@@ -136,9 +137,9 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
     // Serie historica do proprio parlamentar, por fornecedor — sem o documento do
-    // fornecedor nao ha serie a montar.
+    // fornecedor nao ha serie a montar. E "ao centavo" exige que a origem publique o centavo.
     public DadoExigido Exige =>
-        DadoExigido.DocumentoDoFornecedor;
+        DadoExigido.DocumentoDoFornecedor | DadoExigido.CentavosDoValor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
@@ -148,7 +149,9 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
 
         var grupos = contexto.Despesas
             .Where(despesa => !despesa.DocumentoFornecedor.EhVazio
-                && despesa.ValorLiquido >= parametros.ValorMinimoParaPadraoMensal)
+                && despesa.ValorLiquido >= parametros.ValorMinimoParaPadraoMensal
+                && (contexto.Parlamentar.Tipo == TipoParlamentar.Senador
+                    || Despesa.PrecisaoDaOrigem(despesa.ValorLiquido) == 0.01m))
             .GroupBy(despesa => (despesa.DocumentoFornecedor.Numero, despesa.ValorLiquido));
 
         foreach (var grupo in grupos)

@@ -47,6 +47,7 @@ Um arquivo por etapa, nomeado `etapa-NN-nome.md`, com as seções:
 | 14 | O mapa de poder — 139 cadeiras de comando, de quatro fontes | ✅ Concluída | [etapa-14-mapa-de-poder.md](etapa-14-mapa-de-poder.md) |
 | 15 | O plano de execução, fases 1 a 6, e a auditoria tela a tela | ✅ Concluída | [etapa-15-plano-de-execucao.md](etapa-15-plano-de-execucao.md) |
 | 16 | O servidor empacotado, o Senado na base, a segunda auditoria e o card | ✅ Concluída | [etapa-16-empacotamento-e-auditoria.md](etapa-16-empacotamento-e-auditoria.md) |
+| 17 | Revisão das regras, dos valores e dos bugs do motor (motor 7) | ✅ Concluída | [etapa-17-revisao-das-regras.md](etapa-17-revisao-das-regras.md) |
 
 ## Incidentes
 

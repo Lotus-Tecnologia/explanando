@@ -588,6 +588,121 @@ switch (comando)
             return 0;
         }
 
+    case "recoletar-rejeitadas":
+        {
+            // So' os deputados com despesa rejeitada no checkpoint, e so' ate a competencia
+            // --ate (AAAAMM): a glosa da Camara passou a ser conferida pela precisao da
+            // origem (08/11/2026) e as rejeitadas agora entram, sem dar a esses deputados
+            // meses que o resto da base congelada nao tem.
+            //
+            // A primeira rodada (08/11/2026) duplicou 28.630 passagens SIGEPA: a Camara passou
+            // a publicar o CNPJ nelas e o documento estava no hash. Corrigido no hash (A15,
+            // ver docs/registro/etapa-17-revisao-das-regras.md).
+            var ate = LerInteiro("--ate")
+                ?? throw new InvalidOperationException("Informe --ate AAAAMM.");
+            var teto = Competencia.Criar(ate / 100, ate % 100);
+
+            var comRejeicao = (await contexto.CheckpointsDeIngestao
+                .AsNoTracking()
+                .Where(checkpoint => checkpoint.Legislatura == legislatura
+                    && checkpoint.DespesasRejeitadas > 0)
+                .Select(checkpoint => checkpoint.IdExternoParlamentar)
+                .ToListAsync()
+                .ConfigureAwait(false))
+                .ToHashSet();
+
+            var ingestao = servicos.GetRequiredService<ServicoDeIngestao>();
+            int visitados = 0, novas = 0, aindaRejeitadas = 0;
+
+            await foreach (var deputado in servicos.GetRequiredService<IFonteDeParlamentares>()
+                .ListarDeputadosAsync()
+                .ConfigureAwait(false))
+            {
+                if (!comRejeicao.Contains(deputado.IdExterno))
+                {
+                    continue;
+                }
+
+                ResultadoDaIngestao resultado;
+
+                try
+                {
+                    resultado = await ingestao
+                        .IngerirDeputadoAsync(deputado, legislatura, teto)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception erro) when (erro is not OperationCanceledException)
+                {
+                    // Como na coleta: um deputado que falha nao derruba os outros; rodar de
+                    // novo e' seguro, o hash nao deixa duplicar.
+                    Console.Error.WriteLine($"Deputado {deputado.IdExterno}: {erro.GetBaseException().Message}");
+                    continue;
+                }
+
+                visitados++;
+                novas += resultado.DespesasNovas;
+                aindaRejeitadas += resultado.Rejeitadas.Count;
+            }
+
+            Console.WriteLine($"Deputados com rejeicao: {comRejeicao.Count}; visitados: {visitados}; "
+                + $"despesas novas ate {teto}: {novas}; ainda rejeitadas: {aindaRejeitadas}.");
+            return 0;
+        }
+
+    case "reconsultar-mei":
+        {
+            // Uma vez, para a base que ja existia: as datas da opcao pelo MEI eram
+            // descartadas na ingestao ate 08/11/2026. Fornecedor novo ja entra com elas.
+            var cadastro = servicos.GetRequiredService<IFonteDeCadastroEmpresarial>();
+            var meis = await contexto.Fornecedores
+                .Where(fornecedor => fornecedor.OptantePeloMei == true
+                    && fornecedor.DataOpcaoPeloMei == null)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            int comData = 0, semResposta = 0;
+
+            var vistos = 0;
+
+            foreach (var fornecedor in meis)
+            {
+                EmpresaDaFonte? empresa;
+
+                try
+                {
+                    empresa = await cadastro.ConsultarAsync(fornecedor.Documento.Numero).ConfigureAwait(false);
+                }
+                catch (HttpRequestException)
+                {
+                    // Falha transitoria da fonte: fica sem data e a proxima execucao tenta de novo.
+                    empresa = null;
+                }
+
+                if (empresa is null)
+                {
+                    semResposta++;
+                }
+                else
+                {
+                    fornecedor.RegistrarDatasDoMei(
+                        empresa.OptantePeloMei, empresa.DataOpcaoPeloMei, empresa.DataExclusaoDoMei);
+                    comData += empresa.DataOpcaoPeloMei is null ? 0 : 1;
+                }
+
+                // Salva aos poucos: uma queda no meio nao perde o que ja foi consultado.
+                if (++vistos % 50 == 0)
+                {
+                    await contexto.SaveChangesAsync().ConfigureAwait(false);
+                }
+            }
+
+            await contexto.SaveChangesAsync().ConfigureAwait(false);
+
+            Console.WriteLine($"MEI reconsultados: {meis.Count}; com data da opcao: {comData}; "
+                + $"sem resposta da fonte: {semResposta}.");
+            return 0;
+        }
+
     case "varrer":
         {
             var varredura = servicos.GetRequiredService<ServicoDeVarredura>();
@@ -815,6 +930,9 @@ switch (comando)
               dotnet run -- coletar [--legislatura 57] [--limite N]
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
+              dotnet run -- reconsultar-mei            datas da opcao pelo MEI na BrasilAPI
+              dotnet run -- recoletar-rejeitadas --ate AAAAMM
+                                                          so' os deputados com despesa rejeitada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
               dotnet run -- coletar-cadeiras [--se-vencido]

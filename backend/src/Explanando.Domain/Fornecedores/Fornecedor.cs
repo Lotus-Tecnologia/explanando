@@ -40,6 +40,8 @@ public sealed record NovoFornecedor
     public DateOnly? DataSituacaoCadastral { get; init; }
     public DateOnly? DataInicioAtividade { get; init; }
     public bool? OptantePeloMei { get; init; }
+    public DateOnly? DataOpcaoPeloMei { get; init; }
+    public DateOnly? DataExclusaoDoMei { get; init; }
     public string? Porte { get; init; }
     public EnderecoFornecedor Endereco { get; init; } = new();
 }
@@ -86,6 +88,12 @@ public sealed class Fornecedor : Entidade
     /// </summary>
     public bool? OptantePeloMei { get; private set; }
 
+    /// <summary>Desde quando e' (ou foi) MEI. A BrasilAPI publica; antes de 08/11/2026 era descartada.</summary>
+    public DateOnly? DataOpcaoPeloMei { get; private set; }
+
+    /// <summary>Quando deixou de ser MEI. Nulo enquanto continua.</summary>
+    public DateOnly? DataExclusaoDoMei { get; private set; }
+
     public string? Porte { get; private set; }
 
     public EnderecoFornecedor Endereco { get; private set; }
@@ -95,6 +103,28 @@ public sealed class Fornecedor : Entidade
     public bool EhMei => OptantePeloMei == true;
 
     public bool OpcaoPeloMeiConhecida => OptantePeloMei.HasValue;
+
+    /// <summary>
+    /// Se era MEI naquela data. Nulo quando nao ha como saber: optante sem a data da opcao
+    /// ou opcao desconhecida. A opcao de hoje nao diz nada sobre um pagamento de 2023.
+    /// </summary>
+    public bool? EraMeiEm(DateOnly data)
+    {
+        if (DataOpcaoPeloMei is not { } opcao)
+        {
+            return OptantePeloMei == false ? false : null;
+        }
+
+        return data >= opcao && (DataExclusaoDoMei is not { } exclusao || data <= exclusao);
+    }
+
+    /// <summary>Reconsulta do cadastro: so' a opcao pelo MEI e as suas datas.</summary>
+    public void RegistrarDatasDoMei(bool? optante, DateOnly? opcao, DateOnly? exclusao)
+    {
+        OptantePeloMei = optante;
+        DataOpcaoPeloMei = opcao;
+        DataExclusaoDoMei = exclusao;
+    }
 
     public static Fornecedor Criar(NovoFornecedor dados)
     {
@@ -119,6 +149,8 @@ public sealed class Fornecedor : Entidade
             DataSituacaoCadastral = dados.DataSituacaoCadastral,
             DataInicioAtividade = dados.DataInicioAtividade,
             OptantePeloMei = dados.OptantePeloMei,
+            DataOpcaoPeloMei = dados.DataOpcaoPeloMei,
+            DataExclusaoDoMei = dados.DataExclusaoDoMei,
             Porte = dados.Porte?.Trim(),
             Endereco = NormalizarEndereco(dados.Endereco),
         };

@@ -14,9 +14,10 @@ namespace Explanando.Domain.Auditoria;
 /// custo irrelevante para a única coisa que distingue <b>"avaliei e está limpo"</b> de
 /// <b>"não tive como avaliar"</b>.</para>
 ///
-/// <para>Na base real isso não é hipótese: <c>REG_TX_002</c> ficou em zero nas 711.796
-/// despesas porque a tabela de limites da CEAP só cobre 2026. Publicar esse zero como
-/// silêncio conclusivo seria o produto afirmando mais do que sabe.</para>
+/// <para>Na base real isso não é hipótese: <c>REG_TX_002</c> fica em zero em todas as
+/// despesas porque a tabela de limites da CEAP não é aplicada (ver
+/// <c>SementeDeLimitesCota</c>). Publicar esse zero como silêncio conclusivo seria o
+/// produto afirmando mais do que sabe.</para>
 /// </summary>
 public sealed class CoberturaDoParlamentar : Entidade
 {

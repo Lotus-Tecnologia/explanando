@@ -198,7 +198,7 @@ public sealed class ServicoDeColeta(
             try
             {
                 resultado = await ingestao
-                    .IngerirDeputadoAsync(deputado, legislatura, cancelamento)
+                    .IngerirDeputadoAsync(deputado, legislatura, cancelamento: cancelamento)
                     .ConfigureAwait(false);
             }
             catch (Exception erro) when (erro is not OperationCanceledException)

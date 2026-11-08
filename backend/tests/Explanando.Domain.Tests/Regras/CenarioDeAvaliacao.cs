@@ -75,7 +75,9 @@ internal sealed class CenarioDeAvaliacao
         DateOnly? dataSituacao = null,
         DateOnly? dataAbertura = null,
         bool? optantePeloMei = null,
-        string uf = "GO")
+        string uf = "GO",
+        DateOnly? opcaoPeloMei = null,
+        DateOnly? exclusaoDoMei = null)
     {
         _fornecedores.Add(Fornecedor.Criar(new NovoFornecedor
         {
@@ -87,6 +89,8 @@ internal sealed class CenarioDeAvaliacao
             DataSituacaoCadastral = dataSituacao ?? new DateOnly(2005, 9, 24),
             DataInicioAtividade = dataAbertura ?? new DateOnly(1991, 7, 23),
             OptantePeloMei = optantePeloMei,
+            DataOpcaoPeloMei = opcaoPeloMei,
+            DataExclusaoDoMei = exclusaoDoMei,
             Endereco = new EnderecoFornecedor { Uf = uf, Municipio = "GOIANIA" },
         }));
 

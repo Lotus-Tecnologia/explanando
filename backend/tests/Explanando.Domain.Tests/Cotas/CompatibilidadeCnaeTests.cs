@@ -136,6 +136,19 @@ public sealed class CompatibilidadeCnaeTests
     }
 
     [Theory]
+    [InlineData("4520005", "troca de oleo em oficina")]
+    [InlineData("4530703", "lubrificante em autopecas")]
+    [InlineData("4612500", "posto registrado como representante de combustivel")]
+    public void Combustivel_aceita_familias_de_lubrificante(string cnae, string caso)
+    {
+        // Levantamento de 08/11/2026: ~792 flags de combustivel na Camara caiam nestes
+        // ramos, que a rubrica do Senado ja aceitava.
+        CompatibilidadeCnae
+            .Avaliar("COMBUSTÍVEIS E LUBRIFICANTES.", [cnae])
+            .ShouldBe(ResultadoDeCompatibilidade.Compativel, caso);
+    }
+
+    [Theory]
     [InlineData("8112500", "condominio e administracao predial — 1.638 despesas sinalizadas")]
     [InlineData("8011101", "vigilancia do predio — 201")]
     [InlineData("4321500", "instalacoes eletricas — 141")]

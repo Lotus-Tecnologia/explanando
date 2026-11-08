@@ -84,6 +84,8 @@ public sealed record EmpresaDaFonte
     public DateOnly? DataSituacaoCadastral { get; init; }
     public DateOnly? DataInicioAtividade { get; init; }
     public bool? OptantePeloMei { get; init; }
+    public DateOnly? DataOpcaoPeloMei { get; init; }
+    public DateOnly? DataExclusaoDoMei { get; init; }
     public string? Porte { get; init; }
     public string? Logradouro { get; init; }
     public string? Numero { get; init; }

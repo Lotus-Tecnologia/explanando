@@ -3,6 +3,8 @@ using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Fornecedores;
 
+using Explanando.Domain.Parlamentares;
+
 namespace Explanando.Domain.Regras;
 
 /// <summary>
@@ -65,6 +67,12 @@ public enum DadoExigido
     /// locomoção, hospedagem, alimentação e combustível: ali não se sabe se foi hotel ou posto.
     /// </summary>
     NaturezaDaDespesa = 2048,
+
+    /// <summary>
+    /// O valor traz os centavos. A Câmara publica com seis dígitos significativos: de
+    /// R$ 10 mil para cima o centavo não existe na origem (levantamento de 08/11/2026).
+    /// </summary>
+    CentavosDoValor = 4096,
 }
 
 /// <summary>O que aconteceu com uma regra numa passada.</summary>
@@ -226,6 +234,12 @@ internal static class DisponibilidadeDeDados
             disponivel |= DadoExigido.DocumentoDoFornecedor;
         }
 
+        if (contexto.Parlamentar.Tipo == TipoParlamentar.Senador
+            || Despesa.PrecisaoDaOrigem(despesa.ValorLiquido) == 0.01m)
+        {
+            disponivel |= DadoExigido.CentavosDoValor;
+        }
+
         if (!TiposPresenciais.EhRubricaAmbigua(despesa.TipoDespesa))
         {
             disponivel |= DadoExigido.NaturezaDaDespesa;
@@ -254,8 +268,9 @@ internal static class DisponibilidadeDeDados
             disponivel |= DadoExigido.AberturaDoFornecedor;
         }
 
-        // Nulo em 65% da base real: a BrasilAPI só informa quando sabe.
-        if (fornecedor.OptantePeloMei is not null)
+        // Nulo em 65% da base real: a BrasilAPI só informa quando sabe. E optante sem a
+        // data da opção não diz se esta despesa foi paga a um MEI.
+        if (fornecedor.EraMeiEm(DateOnly.FromDateTime(despesa.DataDocumento.UtcDateTime)) is not null)
         {
             disponivel |= DadoExigido.OpcaoPeloMei;
         }

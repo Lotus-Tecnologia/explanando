@@ -219,9 +219,9 @@ public sealed class ServicoDeIngestaoTests
     [Fact]
     public async Task Nota_malformada_vira_rejeicao_contada_e_nao_derruba_o_lote()
     {
-        // Valores inconsistentes fazem o dominio recusar a despesa. Uma nota ruim nao
+        // Glosa negativa faz o dominio recusar a despesa. Uma nota ruim nao
         // pode custar as outras 1.199 do mesmo deputado.
-        var ruim = Despesa("ruim") with { ValorDocumento = 100m, ValorLiquido = 90m, ValorGlosa = 50m };
+        var ruim = Despesa("ruim") with { ValorGlosa = -10m };
         var repositorio = new RepositorioFalso();
         var servico = new ServicoDeIngestao(
             new FonteFalsa([Despesa("1"), ruim, Despesa("2")]), new CadastroFalso(), repositorio);
@@ -251,6 +251,41 @@ public sealed class ServicoDeIngestaoTests
         resultado.DespesasNovas.ShouldBe(2, "as despesas continuam sendo gravadas");
         resultado.FornecedoresNaoEnriquecidos.ShouldBe(2);
         repositorio.Despesas.ShouldAllBe(d => d.FornecedorId == null);
+    }
+
+    [Fact]
+    public async Task Despesa_que_ficou_sem_fornecedor_por_falha_e_religada_depois()
+    {
+        // Levantamento de 08/11/2026: uma despesa do Senado ficou com fornecedor_id nulo
+        // embora o fornecedor exista. A consulta falhou na primeira passada; na seguinte a
+        // despesa ja era conhecida pelo hash e era pulada, e nunca ganhava a ligacao.
+        var repositorio = new RepositorioFalso();
+        await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1")]), new CadastroFalso { Explode = true }, repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura);
+
+        await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), Despesa("2")]), new CadastroFalso(), repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura);
+
+        repositorio.Despesas.Count.ShouldBe(2);
+        repositorio.Despesas.ShouldAllBe(d => d.FornecedorId != null);
+    }
+
+    [Fact]
+    public async Task Teto_de_competencia_deixa_de_fora_o_que_vem_depois()
+    {
+        // Recoleta de uma base congelada: so' o periodo que a base ja cobre, para nao dar
+        // a alguns parlamentares meses que os outros nao tem.
+        var depois = Despesa("depois") with { Ano = 2026, Mes = 9, DataDocumento = new DateTimeOffset(2026, 9, 2, 0, 0, 0, TimeSpan.Zero) };
+        var repositorio = new RepositorioFalso();
+
+        var resultado = await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), depois]), new CadastroFalso(), repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura, teto: Competencia.Criar(2026, 8));
+
+        resultado.DespesasNovas.ShouldBe(1);
+        repositorio.Despesas.ShouldAllBe(d => d.Competencia <= Competencia.Criar(2026, 8));
     }
 
     [Fact]
@@ -437,5 +472,20 @@ public sealed class ServicoDeIngestaoTests
         public void Adicionar(Despesa despesa) => Despesas.Add(despesa);
 
         public Task SalvarAsync(CancellationToken c = default) => Task.CompletedTask;
+
+        public Task<int> LigarDespesasSemFornecedorAsync(Guid parlamentarId, CancellationToken c = default)
+        {
+            var ligadas = 0;
+            foreach (var despesa in Despesas.Where(d => d.ParlamentarId == parlamentarId && d.FornecedorId is null))
+            {
+                if (Fornecedores.Find(f => f.Documento == despesa.DocumentoFornecedor) is { } fornecedor)
+                {
+                    despesa.AssociarFornecedor(fornecedor.Id);
+                    ligadas++;
+                }
+            }
+
+            return Task.FromResult(ligadas);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using Explanando.Domain.Fornecedores;
 using System.Globalization;
 using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
@@ -522,6 +523,78 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
         var perfil = await consultas.ObterPerfilAsync(descoberto.Id);
         perfil!.CoberturaDeFornecedor.ShouldBe(0.3m);
         perfil.CoberturaSuficiente.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Fornecedores_distintos_nao_contam_o_documento_vazio()
+    {
+        // Levantamento de 08/11/2026: a passagem aerea da Camara vem sem documento do
+        // fornecedor, e o vazio contava como um fornecedor a mais em 500 dos 631 perfis.
+        var deputado = NovoDeputado();
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            foreach (var documento in new[] { "36826246000164", "11222333000181", "" })
+            {
+                var despesa = Despesa.Criar(new NovaDespesa
+                {
+                    ParlamentarId = deputado.Id,
+                    DocumentoFornecedor = CpfCnpj.Criar(documento),
+                    NomeFornecedor = "FORNECEDOR",
+                    Competencia = Competencia.Criar(2026, 7),
+                    TipoDespesa = "PASSAGEM AÉREA - SIGEPA",
+                    CodigoDocumento = $"forn-{ProximoIdExterno()}",
+                    NumeroDocumento = "1",
+                    DataDocumento = new DateTimeOffset(2026, 7, 6, 0, 0, 0, TimeSpan.Zero),
+                    ValorDocumento = 100m,
+                    ValorLiquido = 100m,
+                });
+                escrita.Despesas.Add(despesa);
+            }
+
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var perfil = await new Infrastructure.Persistencia.Consultas.ConsultasPublicasEfCore(leitura)
+            .ObterPerfilAsync(deputado.Id);
+
+        perfil!.FornecedoresDistintos.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Despesa_sem_fornecedor_e_ligada_ao_fornecedor_ja_cadastrado()
+    {
+        var deputado = NovoDeputado();
+        var orfa = NovaDespesaDe(deputado.Id, $"orfa-{ProximoIdExterno()}");
+        var fornecedor = Fornecedor.Criar(new NovoFornecedor
+        {
+            Documento = orfa.DocumentoFornecedor,
+            RazaoSocial = "AUTO POSTO BOMTEMPO LTDA",
+        });
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            if (!await escrita.Fornecedores.AnyAsync(f => f.Documento == orfa.DocumentoFornecedor))
+            {
+                escrita.Fornecedores.Add(fornecedor);
+            }
+
+            escrita.Parlamentares.Add(deputado);
+            escrita.Despesas.Add(orfa);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using (var ligacao = banco.CriarContexto())
+        {
+            var ligadas = await new Infrastructure.Persistencia.Repositorios.RepositorioDeIngestao(ligacao)
+                .LigarDespesasSemFornecedorAsync(deputado.Id);
+            ligadas.ShouldBe(1);
+        }
+
+        await using var leitura = banco.CriarContexto();
+        (await leitura.Despesas.SingleAsync(d => d.Id == orfa.Id)).FornecedorId.ShouldNotBeNull();
     }
 
     private const int MotorDeRegrasVersao = 2;

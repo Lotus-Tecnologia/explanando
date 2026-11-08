@@ -102,7 +102,8 @@ public sealed class MotorDeRegrasTests
                 situacao: SituacaoCadastral.Inapta,
                 dataSituacao: new DateOnly(2026, 1, 15),
                 dataAbertura: new DateOnly(2026, 6, 1),
-                optantePeloMei: true)
+                optantePeloMei: true,
+                opcaoPeloMei: new DateOnly(2020, 1, 1))
             .ComLimiteDeCota("AP", 55_929.26m)
             .ComDespesa(60_000m, ano: 2026, mes: 7, dia: 25, tipo: CenarioDeAvaliacao.Alimentacao)
             .Construir();

@@ -1010,9 +1010,17 @@ namespace Explanando.Infrastructure.Persistencia.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("cnaes_secundarios");
 
+                    b.Property<DateOnly?>("DataExclusaoDoMei")
+                        .HasColumnType("date")
+                        .HasColumnName("data_exclusao_do_mei");
+
                     b.Property<DateOnly?>("DataInicioAtividade")
                         .HasColumnType("date")
                         .HasColumnName("data_inicio_atividade");
+
+                    b.Property<DateOnly?>("DataOpcaoPeloMei")
+                        .HasColumnType("date")
+                        .HasColumnName("data_opcao_pelo_mei");
 
                     b.Property<DateOnly?>("DataSituacaoCadastral")
                         .HasColumnType("date")

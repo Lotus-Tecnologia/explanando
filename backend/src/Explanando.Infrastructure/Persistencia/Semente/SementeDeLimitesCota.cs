@@ -31,6 +31,13 @@ namespace Explanando.Infrastructure.Persistencia.Semente;
 /// <para>Despesas anteriores a esta vigencia ficam <b>sem teto configurado</b>, e REG_TX_002
 /// se abstem sobre elas. Os valores de 2023 a 2025 precisam ser levantados nos Atos da Mesa
 /// correspondentes para que a regra alcance o restante da legislatura 57.</para>
+///
+/// <para><b>Nao aplicada, de proposito</b> (levantamento de 08/11/2026). Nada chama
+/// <see cref="AplicarAsync"/>, e assim deve ficar: o saldo da CEAP acumula no exercicio, entao
+/// o valor mensal nao e' teto do mes. Semeando, 934 de 3.700 meses de 2026 ficavam
+/// <i>acima</i> do "teto" e REG_TX_002 emitiria 967 flags em 392 deputados sobre gasto
+/// permitido. A regra se abstem (TetoDaCota ausente) ate ser redesenhada sobre o acumulado
+/// anual.</para>
 /// </summary>
 public static class SementeDeLimitesCota
 {
