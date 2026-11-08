@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { obterDespesa } from "@/lib/api";
 import { formatarDataDoDocumento, formatarReais } from "@/lib/formato";
 import { tituloDaDespesa } from "@/lib/metadados";
-import { caixaDeFrase } from "@/lib/frases";
+import { caixaDeFrase, documentoPublicavel } from "@/lib/frases";
 import { Comprovante, ValoresDaDespesa } from "@/componentes/Comprovante";
 import { RespostasDoGabinete, SemRespostaDoGabinete } from "@/componentes/RespostasDoGabinete";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
@@ -103,7 +103,7 @@ export default async function Despesa({ params }: Parametros) {
             </dd>
             {/* CNPJ inteiro porque é dado de pessoa jurídica e público; CPF a API já entrega
                 mascarado, e a borda não tem como contornar isso. */}
-            <dd className="numeros text-sm text-texto-suave">{despesa.documentoFornecedor}</dd>
+            <dd className="numeros text-sm text-texto-suave">{documentoPublicavel(despesa.documentoFornecedor)}</dd>
           </div>
 
           <div>

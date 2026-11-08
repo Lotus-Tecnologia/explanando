@@ -50,3 +50,14 @@ export function caixaDeFrase(texto: string): string {
     ? minusculo
     : minusculo.charAt(0).toLocaleUpperCase("pt-BR") + minusculo.slice(1);
 }
+
+/**
+ * O documento do fornecedor que pode ir para a tela: só CNPJ, que é de pessoa jurídica e
+ * público. CPF não aparece nem mascarado — fornecedor pessoa física é gente que não é agente
+ * público, e um CPF parcial ainda ajuda a identificar alguém.
+ */
+export function documentoPublicavel(documento: string): string {
+  return documento.replace(/\D/g, "").length === 14 && !documento.includes("*")
+    ? documento
+    : "Pessoa física (documento não exibido)";
+}

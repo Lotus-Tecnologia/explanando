@@ -46,8 +46,8 @@ export function SerieMensal({
     `${String(mes.mes).padStart(2, "0")}/${mes.ano}`;
 
   return (
-    <section aria-labelledby="titulo-serie" className="border border-borda-suave p-4">
-      <h2 id="titulo-serie" className="text-base font-bold text-titulo">
+    <section aria-labelledby="titulo-serie" className="rounded-cartao border border-borda-suave bg-surface p-5">
+      <h2 id="titulo-serie" className="font-display text-xl font-bold text-titulo">
         Gasto mês a mês
       </h2>
 
@@ -120,7 +120,7 @@ export function SerieMensal({
                   {mes.detalheDisponivel ? (
                     <Link
                       href={`/parlamentares/${idDoParlamentar}/despesas?ano=${mes.ano}`}
-                      className="text-titulo underline-offset-2 hover:underline"
+                      className="inline-flex min-h-11 items-center text-titulo underline decoration-borda-estrutural underline-offset-4"
                     >
                       {rotulo(mes)}
                     </Link>

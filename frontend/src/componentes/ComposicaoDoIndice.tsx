@@ -49,9 +49,9 @@ export function ComposicaoDoIndice({
     <section
       id="de-onde-vem-o-indice"
       aria-labelledby="titulo-composicao"
-      className="scroll-mt-24 border border-borda-suave bg-surface p-4 sm:p-5"
+      className="scroll-mt-32 rounded-cartao border border-borda-suave bg-surface p-5"
     >
-      <h2 id="titulo-composicao" className="text-base font-bold text-titulo">
+      <h2 id="titulo-composicao" className="font-display text-xl font-bold text-titulo">
         De onde vem o índice
       </h2>
 

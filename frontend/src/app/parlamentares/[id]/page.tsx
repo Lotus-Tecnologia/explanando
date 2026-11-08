@@ -1,6 +1,4 @@
-import { notaDaCobertura } from "@/lib/cobertura";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -13,7 +11,7 @@ import {
   ranquearTudo,
 } from "@/lib/api";
 import { metadadosDoParlamentar } from "@/lib/metadados";
-import { formatarDensidade, formatarMomento, formatarNumero, formatarReais } from "@/lib/formato";
+import { formatarNumero } from "@/lib/formato";
 import { CASAS } from "@/lib/casas";
 import { BlocoDeCobertura } from "@/componentes/Abstencao";
 import { ComposicaoDoIndice } from "@/componentes/ComposicaoDoIndice";
@@ -21,7 +19,8 @@ import { CompararCom } from "@/componentes/CompararCom";
 import { EscadaDeFornecedores } from "@/componentes/EscadaDeFornecedores";
 import { SociosEmComum } from "@/componentes/SociosEmComum";
 import { VotacaoDoParlamentar } from "@/componentes/VotacaoDoParlamentar";
-import { retratoSeguro } from "@/lib/fotos";
+import { ResumoDoPerfil } from "@/componentes/ResumoDoPerfil";
+import { Botao } from "@/componentes/base/Botao";
 import { ListaDeDespesas } from "@/componentes/ListaDeDespesas";
 import { SerieMensal } from "@/componentes/SerieMensal";
 
@@ -33,8 +32,11 @@ import { SerieMensal } from "@/componentes/SerieMensal";
 */
 export const revalidate = 300;
 
-/** Quantas despesas com achado o perfil mostra antes de mandar para a lista completa. */
-const ACHADOS_EM_DESTAQUE = 25;
+/**
+ * Quantas despesas com achado o perfil mostra antes de mandar para a lista completa. Dez, e
+ * não 25: com 25 o perfil passava de 7.500px no celular mesmo com o resto recolhido.
+ */
+const ACHADOS_EM_DESTAQUE = 10;
 
 /**
  * As 513 páginas de perfil, geradas no build.
@@ -88,24 +90,6 @@ export async function generateMetadata({
   };
 }
 
-function Numero({
-  rotulo,
-  valor,
-  nota,
-}: {
-  rotulo: string;
-  valor: string;
-  nota?: string;
-}) {
-  return (
-    <div className="border border-borda-suave bg-surface p-4">
-      <dt className="text-xs font-semibold text-texto-suave">{rotulo}</dt>
-      <dd className="numeros mt-1 text-xl font-bold text-titulo">{valor}</dd>
-      {nota ? <p className="mt-1 text-xs text-texto-suave">{nota}</p> : null}
-    </div>
-  );
-}
-
 export default async function Perfil({
   params,
 }: {
@@ -130,116 +114,27 @@ export default async function Perfil({
   // Os colegas de casa, para o comparador. O Next deduplica: é a mesma busca que o ranking
   // faz, e as 513 páginas de perfil a dividem.
   const colegas = casaDoPerfil ? await ranquearTudo(casaDoPerfil, "volume") : null;
-  const retrato = retratoSeguro(perfil.fotoUrl);
 
   // Volta para o ranking da casa dele, e não para a página inicial: é de lá que quem
   // clicou num nome veio, e as duas casas nunca dividem um ranking.
   const casa = casaDoPerfil;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
+    <main className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
       <Link
         href={casa?.caminho ?? "/"}
-        className="text-sm text-titulo underline-offset-2 hover:underline"
+        className="inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
       >
         ← {casa ? `Ranking ${casa.chave === "camara" ? "da Câmara" : "do Senado"}` : "Início"}
       </Link>
 
-      <header className="mt-4 flex flex-wrap items-start gap-4">
-        {/*
-          A foto é oficial e vem da própria casa legislativa. Entra sem `priority`: ela não é
-          o conteúdo da página, e disputar banda com o texto no celular seria trocar o que
-          importa pelo enfeite.
-        */}
-        {retrato ? (
-          <Image
-            src={retrato}
-            alt=""
-            width={72}
-            height={96}
-            className="border border-borda-suave object-cover"
-          />
-        ) : null}
+      <div className="mt-2">
+        <ResumoDoPerfil perfil={perfil} />
+      </div>
 
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-titulo">{perfil.nomeParlamentar}</h1>
-          <p className="mt-1 text-sm text-texto-suave">
-            {perfil.nomeCivil} · {perfil.siglaPartido} · {perfil.uf} · {perfil.casa}
-          </p>
-
-          {/*
-            A data da varredura fica ao lado do nome, e não em rodapé.
-
-            O dado é atualizado por rotina mensal e por varredura sob demanda, então dois
-            parlamentares podem ter frescor diferente. Sem a data à vista, quem tem dado mais
-            recente parece pior — não por ser, mas por ter sido olhado mais perto.
-          */}
-          {perfil.dataUltimaVarredura ? (
-            <p className="numeros mt-1 text-xs text-texto-suave">
-              Última varredura em{" "}
-              {formatarMomento(perfil.dataUltimaVarredura)} · motor
-              versão {perfil.versaoDoMotor}
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-texto-suave">
-              Este parlamentar ainda não passou por varredura.
-            </p>
-          )}
-        </div>
-      </header>
-
-      <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Numero
-          rotulo="Volume gasto"
-          valor={formatarReais(perfil.volumeTotalGasto)}
-          nota={`${formatarNumero(perfil.despesasAvaliadas)} despesas analisadas`}
-        />
-        <Numero
-          rotulo="Densidade de indicadores"
-          valor={
-            perfil.indiceDeRisco === null
-              ? "não publicável"
-              : formatarDensidade(perfil.indiceDeRisco)
-          }
-          nota={
-            perfil.indiceDeRisco === null
-              ? "Menos de 100 despesas: a densidade seria ruído."
-              : [
-                  "Peso dos achados a cada 100 despesas.",
-                  notaDaCobertura(perfil.coberturaDeFornecedor, perfil.coberturaSuficiente),
-                ]
-                  .filter(Boolean)
-                  .join(" ")
-          }
-        />
-        <Numero
-          rotulo="Alta relevância"
-          valor={formatarNumero(perfil.flagsAltas)}
-          nota="Os achados de maior peso."
-        />
-        <Numero
-          rotulo="Média e baixa"
-          valor={`${formatarNumero(perfil.flagsMedias)} · ${formatarNumero(perfil.flagsBaixas)}`}
-          nota="Indicadores de peso intermediário e baixo."
-        />
-      </dl>
-
-      {colegas && colegas.length > 1 && casa ? (
-        <div className="mt-4">
-          <CompararCom
-            id={perfil.id}
-            nome={perfil.nomeParlamentar}
-            colegas={colegas}
-            integrante={casa.integrante}
-          />
-        </div>
-      ) : null}
-
-      {/*
-        Logo abaixo dos números, porque é a pergunta que o número provoca: de onde vem isso?
-      */}
+      {/* Logo abaixo dos números, porque é a pergunta que o número provoca: de onde vem isso? */}
       {perfil.composicao ? (
-        <div className="mt-8">
+        <div className="mt-6">
           <ComposicaoDoIndice
             composicao={perfil.composicao}
             indice={perfil.indiceDeRisco}
@@ -249,104 +144,128 @@ export default async function Perfil({
         </div>
       ) : null}
 
-      {/*
-        A cobertura vem ANTES da lista de achados, e não em rodapé. É o que impede o leitor
-        de ler o silêncio de uma regra como aprovação — ADR-0013 §2.
-      */}
-      <div className="mt-8">
-        <BlocoDeCobertura
-          cobertura={perfil.cobertura}
-          regrasSemDado={perfil.regrasSemDado}
-        />
-      </div>
-
-      <div className="mt-8">
-        <SerieMensal serie={perfil.serieMensal} idDoParlamentar={perfil.id} />
-      </div>
-
-      {escada ? (
-        <div className="mt-8">
-          <EscadaDeFornecedores escada={escada} />
-        </div>
-      ) : null}
-
-      {votacao ? (
-        <div className="mt-8">
-          <VotacaoDoParlamentar votacao={votacao} />
-        </div>
-      ) : null}
-
-      {socios ? (
-        <div className="mt-8">
-          <SociosEmComum resultado={socios} parlamentarId={perfil.id} nome={perfil.nomeParlamentar} />
-        </div>
-      ) : null}
-
-      <section aria-labelledby="titulo-despesas" className="mt-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 id="titulo-despesas" className="text-base font-bold text-titulo">
-            Despesas com indicadores
-          </h2>
-
-          {/*
-            O caminho para o gasto inteiro fica à vista. Um portal que só mostra o que ele
-            mesmo apontou publica a própria leitura, não a prestação de contas.
-          */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {/*
-              Acompanhar sem cadastro: o feed não pede e-mail nem guarda nada de quem assina.
-              É o primeiro degrau da recorrência (Fase 3), antes de existir alerta por e-mail.
-            */}
-            <a
-              href={`/parlamentares/${id}/feed.xml`}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-titulo underline-offset-2 hover:underline"
-            >
-              <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="currentColor">
-                <circle cx="3" cy="13" r="2" />
-                <path d="M1 7.5a7.5 7.5 0 0 1 7.5 7.5h-2A5.5 5.5 0 0 0 1 9.5z" />
-                <path d="M1 2a13 13 0 0 1 13 13h-2A11 11 0 0 0 1 4z" />
-              </svg>
-              Acompanhar por RSS
-            </a>
-            <Link
-              href={`/parlamentares/${id}/despesas`}
-              className="text-sm font-semibold text-titulo underline-offset-2 hover:underline"
-            >
-              Ver todas as {formatarNumero(perfil.despesasAvaliadas)} despesas →
-            </Link>
-          </div>
-        </div>
+      <section aria-labelledby="titulo-despesas" className="mt-10">
+        <h2 id="titulo-despesas" className="font-display text-2xl font-bold tracking-tight text-titulo">
+          Despesas com achado
+        </h2>
 
         {despesas && despesas.total > 0 ? (
           <>
-            <p className="mt-1 text-sm text-texto-suave">
-              <strong className="numeros">{formatarNumero(despesas.total)}</strong> de{" "}
+            <p className="mt-1 text-texto-suave">
+              <strong className="numeros text-texto">{formatarNumero(despesas.total)}</strong> de{" "}
               {formatarNumero(perfil.despesasAvaliadas)} despesas receberam ao menos um
               indicador.
               {despesas.total > ACHADOS_EM_DESTAQUE ? (
-                <> As {ACHADOS_EM_DESTAQUE} mais recentes aparecem abaixo.</>
-              ) : null}
+                <> As {ACHADOS_EM_DESTAQUE} mais recentes estão abaixo; toque numa para abrir.</>
+              ) : (
+                <> Toque numa para abrir.</>
+              )}
             </p>
 
             <ListaDeDespesas despesas={despesas.itens} casa={perfil.casa} />
 
             {despesas.total > ACHADOS_EM_DESTAQUE ? (
-              <Link
-                href={`/parlamentares/${id}/despesas?indicador=com`}
-                className="mt-4 inline-block border border-borda-suave px-3 py-1.5 text-sm font-semibold text-titulo hover:bg-surface"
-              >
-                Ver as {formatarNumero(despesas.total)} despesas com indicador
-              </Link>
+              <div className="mt-3">
+                <Botao variante="secundario" href={`/parlamentares/${id}/despesas?indicador=com`}>
+                  Ver as {formatarNumero(despesas.total)} despesas com indicador
+                </Botao>
+              </div>
             ) : null}
           </>
         ) : (
-          <p className="mt-1 text-sm text-texto-suave">
+          <p className="mt-1 text-texto-suave">
             Nenhuma despesa recebeu indicador entre as que puderam ser analisadas.{" "}
-            <strong>Isso não é atestado de regularidade</strong> — o bloco acima diz quantas
-            regras puderam ser aplicadas.
+            <strong className="text-texto">Isso não é atestado de regularidade</strong> — o
+            bloco abaixo diz quantas regras puderam ser aplicadas.
           </p>
         )}
+
+        {/*
+          O caminho para o gasto inteiro fica à vista. Um portal que só mostra o que ele mesmo
+          apontou publica a própria leitura, não a prestação de contas.
+        */}
+        <p className="mt-2 flex flex-wrap gap-x-5">
+          <Link href={`/parlamentares/${id}/despesas`} className={LINK}>
+            Ver todas as {formatarNumero(perfil.despesasAvaliadas)} despesas
+          </Link>
+          {/* Acompanhar sem cadastro: o feed não pede e-mail nem guarda nada de quem assina. */}
+          <a href={`/parlamentares/${id}/feed.xml`} className={LINK}>
+            Acompanhar por RSS
+          </a>
+        </p>
       </section>
+
+      {/*
+        A cobertura vem logo depois dos achados e aberta, nunca recolhida nem em rodapé: é o
+        que impede o leitor de ler o silêncio de uma regra como aprovação (ADR-0013 §2).
+      */}
+      <div className="mt-10">
+        <BlocoDeCobertura cobertura={perfil.cobertura} regrasSemDado={perfil.regrasSemDado} />
+      </div>
+
+      {colegas && colegas.length > 1 && casa ? (
+        <div className="mt-6">
+          <CompararCom
+            id={perfil.id}
+            nome={perfil.nomeParlamentar}
+            colegas={colegas}
+            integrante={casa.integrante}
+          />
+        </div>
+      ) : null}
+
+      {/* O resto abre sob demanda: é o que levava o perfil a 14 mil pixels no celular. */}
+      <div className="mt-6 grid gap-2">
+        <Recolhivel titulo="Gasto mês a mês">
+          <SerieMensal serie={perfil.serieMensal} idDoParlamentar={perfil.id} />
+        </Recolhivel>
+
+        {escada ? (
+          <Recolhivel titulo="Para quem foi o dinheiro">
+            <EscadaDeFornecedores escada={escada} />
+          </Recolhivel>
+        ) : null}
+
+        {votacao ? (
+          <Recolhivel titulo="Como votou">
+            <VotacaoDoParlamentar votacao={votacao} />
+          </Recolhivel>
+        ) : null}
+
+        {socios ? (
+          <Recolhivel titulo="Sócios em comum com outros gabinetes">
+            <SociosEmComum resultado={socios} parlamentarId={perfil.id} nome={perfil.nomeParlamentar} />
+          </Recolhivel>
+        ) : null}
+      </div>
     </main>
+  );
+}
+
+const LINK =
+  "inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4";
+
+/**
+ * Uma seção do perfil que abre sob demanda. O componente de dentro continua com o próprio
+ * `<h2>` (para quem navega por título no leitor de tela), escondido à vista porque o resumo
+ * já mostra o nome; a moldura dele some para não haver cartão dentro de cartão.
+ */
+function Recolhivel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <details className="group rounded-cartao border border-borda-suave bg-surface">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-5 font-semibold text-texto [&::-webkit-details-marker]:hidden">
+        <span className="flex-1">{titulo}</span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          className="size-5 shrink-0 text-texto-suave transition-transform group-open:rotate-180"
+        >
+          <path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      </summary>
+      <div className="border-t border-borda-suave px-5 py-4 [&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section>h2:first-child]:sr-only">
+        {children}
+      </div>
+    </details>
   );
 }

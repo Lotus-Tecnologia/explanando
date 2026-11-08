@@ -4,7 +4,7 @@ import { RespostasDoGabinete } from "./RespostasDoGabinete";
 import { TagDeGravidade } from "./TagDeGravidade";
 import type { Gravidade, ItemDeDespesa } from "@/lib/contrato";
 import { formatarDataDoDocumento, formatarReais } from "@/lib/formato";
-import { caixaDeFrase } from "@/lib/frases";
+import { caixaDeFrase, documentoPublicavel } from "@/lib/frases";
 
 /**
  * A lista de despesas, compartilhada pelo perfil e pela listagem completa.
@@ -100,7 +100,7 @@ export function LinhaDeDespesa({
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-texto-suave">Documento do fornecedor</dt>
-              <dd className="numeros font-semibold text-texto">{despesa.documentoFornecedor}</dd>
+              <dd className="numeros font-semibold text-texto">{documentoPublicavel(despesa.documentoFornecedor)}</dd>
             </div>
             <div>
               <dt className="text-texto-suave">Competência</dt>

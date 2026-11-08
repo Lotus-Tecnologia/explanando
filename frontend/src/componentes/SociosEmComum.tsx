@@ -28,8 +28,8 @@ export function SociosEmComum({
   }
 
   return (
-    <section aria-labelledby="titulo-socios" className="border border-borda-suave bg-surface p-4 sm:p-5">
-      <h2 id="titulo-socios" className="text-base font-bold text-titulo">
+    <section aria-labelledby="titulo-socios" className="rounded-cartao border border-borda-suave bg-surface p-5">
+      <h2 id="titulo-socios" className="font-display text-xl font-bold text-titulo">
         Sócios em comum com fornecedores de outros parlamentares
       </h2>
       <p className="mt-1 text-sm text-texto-suave">

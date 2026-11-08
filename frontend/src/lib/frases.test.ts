@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { caixaDeFrase, fraseDosAchadosAbaixo, fraseDosMaioresFornecedores } from "./frases";
+import { caixaDeFrase, documentoPublicavel, fraseDosAchadosAbaixo, fraseDosMaioresFornecedores } from "./frases";
 
 /**
  * Frases com número, que precisam concordar com ele.
@@ -52,5 +52,13 @@ describe("caixaDeFrase", () => {
     expect(caixaDeFrase("Aluguel de imóveis para escritório político")).toBe(
       "Aluguel de imóveis para escritório político",
     );
+  });
+});
+
+describe("documentoPublicavel", () => {
+  it("mostra CNPJ e esconde CPF, mesmo mascarado", () => {
+    expect(documentoPublicavel("36.826.246/0001-64")).toBe("36.826.246/0001-64");
+    expect(documentoPublicavel("***.456.789-**")).toBe("Pessoa física (documento não exibido)");
+    expect(documentoPublicavel("123.456.789-09")).toBe("Pessoa física (documento não exibido)");
   });
 });

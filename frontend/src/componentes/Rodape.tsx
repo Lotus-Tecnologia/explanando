@@ -16,7 +16,7 @@ import { ENCARREGADO } from "@/lib/site";
  * responsável nomeado é condição para operar, não item de backlog.
  */
 export function Rodape() {
-  const link = "font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4 hover:decoration-titulo";
+  const link = "inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4 hover:decoration-titulo";
 
   return (
     <footer className="mt-12 border-t border-borda-suave">

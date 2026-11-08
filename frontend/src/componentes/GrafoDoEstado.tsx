@@ -337,7 +337,7 @@ export function GrafoDoEstado({
               </defs>
 
               {grafo.setores.map((setor) => {
-                const texto = setor.rotulo.toUpperCase();
+                const texto = setor.rotulo;
                 const medida = fonteDoRotuloDoSetor(
                   texto,
                   setor.inicio,
@@ -681,12 +681,12 @@ function RotuloDoAnel({ raio, texto }: { raio: number; texto: string }) {
       <text
         y={y}
         textAnchor="middle"
-        fontSize={9.5}
+        fontSize={11}
         fontWeight={700}
-        letterSpacing={1.1}
+        letterSpacing={0.2}
         fill="var(--color-texto-suave)"
       >
-        {texto.toUpperCase()}
+        {texto}
       </text>
     </g>
   );
