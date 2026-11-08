@@ -69,6 +69,51 @@ public sealed class RegrasDeFornecedorTests
     }
 
     [Fact]
+    public void Cnae_divergente_emite_uma_flag_por_fornecedor_e_tipo()
+    {
+        // Levantamento de 08/11/2026: um par deputado–posto gerava 342 flags, e o indice
+        // passava a medir quantas vezes se abasteceu. O fato e' do fornecedor: uma flag,
+        // na despesa de maior valor, com quantidade e total na descricao.
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(cnaePrincipal: "4723700");
+        for (var mes = 1; mes <= 10; mes++)
+        {
+            cenario.ComDespesa(100m * mes, mes: mes, tipo: CenarioDeAvaliacao.Combustivel);
+        }
+
+        cenario.ComDespesa(-300m, mes: 11, tipo: CenarioDeAvaliacao.Combustivel);
+        var contexto = cenario.Construir();
+
+        var flags = new RegraCnaeDivergente().Avaliar(contexto).ToList();
+
+        flags.Count.ShouldBe(1);
+        var maior = contexto.Despesas.MaxBy(d => d.ValorLiquido)!;
+        flags[0].DespesaId.ShouldBe(maior.Id);
+        flags[0].Descricao.ShouldContain("10 despesas");
+        flags[0].Descricao.ShouldContain("R$ 5.500,00");
+    }
+
+    [Fact]
+    public void Cnae_divergente_separa_tipos_diferentes_do_mesmo_fornecedor()
+    {
+        new CenarioDeAvaliacao()
+            .ComFornecedor(cnaePrincipal: "4723700")
+            .ComDespesa(3_000m, mes: 3, tipo: CenarioDeAvaliacao.Combustivel)
+            .ComDespesa(3_000m, mes: 4, tipo: CenarioDeAvaliacao.Consultoria)
+            .Rodar(new RegraCnaeDivergente())
+            .Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void Cnae_divergente_nao_marca_estorno()
+    {
+        new CenarioDeAvaliacao()
+            .ComFornecedor(cnaePrincipal: "4723700")
+            .ComDespesa(-3_000m, tipo: CenarioDeAvaliacao.Consultoria)
+            .Rodar(new RegraCnaeDivergente())
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Cnae_divergente_se_cala_quando_o_ramo_bate()
     {
         new CenarioDeAvaliacao()
@@ -114,6 +159,34 @@ public sealed class RegrasDeFornecedorTests
 
         flags.Count.ShouldBe(1);
         flags[0].Gravidade.ShouldBe(Gravidade.Alta, "emitir nota apos a baixa e' sinal forte");
+    }
+
+    [Fact]
+    public void Situacao_irregular_emite_uma_flag_por_fornecedor_sem_citar_a_casa()
+    {
+        var cenario = new CenarioDeAvaliacao()
+            .ParlamentarDoSenado()
+            .ComFornecedor(situacao: SituacaoCadastral.Baixada, dataSituacao: new DateOnly(2026, 1, 15));
+        cenario.ComDespesa(500m, mes: 3).ComDespesa(800m, mes: 4).ComDespesa(200m, mes: 5);
+        var contexto = cenario.Construir();
+
+        var flags = new RegraSituacaoCadastralIrregular().Avaliar(contexto).ToList();
+
+        flags.Count.ShouldBe(1);
+        flags[0].DespesaId.ShouldBe(contexto.Despesas.MaxBy(d => d.ValorLiquido)!.Id);
+        flags[0].Descricao.ShouldNotContain("Câmara");
+        flags[0].Descricao.ShouldContain("3 notas");
+        flags[0].Descricao.ShouldContain("R$ 1.500,00");
+    }
+
+    [Fact]
+    public void Situacao_irregular_de_uma_nota_abre_pela_nota()
+    {
+        new CenarioDeAvaliacao()
+            .ComFornecedor(situacao: SituacaoCadastral.Baixada, dataSituacao: new DateOnly(2026, 1, 15))
+            .ComDespesa(500m, mes: 7, dia: 6)
+            .Rodar(new RegraSituacaoCadastralIrregular())[0]
+            .Descricao.ShouldStartWith("A nota de 06/07/2026");
     }
 
     [Fact]

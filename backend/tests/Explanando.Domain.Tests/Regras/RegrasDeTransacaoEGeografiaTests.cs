@@ -294,6 +294,21 @@ public sealed class RegrasDeTransacaoEGeografiaTests
     }
 
     [Fact]
+    public void Fora_da_base_emite_uma_flag_por_fornecedor()
+    {
+        var cenario = new CenarioDeAvaliacao().ParlamentarDe("AP").ComFornecedor(uf: "GO");
+        cenario.ComDespesa(2_500m, mes: 3).ComDespesa(3_000m, mes: 4).ComDespesa(1_000m, mes: 5);
+        var contexto = cenario.Construir();
+
+        var flags = new RegraGastoForaDaBaseEleitoral().Avaliar(contexto).ToList();
+
+        flags.Count.ShouldBe(1);
+        flags[0].DespesaId.ShouldBe(contexto.Despesas.MaxBy(d => d.ValorLiquido)!.Id);
+        flags[0].Descricao.ShouldContain("3 despesas");
+        flags[0].Descricao.ShouldContain("R$ 6.500,00");
+    }
+
+    [Fact]
     public void Fora_da_base_se_cala_na_propria_uf()
     {
         new CenarioDeAvaliacao()

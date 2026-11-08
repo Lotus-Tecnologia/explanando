@@ -28,31 +28,43 @@ public sealed class RegraCnaeDivergente : IRegraAnomalia
     {
         ArgumentNullException.ThrowIfNull(contexto);
 
-        foreach (var despesa in contexto.Despesas)
+        // O ramo e' fato do fornecedor: uma flag por (fornecedor, tipo), nao por nota — ver
+        // FatoDoFornecedor.
+        var grupos = contexto.Despesas
+            .Where(despesa => !despesa.EhEstorno && Incompativel(contexto, despesa))
+            .GroupBy(despesa => (despesa.DocumentoFornecedor.Numero, despesa.TipoDespesa));
+
+        foreach (var grupo in grupos)
         {
-            if (contexto.FornecedorDe(despesa) is not { } fornecedor)
-            {
-                continue;
-            }
-
-            var cnaes = new List<string?> { fornecedor.CnaePrincipal };
-            cnaes.AddRange(fornecedor.CnaesSecundarios);
-
-            if (CompatibilidadeCnae.Avaliar(despesa.TipoDespesa, cnaes)
-                != ResultadoDeCompatibilidade.Incompativel)
-            {
-                continue;
-            }
+            var representante = FatoDoFornecedor.Representante(grupo);
+            var fornecedor = contexto.FornecedorDe(representante)!;
+            var total = grupo.Sum(despesa => despesa.ValorLiquido).ToString("C2", CulturaBrasileira.Padrao);
+            var abertura = grupo.Count() == 1
+                ? $"A despesa de '{grupo.Key.TipoDespesa}' de {total} foi paga"
+                : $"{grupo.Count()} despesas de '{grupo.Key.TipoDespesa}', somando {total}, foram pagas";
 
             yield return FlagAnomalia.Criar(
-                despesa.Id,
+                representante.Id,
                 Codigo,
                 Gravidade.Media,
-                $"A despesa de '{despesa.TipoDespesa}' foi paga a "
-                + $"'{fornecedor.RazaoSocial}', cujo ramo registrado na Receita Federal "
-                + $"(CNAE {fornecedor.CnaePrincipal}) pertence a outra atividade econômica.",
+                $"{abertura} a '{fornecedor.RazaoSocial}', cujo ramo registrado na Receita "
+                + $"Federal (CNAE {fornecedor.CnaePrincipal}) pertence a outra atividade econômica.",
                 grauDeConfianca: 1.0m);
         }
+    }
+
+    private static bool Incompativel(ContextoDeAvaliacao contexto, Despesa despesa)
+    {
+        if (contexto.FornecedorDe(despesa) is not { } fornecedor)
+        {
+            return false;
+        }
+
+        var cnaes = new List<string?> { fornecedor.CnaePrincipal };
+        cnaes.AddRange(fornecedor.CnaesSecundarios);
+
+        return CompatibilidadeCnae.Avaliar(despesa.TipoDespesa, cnaes)
+            == ResultadoDeCompatibilidade.Incompativel;
     }
 }
 
@@ -78,26 +90,30 @@ public sealed class RegraSituacaoCadastralIrregular : IRegraAnomalia
     {
         ArgumentNullException.ThrowIfNull(contexto);
 
-        foreach (var despesa in contexto.Despesas)
-        {
-            if (contexto.FornecedorDe(despesa) is not { } fornecedor)
-            {
-                continue;
-            }
+        // Uma flag por fornecedor, nao por nota — ver FatoDoFornecedor. O texto nao cita
+        // casa: dizia "regra da Camara" tambem para senador (54 flags, 08/11/2026).
+        var grupos = contexto.Despesas
+            .Where(despesa => !despesa.EhEstorno
+                && contexto.FornecedorDe(despesa)?.EstavaIrregularEm(despesa.DataDocumento) == true)
+            .GroupBy(despesa => despesa.DocumentoFornecedor.Numero, StringComparer.Ordinal);
 
-            if (!fornecedor.EstavaIrregularEm(despesa.DataDocumento))
-            {
-                continue;
-            }
+        foreach (var grupo in grupos)
+        {
+            var representante = FatoDoFornecedor.Representante(grupo);
+            var fornecedor = contexto.FornecedorDe(representante)!;
+            var primeira = grupo.Min(despesa => despesa.DataDocumento);
+            var ultima = grupo.Max(despesa => despesa.DataDocumento);
+            var total = grupo.Sum(despesa => despesa.ValorLiquido).ToString("C2", CulturaBrasileira.Padrao);
+            var abertura = grupo.Count() == 1
+                ? $"A nota de {primeira:dd/MM/yyyy} foi emitida"
+                : $"{grupo.Count()} notas de {primeira:dd/MM/yyyy} a {ultima:dd/MM/yyyy}, somando {total}, foram emitidas";
 
             yield return FlagAnomalia.Criar(
-                despesa.Id,
+                representante.Id,
                 Codigo,
                 Gravidade.Alta,
-                $"Inconsistência com a regra da Câmara: a nota de "
-                + $"{despesa.DataDocumento:dd/MM/yyyy} foi emitida por '{fornecedor.RazaoSocial}', "
-                + $"cuja situação cadastral na Receita Federal consta como "
-                + $"{fornecedor.SituacaoCadastral} desde "
+                $"{abertura} por '{fornecedor.RazaoSocial}', cuja situação cadastral na Receita "
+                + $"Federal consta como {fornecedor.SituacaoCadastral} desde "
                 + $"{fornecedor.DataSituacaoCadastral:dd/MM/yyyy}.",
                 grauDeConfianca: 1.0m);
         }
@@ -283,6 +299,26 @@ public sealed class RegraNotaFiscalInicial : IRegraAnomalia
         int.TryParse(despesa.NumeroDocumento, NumberStyles.None, CultureInfo.InvariantCulture, out var numero)
             ? numero
             : null;
+}
+
+/// <summary>
+/// Regras cujo achado e' fato do <b>fornecedor</b> (ramo, situacao cadastral, sede) emitem
+/// uma flag pelo conjunto, nao uma por nota.
+///
+/// <para>Levantamento de 08/11/2026: um par deputado–posto gerava 342 flags de REG_KYB_001,
+/// e o indice (peso/despesas) passava a medir quantas vezes se abasteceu — o mesmo defeito
+/// que REG_NET_001 evita de proposito. A flag fica na despesa de maior valor, com quantidade
+/// e total na descricao.</para>
+/// </summary>
+internal static class FatoDoFornecedor
+{
+    /// <summary>Maior valor; empate pela data e pelo codigo, para a flag nao trocar de nota entre passadas.</summary>
+    public static Despesa Representante(IEnumerable<Despesa> despesas) =>
+        despesas
+            .OrderByDescending(despesa => despesa.ValorLiquido)
+            .ThenBy(despesa => despesa.DataDocumento)
+            .ThenBy(despesa => despesa.CodigoDocumento, StringComparer.Ordinal)
+            .First();
 }
 
 /// <summary>Formatacao monetaria em pt-BR, independente do locale da maquina.</summary>

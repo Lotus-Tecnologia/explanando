@@ -99,32 +99,29 @@ public sealed class RegraGastoForaDaBaseEleitoral : IRegraAnomalia
 
         var ufDoParlamentar = contexto.Parlamentar.Uf;
 
-        foreach (var despesa in contexto.Despesas)
+        // A sede e' fato do fornecedor: uma flag por fornecedor — ver FatoDoFornecedor.
+        var grupos = contexto.Despesas
+            .Where(despesa => despesa.ValorLiquido >= contexto.Parametros.ValorMinimoParaGastoForaDaBase
+                && TiposPresenciais.Inclui(despesa.TipoDespesa)
+                && contexto.FornecedorDe(despesa)?.Endereco.Uf is { Length: 2 } uf
+                && !string.Equals(uf, ufDoParlamentar, StringComparison.Ordinal)
+                && !string.Equals(uf, "DF", StringComparison.Ordinal))
+            .GroupBy(despesa => despesa.DocumentoFornecedor.Numero, StringComparer.Ordinal);
+
+        foreach (var grupo in grupos)
         {
-            if (despesa.ValorLiquido < contexto.Parametros.ValorMinimoParaGastoForaDaBase
-                || !TiposPresenciais.Inclui(despesa.TipoDespesa))
-            {
-                continue;
-            }
-
-            if (contexto.FornecedorDe(despesa)?.Endereco.Uf is not { Length: 2 } ufDoFornecedor)
-            {
-                continue;
-            }
-
-            if (string.Equals(ufDoFornecedor, ufDoParlamentar, StringComparison.Ordinal)
-                || string.Equals(ufDoFornecedor, "DF", StringComparison.Ordinal))
-            {
-                continue;
-            }
+            var representante = FatoDoFornecedor.Representante(grupo);
+            var ufDoFornecedor = contexto.FornecedorDe(representante)!.Endereco.Uf;
+            var total = grupo.Sum(despesa => despesa.ValorLiquido).ToString("C2", CulturaBrasileira.Padrao);
+            var abertura = grupo.Count() == 1
+                ? $"Despesa presencial de '{representante.TipoDespesa}' no valor de {total} paga"
+                : $"{grupo.Count()} despesas presenciais, somando {total}, pagas";
 
             yield return FlagAnomalia.Criar(
-                despesa.Id,
+                representante.Id,
                 Codigo,
                 Gravidade.Baixa,
-                $"Despesa presencial de '{despesa.TipoDespesa}' no valor "
-                + $"de {despesa.ValorLiquido.ToString("C2", CulturaBrasileira.Padrao)} paga a "
-                + $"fornecedor sediado em {ufDoFornecedor}, fora da base eleitoral "
+                $"{abertura} a fornecedor sediado em {ufDoFornecedor}, fora da base eleitoral "
                 + $"({ufDoParlamentar}) e de Brasília.",
                 grauDeConfianca: 1.0m);
         }
