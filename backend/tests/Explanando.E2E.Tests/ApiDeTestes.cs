@@ -33,7 +33,7 @@ namespace Explanando.E2E.Tests;
 public sealed class ApiDeTestes : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container =
-        new PostgreSqlBuilder("postgres:17-alpine")
+        new PostgreSqlBuilder("postgres:17.11-alpine")
             .WithDatabase("explanando_e2e")
             .WithUsername("explanando")
             .WithPassword("explanando_e2e")

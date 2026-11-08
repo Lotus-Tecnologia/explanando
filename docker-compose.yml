@@ -17,7 +17,7 @@ name: explanando
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine
     container_name: explanando-postgres
     restart: unless-stopped
     environment:

@@ -14,7 +14,7 @@ namespace Explanando.Integration.Tests;
 /// </summary>
 public sealed class BancoDeTestes : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17.11-alpine")
         .WithDatabase("explanando_testes")
         .WithUsername("explanando")
         .WithPassword("explanando_teste")

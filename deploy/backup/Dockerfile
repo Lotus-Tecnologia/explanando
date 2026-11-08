@@ -6,7 +6,7 @@
 #
 # O rclone fala S3 com o R2 e com o S3 local do teste (compose.local.yml) pela mesma linha
 # de comando — e é ele mesmo quem serve esse S3 local.
-FROM postgres:17-alpine
+FROM postgres:17.11-alpine
 
 RUN apk add --no-cache rclone curl
 
