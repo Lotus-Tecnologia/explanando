@@ -273,6 +273,22 @@ public sealed class ServicoDeIngestaoTests
     }
 
     [Fact]
+    public async Task Teto_de_competencia_deixa_de_fora_o_que_vem_depois()
+    {
+        // Recoleta de uma base congelada: so' o periodo que a base ja cobre, para nao dar
+        // a alguns parlamentares meses que os outros nao tem.
+        var depois = Despesa("depois") with { Ano = 2026, Mes = 9, DataDocumento = new DateTimeOffset(2026, 9, 2, 0, 0, 0, TimeSpan.Zero) };
+        var repositorio = new RepositorioFalso();
+
+        var resultado = await new ServicoDeIngestao(
+            new FonteFalsa([Despesa("1"), depois]), new CadastroFalso(), repositorio)
+            .IngerirDeputadoAsync(Deputado, Legislatura, teto: Competencia.Criar(2026, 8));
+
+        resultado.DespesasNovas.ShouldBe(1);
+        repositorio.Despesas.ShouldAllBe(d => d.Competencia <= Competencia.Criar(2026, 8));
+    }
+
+    [Fact]
     public async Task Falha_de_enriquecimento_nao_e_cacheada()
     {
         // "Nao deu para consultar" e' diferente de "consultei e nao existe". Cachear a

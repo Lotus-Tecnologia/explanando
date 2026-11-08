@@ -588,6 +588,50 @@ switch (comando)
             return 0;
         }
 
+    case "recoletar-rejeitadas":
+        {
+            // So' os deputados com despesa rejeitada no checkpoint, e so' ate a competencia
+            // --ate (AAAAMM): a glosa da Camara passou a ser conferida pela precisao da
+            // origem (08/11/2026) e as rejeitadas agora entram, sem dar a esses deputados
+            // meses que o resto da base congelada nao tem.
+            var ate = LerInteiro("--ate")
+                ?? throw new InvalidOperationException("Informe --ate AAAAMM.");
+            var teto = Competencia.Criar(ate / 100, ate % 100);
+
+            var comRejeicao = (await contexto.CheckpointsDeIngestao
+                .AsNoTracking()
+                .Where(checkpoint => checkpoint.Legislatura == legislatura
+                    && checkpoint.DespesasRejeitadas > 0)
+                .Select(checkpoint => checkpoint.IdExternoParlamentar)
+                .ToListAsync()
+                .ConfigureAwait(false))
+                .ToHashSet();
+
+            var ingestao = servicos.GetRequiredService<ServicoDeIngestao>();
+            int visitados = 0, novas = 0, aindaRejeitadas = 0;
+
+            await foreach (var deputado in servicos.GetRequiredService<IFonteDeParlamentares>()
+                .ListarDeputadosAsync()
+                .ConfigureAwait(false))
+            {
+                if (!comRejeicao.Contains(deputado.IdExterno))
+                {
+                    continue;
+                }
+
+                var resultado = await ingestao
+                    .IngerirDeputadoAsync(deputado, legislatura, teto)
+                    .ConfigureAwait(false);
+                visitados++;
+                novas += resultado.DespesasNovas;
+                aindaRejeitadas += resultado.Rejeitadas.Count;
+            }
+
+            Console.WriteLine($"Deputados com rejeicao: {comRejeicao.Count}; visitados: {visitados}; "
+                + $"despesas novas ate {teto}: {novas}; ainda rejeitadas: {aindaRejeitadas}.");
+            return 0;
+        }
+
     case "reconsultar-mei":
         {
             // Uma vez, para a base que ja existia: as datas da opcao pelo MEI eram
@@ -851,6 +895,8 @@ switch (comando)
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
               dotnet run -- reconsultar-mei            datas da opcao pelo MEI na BrasilAPI
+              dotnet run -- recoletar-rejeitadas --ate AAAAMM
+                                                          so' os deputados com despesa rejeitada
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
               dotnet run -- coletar-cadeiras [--se-vencido]
