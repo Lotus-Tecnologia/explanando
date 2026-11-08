@@ -288,6 +288,31 @@ public sealed class DespesaTests
     }
 
     [Fact]
+    public void Hash_da_passagem_sigepa_nao_depende_do_documento_do_fornecedor()
+    {
+        // A15 (08/11/2026): a Camara publicava a passagem SIGEPA sem documento e passou a
+        // publicar o CNPJ da companhia. Com o documento no hash, a recoleta trazia as
+        // 184.280 passagens da base de novo, como despesas novas.
+        static Despesa Passagem(string documento) => Despesa.Criar(Real(b =>
+        {
+            b.TipoDespesa = "PASSAGEM AÉREA - SIGEPA";
+            b.DocumentoFornecedor = CpfCnpj.Criar(documento);
+        }));
+
+        Passagem("").CodigoTipoDespesa.ShouldNotBe(CatalogoDeTiposDeDespesa.NaoCatalogado);
+        Passagem("").HashUnico.ShouldBe(Passagem("36826246000164").HashUnico);
+    }
+
+    [Fact]
+    public void Hash_das_outras_despesas_continua_dependendo_do_documento()
+    {
+        var uma = Despesa.Criar(Real(b => b.DocumentoFornecedor = CpfCnpj.Criar("36826246000164")));
+        var outra = Despesa.Criar(Real(b => b.DocumentoFornecedor = CpfCnpj.Criar("11222333000181")));
+
+        uma.HashUnico.ShouldNotBe(outra.HashUnico);
+    }
+
+    [Fact]
     public void Hash_cabe_na_coluna_de_64_caracteres()
     {
         Despesa.Criar(Real()).HashUnico.Length.ShouldBe(16, "128 bits do SHA-256");

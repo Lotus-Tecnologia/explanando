@@ -300,12 +300,25 @@ public sealed class Despesa : Entidade
     /// nome de fornecedor e URL do documento mudam sem que a despesa seja outra, e se
     /// entrassem aqui uma correcao na origem viraria duplicata no banco.
     /// </summary>
+    /// <summary>
+    /// A15 (08/11/2026): a Camara publicava a passagem SIGEPA sem documento do fornecedor e
+    /// passou a publicar o CNPJ da companhia. Fora do hash nessa rubrica, a passagem ja
+    /// conhecida continua conhecida — as 184.280 da base foram gravadas com documento vazio,
+    /// entao o hash delas nao muda.
+    /// </summary>
+    private static readonly short CodigoDaPassagemSigepa =
+        CatalogoDeTiposDeDespesa.CodigoDe("PASSAGEM AÉREA - SIGEPA");
+
     private static byte[] CalcularHash(Despesa despesa)
     {
+        var documento = despesa.CodigoTipoDespesa == CodigoDaPassagemSigepa
+            ? string.Empty
+            : despesa.DocumentoFornecedor.Numero;
+
         var partes = string.Join(
             '|',
             despesa.ParlamentarId.ToString("N", CultureInfo.InvariantCulture),
-            despesa.DocumentoFornecedor.Numero,
+            documento,
             despesa.CodigoDocumento,
             despesa.NumeroDocumento,
             despesa.Competencia.ToString(),
