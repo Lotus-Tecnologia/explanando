@@ -328,6 +328,46 @@ public sealed class RegrasDeTransacaoEGeografiaTests
             .ShouldBeEmpty();
     }
 
+    [Theory]
+    [InlineData("MANUTENÇÃO DE ESCRITÓRIO DE APOIO À ATIVIDADE PARLAMENTAR", false)]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE AERONAVES", false)]
+    [InlineData("Aquisição de material de consumo para uso no escritório político, inclusive aquisição ou locação de software, despesas postais, aquisição de publicações, locação de móveis e de equipamentos.", true)]
+    public void Fora_da_base_se_cala_para_rubrica_que_nao_e_presencial(string tipo, bool senado)
+    {
+        // Levantamento de 08/11/2026: "MANUTEN" e "LOCA" pegavam software, administradora
+        // de imoveis e frete de aeronave — 943 flags sobre compra que nao exige presenca.
+        var cenario = new CenarioDeAvaliacao();
+        if (senado)
+        {
+            cenario.ParlamentarDoSenado("AP");
+        }
+
+        cenario
+            .ComFornecedor(uf: "SP", cnaePrincipal: "6204000")
+            .ComDespesa(2_500m, tipo: tipo)
+            .Rodar(new RegraGastoForaDaBaseEleitoral())
+            .ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE VEÍCULOS AUTOMOTORES", false)]
+    [InlineData("LOCAÇÃO OU FRETAMENTO DE EMBARCAÇÕES", false)]
+    [InlineData("Locomoção, hospedagem, alimentação, combustíveis e lubrificantes", true)]
+    public void Fora_da_base_continua_para_rubrica_presencial(string tipo, bool senado)
+    {
+        var cenario = new CenarioDeAvaliacao();
+        if (senado)
+        {
+            cenario.ParlamentarDoSenado("AP");
+        }
+
+        cenario
+            .ComFornecedor(uf: "GO")
+            .ComDespesa(2_500m, tipo: tipo)
+            .Rodar(new RegraGastoForaDaBaseEleitoral())
+            .Count.ShouldBe(1);
+    }
+
     [Fact]
     public void Fora_da_base_se_cala_quando_o_fornecedor_nao_foi_resolvido()
     {

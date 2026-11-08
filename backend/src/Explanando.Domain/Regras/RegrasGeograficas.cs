@@ -11,16 +11,20 @@ namespace Explanando.Domain.Regras;
 /// </summary>
 internal static class TiposPresenciais
 {
+    // "MANUTEN" e "LOCA" sairam em 08/11/2026: pegavam manutencao de escritorio, locacao de
+    // software do Senado e frete de aeronave (943 flags). Locacao de veiculo e embarcacao
+    // continua, pelo nome do que se aluga.
     private static readonly string[] Marcadores =
     [
         "COMBUST",
-        "MANUTEN",
-        "LOCA",
         "ALIMENTA",
         "HOSPEDAGEM",
         "LOCOMO",
         "TÁXI",
         "TAXI",
+        "VEÍCULO",
+        "VEICULO",
+        "EMBARCA",
     ];
 
     public static bool Inclui(string tipoDespesa) =>
