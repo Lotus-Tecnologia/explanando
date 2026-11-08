@@ -231,7 +231,7 @@ export function BuscaRapidaHome({
                             {item.nomeParlamentar}
                           </span>
                           <span
-                            className={`rounded-selo px-1.5 py-0.5 text-[10px] font-semibold ${
+                            className={`rounded-selo px-1.5 py-0.5 text-xs font-semibold ${
                               ehCamara
                                 ? "bg-surface text-texto-suave border border-borda-suave"
                                 : "bg-realce text-titulo"
@@ -269,7 +269,7 @@ export function BuscaRapidaHome({
             </div>
           )}
 
-          <div className="border-t border-borda-suave px-3 py-1.5 text-[11px] text-texto-suave flex items-center justify-between">
+          <div className="border-t border-borda-suave px-3 py-1.5 text-xs text-texto-suave flex items-center justify-between">
             <span>Pressione Enter para selecionar</span>
             <span>Esc para fechar</span>
           </div>

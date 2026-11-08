@@ -53,7 +53,7 @@ export function DespesasComIndicadores({
       {/* Barra superior de controles e filtros por severidade */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda-suave/80 pb-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-texto-suave mr-1">
+          <span className="text-xs font-bold text-texto-suave mr-1">
             Filtrar achados:
           </span>
 
@@ -135,12 +135,12 @@ export function DespesasComIndicadores({
           {despesasFiltradas.map((despesa) => (
             <li
               key={despesa.id}
-              className="rounded-cartao border border-borda-suave bg-fundo p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-cartao"
+              className="rounded-cartao border border-borda-suave bg-surface p-4 sm:p-5 transition-shadow hover:shadow-cartao"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-selo bg-surface border border-borda-suave px-2 py-0.5 text-[11px] font-semibold text-texto-suave">
+                    <span className="rounded-selo bg-surface border border-borda-suave px-2 py-0.5 text-xs font-semibold text-texto-suave">
                       {despesa.tipoDespesa}
                     </span>
                     <span className="numeros text-xs text-texto-suave">
@@ -168,7 +168,7 @@ export function DespesasComIndicadores({
               {/* Achados / Flags com a taxonomia oficial do ADR-0013 */}
               {despesa.flags.length > 0 && (
                 <div className="mt-4 rounded-campo border border-borda-suave/80 bg-surface/70 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-texto-suave mb-2">
+                  <p className="text-xs font-bold text-texto-suave mb-2">
                     Inconsistências identificadas pelo motor:
                   </p>
                   <ul className="space-y-2">

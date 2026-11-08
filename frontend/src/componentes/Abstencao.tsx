@@ -102,7 +102,7 @@ export function BlocoDeCobertura({
   return (
     <section
       aria-labelledby="titulo-cobertura"
-      className="border border-borda-suave bg-fundo p-4"
+      className="border border-borda-suave bg-surface p-4"
     >
       <h2 id="titulo-cobertura" className="text-base font-bold text-titulo">
         O que foi analisado

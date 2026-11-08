@@ -42,7 +42,7 @@ export function PainelDaUnidade({
 
   return (
     <aside
-      className="rounded-cartao border border-borda-suave bg-surface p-5 shadow-cartao"
+      className="rounded-cartao border border-borda-suave bg-surface p-5"
       aria-label={`Resumo de ${no.nome}`}
     >
       <div className="flex items-start gap-3">
@@ -73,7 +73,7 @@ export function PainelDaUnidade({
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
         {fichas.map((ficha) => (
           <div key={ficha.termo}>
-            <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+            <dt className="text-xs font-bold text-texto-suave">
               {ficha.termo}
             </dt>
             <dd className="mt-0.5 text-sm text-texto">
@@ -85,7 +85,7 @@ export function PainelDaUnidade({
         ))}
 
         <div>
-          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+          <dt className="text-xs font-bold text-texto-suave">
             Unidades subordinadas
           </dt>
           <dd className="mt-0.5 font-display text-xl font-bold text-titulo">
@@ -94,7 +94,7 @@ export function PainelDaUnidade({
         </div>
 
         <div>
-          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+          <dt className="text-xs font-bold text-texto-suave">
             Servidores no ramo
           </dt>
           <dd className="mt-0.5 font-display text-xl font-bold text-titulo">

@@ -66,22 +66,35 @@ export function Comprovante({
  * Exibir `R$ 0,00` diria que a despesa passou por conferência e foi integralmente aprovada —
  * afirmação que ninguém fez, produzida por um valor que parece inocente (ADR-0012 §2).
  */
-export function ValoresDaDespesa({ despesa }: { despesa: ItemDeDespesa }) {
+export function ValoresDaDespesa({
+  despesa,
+  grande = false,
+}: {
+  despesa: ItemDeDespesa;
+  /** Na página da despesa o valor é o número principal: alinhado à esquerda e grande. */
+  grande?: boolean;
+}) {
   const glosaConhecida = despesa.valorGlosa !== null;
   const houveCorte = glosaConhecida && despesa.valorGlosa! > 0;
 
   return (
-    <div className="numeros text-right">
-      <div className="font-semibold text-titulo">
+    <div className={grande ? "numeros" : "numeros text-right"}>
+      <div
+        className={
+          grande
+            ? "font-display text-[2rem] leading-tight font-bold text-titulo"
+            : "font-semibold whitespace-nowrap text-titulo"
+        }
+      >
         {formatarReais(despesa.valorLiquido)}
         {despesa.ehEstorno ? (
-          <span className="ml-2 text-xs font-normal text-texto-suave">estorno</span>
+          <span className="ml-2 font-sans text-sm font-normal text-texto-suave">estorno</span>
         ) : null}
       </div>
 
       {houveCorte ? (
-        <div className="text-xs text-texto-suave">
-          declarado {formatarReais(despesa.valorDocumento)} · glosa{" "}
+        <div className="text-sm text-texto-suave">
+          declarado {formatarReais(despesa.valorDocumento)}, glosa{" "}
           {formatarReais(despesa.valorGlosa!)}
         </div>
       ) : null}

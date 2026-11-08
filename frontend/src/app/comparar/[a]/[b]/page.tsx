@@ -14,6 +14,7 @@ import {
 import type { PerfilDoParlamentar } from "@/lib/contrato";
 import { formatarDensidade, formatarNumero, formatarReais } from "@/lib/formato";
 import { iniciais, retratoSeguro } from "@/lib/fotos";
+import { TagDeAbstencao } from "@/componentes/Abstencao";
 
 /* Literal pelo mesmo motivo das outras páginas: o Next lê este export estaticamente. */
 export const revalidate = 300;
@@ -93,18 +94,18 @@ export default async function Comparacao({ params }: Parametros) {
   const regras = compararComposicoes(perfilA, perfilB);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
       <Link
         href={`/parlamentares/${perfilA.id}`}
-        className="text-sm text-titulo underline-offset-2 hover:underline"
+        className="inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
       >
         ← {perfilA.nomeParlamentar}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-balance text-titulo">
+      <h1 className="mt-2 font-display text-[1.75rem] leading-tight font-bold text-balance text-titulo sm:text-4xl">
         {perfilA.nomeParlamentar} × {perfilB.nomeParlamentar}
       </h1>
-      <p className="mt-1 text-sm text-texto-suave">
+      <p className="mt-2 text-texto-suave">
         Dois {casa?.integrantes ?? "parlamentares"} lado a lado, na mesma cota
         {casa ? ` (${casa.cota})` : ""}.
       </p>
@@ -113,7 +114,7 @@ export default async function Comparacao({ params }: Parametros) {
         A ressalva vem ANTES dos números. Dois índices lado a lado convidam "X é mais
         corrupto que Y", e a frase que desmonta isso não pode estar num rodapé que ninguém lê.
       */}
-      <aside className="mt-5 border-l-4 border-titulo bg-surface p-4 text-sm leading-relaxed text-texto">
+      <aside className="mt-5 rounded-cartao border border-borda-suave bg-surface p-5 text-texto">
         <p>
           <strong>Índice de achados técnicos não é juízo de conduta.</strong> Um índice maior quer
           dizer mais inconsistências entre registros públicos — e cada uma pode ter explicação
@@ -135,7 +136,7 @@ export default async function Comparacao({ params }: Parametros) {
         <h2 id="titulo-numeros" className="sr-only">
           Os números
         </h2>
-        <dl className="border border-borda-suave">
+        <dl className="overflow-hidden rounded-cartao border border-borda-suave bg-surface">
           <Linha
             rotulo="Volume gasto"
             a={formatarReais(perfilA.volumeTotalGasto)}
@@ -182,19 +183,19 @@ export default async function Comparacao({ params }: Parametros) {
 
       {regras.length > 0 ? (
         <section aria-labelledby="titulo-regras" className="mt-8">
-          <h2 id="titulo-regras" className="text-base font-bold text-titulo">
+          <h2 id="titulo-regras" className="font-display text-xl font-bold text-titulo">
             De onde vem o índice de cada um
           </h2>
-          <p className="mt-1 text-sm text-texto-suave">
+          <p className="mt-2 text-texto-suave">
             A fatia do peso de cada regra, dentro do índice de cada parlamentar. Cada coluna
             fecha 100%.
           </p>
 
-          <ul className="mt-4 border border-borda-suave">
+          <ul className="mt-4 overflow-hidden rounded-cartao border border-borda-suave bg-surface">
             {/* As colunas repetem os nomes: o cabeçalho com as fotos já saiu da tela aqui. */}
             <li
               aria-hidden="true"
-              className="grid grid-cols-2 gap-3 border-b border-borda-suave bg-surface px-3 py-2 text-xs font-semibold text-texto-suave sm:gap-6 sm:px-4"
+              className="grid grid-cols-2 gap-3 border-b border-borda-estrutural px-3 py-2.5 text-sm font-semibold text-texto-suave sm:gap-6 sm:px-4"
             >
               <span className="truncate">{perfilA.nomeParlamentar}</span>
               <span className="truncate">{perfilB.nomeParlamentar}</span>
@@ -204,7 +205,7 @@ export default async function Comparacao({ params }: Parametros) {
                 key={regra.codigo}
                 className="border-b border-borda-suave p-3 last:border-b-0 sm:p-4"
               >
-                <p className="text-sm text-titulo">{regra.descricao}</p>
+                <p className="text-texto">{regra.descricao}</p>
                 <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-6">
                   <LadoDaBarra lado={regra.a} />
                   <LadoDaBarra lado={regra.b} />
@@ -215,7 +216,7 @@ export default async function Comparacao({ params }: Parametros) {
         </section>
       ) : null}
 
-      <p className="mt-8 border-t border-borda-suave pt-4 text-xs text-texto-suave">
+      <p className="mt-8 border-t border-borda-suave pt-4 text-sm text-texto-suave">
         Cada número acima vem do perfil de cada parlamentar, com o mesmo motor de regras e a
         mesma base. Os achados, um a um, e as respostas dos gabinetes estão nos perfis.
       </p>
@@ -248,21 +249,21 @@ function Cabecalho({ perfil }: { perfil: PerfilDoParlamentar }) {
           alt=""
           width={56}
           height={74}
-          className="h-[74px] w-14 shrink-0 border border-borda-suave object-cover"
+          className="size-14 shrink-0 rounded-full border border-borda-suave object-cover"
         />
       ) : (
         <span
           aria-hidden="true"
-          className="flex h-[74px] w-14 shrink-0 items-center justify-center bg-realce text-sm font-bold text-titulo"
+          className="flex size-14 shrink-0 items-center justify-center rounded-full bg-realce font-bold text-texto"
         >
           {iniciais(perfil.nomeParlamentar)}
         </span>
       )}
       <span className="min-w-0">
-        <span className="block text-base font-bold text-titulo group-hover:underline">
+        <span className="block font-display text-lg font-bold text-titulo group-hover:underline">
           {perfil.nomeParlamentar}
         </span>
-        <span className="block text-xs text-texto-suave">
+        <span className="block text-sm text-texto-suave">
           {perfil.siglaPartido} · {perfil.uf}
         </span>
       </span>
@@ -282,34 +283,34 @@ function Linha({
   b: string;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-x-3 border-b border-borda-suave p-3 last:border-b-0 odd:bg-fundo even:bg-surface sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-6 sm:px-4">
-      <dt className="col-span-2 text-xs font-semibold text-texto-suave sm:col-span-1 sm:text-sm">
+    <div className="grid grid-cols-2 gap-x-3 border-b border-borda-suave p-3 last:border-b-0 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-x-6 sm:px-4">
+      <dt className="col-span-2 text-sm font-semibold text-texto-suave sm:col-span-1">
         {rotulo}
-        {nota ? <span className="block text-xs font-normal">{nota}</span> : null}
+        {nota ? <span className="block text-sm font-normal">{nota}</span> : null}
       </dt>
-      <dd className="numeros mt-1 text-base font-bold text-titulo sm:mt-0">{a}</dd>
-      <dd className="numeros mt-1 text-base font-bold text-titulo sm:mt-0">{b}</dd>
+      <dd className="numeros mt-1 font-display text-lg font-bold text-titulo sm:mt-0">{a}</dd>
+      <dd className="numeros mt-1 font-display text-lg font-bold text-titulo sm:mt-0">{b}</dd>
     </div>
   );
 }
 
 function LadoDaBarra({ lado }: { lado: LadoDaRegra }) {
   if (!lado.avaliada) {
-    return <p className="text-xs font-semibold text-abstencao-texto">Não avaliada — sem dado</p>;
+    return <TagDeAbstencao motivo="sem dado público para esta regra" />;
   }
 
   return (
     <div className="min-w-0">
-      <p className="numeros text-xs text-texto-suave">
+      <p className="numeros text-sm text-texto-suave">
         {lado.porcentagem !== null ? (
-          <strong className="text-sm text-titulo">{lado.porcentagem}%</strong>
+          <strong className="text-titulo">{lado.porcentagem}%</strong>
         ) : null}{" "}
         {formatarNumero(lado.quantidade)} {lado.quantidade === 1 ? "achado" : "achados"}
       </p>
       {lado.porcentagem !== null ? (
-        <div aria-hidden="true" className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+        <div aria-hidden="true" className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-realce">
           <div
-            className="h-full rounded-full bg-titulo"
+            className="h-full rounded-full bg-acento"
             style={{ width: lado.porcentagem > 0 ? `max(2px, ${lado.porcentagem}%)` : "0" }}
           />
         </div>
@@ -330,15 +331,15 @@ function daCasa(casa: string): string {
 function CasasDiferentes({ a, b }: { a: PerfilDoParlamentar; b: PerfilDoParlamentar }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-titulo">Esta comparação não é feita</h1>
-      <p className="mt-3 text-sm leading-relaxed text-texto">
+      <h1 className="font-display text-3xl font-bold text-titulo">Esta comparação não é feita</h1>
+      <p className="mt-3 text-texto">
         <strong>{a.nomeParlamentar}</strong> é {daCasa(a.casa)}, e{" "}
         <strong>{b.nomeParlamentar}</strong> é {daCasa(b.casa)}. As duas casas têm cotas diferentes — a CEAP da Câmara e a CEAPS do Senado —,
         com regras e valores próprios. Pôr os dois no mesmo eixo compararia números que não medem
         a mesma coisa.
       </p>
-      <p className="mt-3 text-sm text-texto">Cada um pode ser comparado com alguém da própria casa:</p>
-      <ul className="mt-2 space-y-1 text-sm">
+      <p className="mt-3 text-texto">Cada um pode ser comparado com alguém da própria casa:</p>
+      <ul className="mt-2 space-y-1">
         {[a, b].map((perfil) => (
           <li key={perfil.id}>
             <Link
@@ -347,7 +348,7 @@ function CasasDiferentes({ a, b }: { a: PerfilDoParlamentar; b: PerfilDoParlamen
             >
               {perfil.nomeParlamentar}
             </Link>{" "}
-            <span className="text-texto-suave">· {perfil.casa}</span>
+            <span className="text-texto-suave">, {perfil.casa}</span>
           </li>
         ))}
       </ul>

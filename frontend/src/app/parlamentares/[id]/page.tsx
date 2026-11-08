@@ -98,7 +98,7 @@ function Numero({
   nota?: string;
 }) {
   return (
-    <div className="border border-borda-suave bg-fundo p-4">
+    <div className="border border-borda-suave bg-surface p-4">
       <dt className="text-xs font-semibold text-texto-suave">{rotulo}</dt>
       <dd className="numeros mt-1 text-xl font-bold text-titulo">{valor}</dd>
       {nota ? <p className="mt-1 text-xs text-texto-suave">{nota}</p> : null}

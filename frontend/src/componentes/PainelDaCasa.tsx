@@ -64,7 +64,7 @@ export function PainelDaCasa({
   return (
     <section
       aria-label={`Panorama — ${casa.nomeOficial}`}
-      className="mt-6 overflow-hidden rounded-cartao border border-borda-suave bg-fundo shadow-cartao"
+      className="mt-6 overflow-hidden rounded-cartao border border-borda-suave bg-surface"
     >
       <div className="grid divide-y divide-borda-suave lg:grid-cols-5 lg:divide-x lg:divide-y-0">
         {/* ---- os dois números que respondem "o que é isto" ---- */}
@@ -95,7 +95,7 @@ export function PainelDaCasa({
 
         {/* ---- a forma do que foi encontrado ---- */}
         <div className="p-5 lg:col-span-3">
-          <h3 className="text-[11px] font-bold tracking-wider text-texto-suave uppercase">
+          <h3 className="text-xs font-bold text-texto-suave">
             Indicadores por peso
           </h3>
 
@@ -162,7 +162,7 @@ function Destaque({
 }) {
   return (
     <div className="bg-fundo px-5 py-4">
-      <dt className="text-[11px] font-bold tracking-wider text-texto-suave uppercase">
+      <dt className="text-xs font-bold text-texto-suave">
         {rotulo}
       </dt>
       <dd className="numeros mt-1 font-display text-2xl font-bold tracking-tight text-titulo sm:text-3xl">

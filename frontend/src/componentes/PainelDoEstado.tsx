@@ -27,7 +27,7 @@ export function DistribuicaoDoEstado({
   if (total === 0) return null;
 
   return (
-    <section className="rounded-cartao border border-borda-suave bg-surface p-5 shadow-cartao">
+    <section className="rounded-cartao border border-borda-suave bg-surface p-5">
       <h3 className="font-display text-base font-bold text-titulo">{titulo}</h3>
       <p className="mt-1 text-sm text-texto-suave">{explicacao}</p>
 
@@ -135,7 +135,7 @@ export function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
     <article className="rounded-cartao border border-borda-suave bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span
-          className="rounded-selo px-2 py-0.5 text-xs font-bold tracking-wide uppercase"
+          className="rounded-selo px-2 py-0.5 text-xs font-bold tracking-wide"
           style={{
             background: "var(--color-realce)",
             color: "var(--color-titulo)",
@@ -163,7 +163,7 @@ export function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
       {saiu !== null || entrou !== null ? (
         <dl className="mt-3 overflow-hidden rounded-campo border border-borda-suave">
           <div className="flex gap-3 bg-fundo px-3 py-2">
-            <dt className="w-12 shrink-0 text-xs font-bold tracking-wider text-texto-suave uppercase">
+            <dt className="w-12 shrink-0 text-xs font-bold text-texto-suave">
               Saiu
             </dt>
             <dd className="min-w-0 flex-1 text-sm">
@@ -176,7 +176,7 @@ export function CartaoDeMudanca({ mudanca }: { mudanca: MudancaDoEstado }) {
           </div>
 
           <div className="flex gap-3 border-t border-borda-suave bg-fundo px-3 py-2">
-            <dt className="w-12 shrink-0 text-xs font-bold tracking-wider text-texto-suave uppercase">
+            <dt className="w-12 shrink-0 text-xs font-bold text-texto-suave">
               Entrou
             </dt>
             <dd className="min-w-0 flex-1 text-sm">

@@ -19,7 +19,7 @@ import {
 export function VotacaoDoParlamentar({ votacao }: { votacao: Votacao }) {
   if (!votacao.temCandidatura) {
     return (
-      <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-fundo p-4 sm:p-5">
+      <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-surface p-4 sm:p-5">
         <h2 id="titulo-votacao" className="text-base font-bold text-titulo">
           De onde vieram os votos
         </h2>
@@ -39,7 +39,7 @@ export function VotacaoDoParlamentar({ votacao }: { votacao: Votacao }) {
       : null;
 
   return (
-    <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-fundo p-4 sm:p-5">
+    <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-surface p-4 sm:p-5">
       <h2 id="titulo-votacao" className="text-base font-bold text-titulo">
         De onde vieram os votos
       </h2>

@@ -43,7 +43,7 @@ function Camada({ camada, chaveDoPoder }: { camada: CamadaDoMapa; chaveDoPoder: 
 
   return (
     <section>
-      <h3 className="flex items-baseline gap-2 text-xs font-bold tracking-widest text-texto-suave uppercase">
+      <h3 className="flex items-baseline gap-2 text-xs font-bold text-texto-suave">
         <span
           aria-hidden="true"
           className="inline-block size-2 rounded-full"
@@ -112,7 +112,7 @@ function Cadeira({
         }}
       >
         {cadeira.vaga ? (
-          <span className="px-1 text-[10px] leading-tight font-semibold text-texto-suave">
+          <span className="px-1 text-xs leading-tight font-semibold text-texto-suave">
             Vaga
           </span>
         ) : retrato === null ? (
@@ -142,17 +142,17 @@ function Cadeira({
           {cadeira.ocupante ?? "Sem ocupante"}
         </p>
 
-        <p className="mt-0.5 text-[11px] leading-snug text-texto-suave">{cadeira.cargo}</p>
+        <p className="mt-0.5 text-xs leading-snug text-texto-suave">{cadeira.cargo}</p>
 
         {cadeira.partido === null ? null : (
-          <p className="numeros mt-0.5 text-[11px] text-texto-suave">
+          <p className="numeros mt-0.5 text-xs text-texto-suave">
             {cadeira.partido}
             {cadeira.uf === null ? "" : `-${cadeira.uf}`}
           </p>
         )}
 
         {cadeira.curada ? (
-          <p className="mt-1 text-[10px] font-semibold text-acento">transcrito à mão</p>
+          <p className="mt-1 text-xs font-semibold text-acento">transcrito à mão</p>
         ) : null}
       </figcaption>
     </figure>

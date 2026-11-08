@@ -72,7 +72,7 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       <section className="border-b border-borda-suave bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
-          <p className="text-xs font-bold tracking-widest text-acento uppercase">
+          <p className="text-xs font-bold text-acento">
             Estrutura organizacional · dados abertos
           </p>
 
@@ -172,7 +172,7 @@ export default async function Pagina() {
 
           <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-3">
             <div className="bg-surface px-5 py-4">
-              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+              <dt className="text-xs font-bold text-texto-suave">
                 Servidores em {formatarCompetencia(mapa.competenciaDoPessoal)}
               </dt>
               <dd className="numeros mt-1 font-display text-3xl font-bold text-titulo">
@@ -181,7 +181,7 @@ export default async function Pagina() {
             </div>
 
             <div className="bg-surface px-5 py-4">
-              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+              <dt className="text-xs font-bold text-texto-suave">
                 Ligados a um órgão do mapa
               </dt>
               <dd className="numeros mt-1 font-display text-3xl font-bold text-titulo">
@@ -196,7 +196,7 @@ export default async function Pagina() {
             </div>
 
             <div className="bg-surface px-5 py-4">
-              <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+              <dt className="text-xs font-bold text-texto-suave">
                 De qual poder
               </dt>
               <dd className="mt-1 text-sm text-texto">
@@ -207,7 +207,7 @@ export default async function Pagina() {
             </div>
           </dl>
 
-          <div className="mt-8 rounded-cartao border border-borda-suave bg-surface p-5 shadow-cartao">
+          <div className="mt-8 rounded-cartao border border-borda-suave bg-surface p-5">
             <SerieDePessoal
               serie={serie}
               titulo="O Executivo federal, mês a mês"
@@ -239,7 +239,7 @@ export default async function Pagina() {
       {/* ---------------------------------------------------------------- */}
       {/*  A lista, que é o desenho em texto                                */}
       {/* ---------------------------------------------------------------- */}
-      <section id="orgaos-e-entidades" className="scroll-mt-24 border-t border-borda-suave bg-surface/50">
+      <section id="orgaos-e-entidades" className="scroll-mt-24 border-t border-borda-suave">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <h2 className="font-display text-2xl font-bold tracking-tight text-titulo">
             Órgãos e entidades
@@ -250,42 +250,57 @@ export default async function Pagina() {
             a mesma informação do desenho, em texto — quem não distingue as cores lê aqui.
           </p>
 
-          <ul className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
-            {[...orgaos]
-              .sort((a, b) => b.unidadesSubordinadas - a.unidadesSubordinadas)
-              .map((orgao) => (
-                <li key={orgao.codigo} className="bg-surface">
-                  <Link
-                    href={`/estado/${orgao.codigo}`}
-                    className="flex items-baseline gap-3 px-4 py-3 hover:bg-realce focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-titulo"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="size-2.5 shrink-0 translate-y-1 rounded-[2px]"
-                      style={{ background: corDoPoder(orgao.poder) }}
-                    />
+          {/*
+            Um grupo por poder, recolhido: aberta, a lista de primeiro nível passava de 24 mil
+            pixels no celular. O `<details>` funciona sem JavaScript e no teclado.
+          */}
+          <div className="mt-6 grid gap-2">
+            {gruposDePoder(orgaos).map(({ poder, rotulo, itens }) => (
+              <details key={rotulo} className="rounded-cartao border border-borda-suave bg-surface">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                  <span
+                    aria-hidden="true"
+                    className="size-3 shrink-0 rounded-full"
+                    style={{ background: corDoPoder(poder) }}
+                  />
+                  <span className="flex-1 font-semibold text-texto">{rotulo}</span>
+                  <span className="numeros text-sm text-texto-suave">
+                    {formatarNumero(itens.length)} {itens.length === 1 ? "órgão" : "órgãos"}
+                  </span>
+                  <span aria-hidden="true" className="text-texto-suave">▾</span>
+                </summary>
 
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-titulo">
-                        {orgao.sigla ?? orgao.nome}
-                      </span>
-                      <span className="block truncate text-xs text-texto-suave">
-                        {orgao.sigla ? orgao.nome : orgao.tipo}
-                      </span>
-                    </span>
+                <ul className="grid grid-cols-1 border-t border-borda-suave sm:grid-cols-2">
+                  {itens.map((orgao) => (
+                    <li key={orgao.codigo}>
+                      <Link
+                        href={`/estado/${orgao.codigo}`}
+                        className="flex min-h-11 items-baseline gap-3 px-4 py-3 hover:bg-realce"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-semibold text-texto">
+                            {orgao.sigla ?? orgao.nome}
+                          </span>
+                          <span className="block truncate text-sm text-texto-suave">
+                            {orgao.sigla ? orgao.nome : orgao.tipo}
+                          </span>
+                        </span>
 
-                    <span className="numeros shrink-0 text-right text-sm text-texto">
-                      {formatarNumero(orgao.unidadesSubordinadas)}
-                      <span className="block text-xs text-texto-suave">
-                        {orgao.servidoresNoRamo == null
-                          ? "sem dado"
-                          : `${formatarNumero(orgao.servidoresNoRamo)} pessoas`}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-          </ul>
+                        <span className="numeros shrink-0 text-right text-sm text-texto">
+                          {formatarNumero(orgao.unidadesSubordinadas)}
+                          <span className="block text-texto-suave">
+                            {orgao.servidoresNoRamo == null
+                              ? "sem dado"
+                              : `${formatarNumero(orgao.servidoresNoRamo)} pessoas`}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -347,6 +362,34 @@ export default async function Pagina() {
         </div>
       </section>
     </main>
+  );
+}
+
+const ROTULO_DO_PODER: Record<string, string> = {
+  executivo: "Executivo",
+  legislativo: "Legislativo",
+  judiciario: "Judiciário",
+  essenciais: "Funções essenciais à Justiça",
+};
+
+/**
+ * Os órgãos agrupados por poder, cada grupo do maior ramo para o menor, e os grupos pelo
+ * número de órgãos. Sem poder classificado vai por último, com nome próprio: a fonte não o
+ * classificou, e pô-lo noutro grupo inventaria a classificação.
+ */
+function gruposDePoder<T extends { poder: string | null; unidadesSubordinadas: number }>(
+  orgaos: readonly T[],
+) {
+  const mapa = new Map<string, { poder: string | null; rotulo: string; itens: T[] }>();
+  for (const orgao of orgaos) {
+    const rotulo = orgao.poder ? (ROTULO_DO_PODER[orgao.poder] ?? orgao.poder) : "Sem poder classificado";
+    const grupo = mapa.get(rotulo) ?? { poder: orgao.poder, rotulo, itens: [] };
+    grupo.itens.push(orgao);
+    mapa.set(rotulo, grupo);
+  }
+  for (const grupo of mapa.values()) grupo.itens.sort((a, b) => b.unidadesSubordinadas - a.unidadesSubordinadas);
+  return [...mapa.values()].sort((a, b) =>
+    a.poder === null ? 1 : b.poder === null ? -1 : b.itens.length - a.itens.length,
   );
 }
 
