@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ranquearTudo } from "@/lib/api";
 import { CASAS, type Casa } from "@/lib/casas";
-import { iniciais, retratoSeguro } from "@/lib/fotos";
 import { formatarNumero, formatarPorcentagem, formatarReais } from "@/lib/formato";
 import { distribuicaoDeGravidade } from "@/lib/gravidade";
 import { ORDENACOES, caminhoDoRanking } from "@/lib/ordenacoes";
 import type { ItemDoRanking } from "@/lib/contrato";
 import { BuscaRapidaHome } from "@/componentes/BuscaRapidaHome";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
+import { TagDeAbstencao } from "@/componentes/Abstencao";
+import { CartaoDePessoa } from "@/componentes/CartaoDePessoa";
 
 /* Ver a nota em camara/page.tsx: precisa ser literal. */
 export const revalidate = 300;
@@ -26,14 +26,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * A porta de entrada do Explanando.
- *
- * Entrega visão consolidada do controle cívico:
- * - Estatísticas globais do período auditado.
- * - Busca rápida e direta de parlamentares.
- * - Paridade estrita entre as duas casas legislativas (Câmara e Senado).
- * - Prévia transparente dos maiores volumes de cada casa.
- * - Explicação visual do pipeline determinístico e da taxonomia de risco (ADR-0004 e ADR-0013).
+ * A porta de entrada. Direção C: um assunto por cartão, cada número com a frase que o
+ * explica, e as duas casas sempre lado a lado e do mesmo tamanho.
  */
 export default async function Home() {
   const casas = await Promise.all(
@@ -52,602 +46,235 @@ export default async function Home() {
     fracao === undefined ? "sem dado" : `${formatarPorcentagem(fracao)} dos achados`;
 
   return (
-    <main className="min-h-screen">
-      {/* ---------------------------------------------------------------- */}
-      {/*  HERO / ABERTURA COM IDENTIDADE & BUSCA RÁPIDA                   */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="relative overflow-hidden border-b border-borda-suave bg-surface py-12 sm:py-20">
-        {/* Padrão geométrico sutil de fundo para dar textura de auditoria */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.06] [background-image:radial-gradient(var(--color-titulo)_1px,transparent_1px)] [background-size:24px_24px]"
-        />
+    <main className="mx-auto max-w-6xl px-4 pt-8 pb-4 sm:pt-12">
+      <h1 className="max-w-3xl font-display text-[2rem] leading-[1.1] font-bold tracking-tight text-balance text-titulo sm:text-5xl">
+        Para onde vai a cota dos seus parlamentares
+      </h1>
 
-        <div className="relative mx-auto max-w-5xl px-4">
-          {/* Tag de status ao vivo dos dados */}
-          <div className="inline-flex items-center gap-2 rounded-selo border border-acento/30 bg-realce/50 px-3 py-1 text-xs font-semibold text-titulo shadow-xs">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-acento opacity-75"></span>
-              <span className="relative inline-flex size-2 rounded-full bg-acento"></span>
-            </span>
-            <span>Auditoria Cívica Contínua · Dados Abertos Oficiais</span>
-          </div>
+      <p className="mt-4 max-w-2xl text-base text-texto sm:text-lg">
+        Cada despesa de deputados e senadores passa por um motor de regras que cruza o gasto com
+        o cadastro da Receita Federal. Ele descreve o que destoa, sem imputar conduta: a
+        conclusão é de quem lê.
+      </p>
 
-          <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold tracking-tight text-balance text-titulo sm:text-5xl lg:text-6xl">
-            Para onde vai a cota parlamentar
-          </h1>
+      <div className="mt-6 max-w-2xl">
+        <label htmlFor="busca-rapida" className="mb-2 block font-semibold text-texto">
+          Procure um parlamentar
+        </label>
+        <BuscaRapidaHome parlamentares={tudo} idDoCampo="busca-rapida" />
+      </div>
 
-          <p className="mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-texto">
-            Um motor de regras determinístico cruza cada despesa de deputados federais e senadores
-            com o cadastro da Receita Federal e{" "}
-            <strong className="font-semibold text-titulo">
-              descreve inconsistências — sem imputar conduta.
-            </strong>{" "}
-            A conclusão técnica e jurídica cabe a quem lê ou às autoridades de controle.
-          </p>
-
-          {/* Busca Rápida de Parlamentares */}
-          <div className="mt-8">
-            <label
-              htmlFor="busca-rapida"
-              className="mb-2 block text-xs font-bold uppercase tracking-wider text-texto-suave"
-            >
-              Consulta Rápida de Parlamentares
-            </label>
-            <BuscaRapidaHome parlamentares={tudo} idDoCampo="busca-rapida" />
-          </div>
-
-          {/* Cards de Métricas Consolidadas (KPIs) */}
-          <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:[&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
-            {/*
-              Sem número de reserva. Quando a API não responde, o cartão diz que não
-              respondeu: um "631" escrito à mão seria o produto publicando um dado que não
-              mediu — e envelheceria em silêncio no primeiro ciclo de coleta.
-            */}
-            <CartaoMetrica
-              rotulo="Parlamentares auditados"
-              valor={tudo.length > 0 ? formatarNumero(tudo.length) : "—"}
-              detalhe={tudo.length > 0 ? casasComDado(casas) : "Indisponível agora"}
-              icone="parlamentares"
-            />
-            <CartaoMetrica
-              rotulo="Despesas analisadas"
-              valor={despesas > 0 ? formatarNumero(despesas) : "—"}
-              detalhe={despesas > 0 ? "Notas fiscais, recibos e bilhetes aéreos" : "Indisponível agora"}
-              icone="despesas"
-            />
-            <CartaoMetrica
-              rotulo="Volume financeiro"
-              valor={volume > 0 ? formatarReais(volume) : "—"}
-              detalhe={volume > 0 ? "Cota parlamentar (CEAP e CEAPS)" : "Indisponível agora"}
-              icone="volume"
-            />
-          </dl>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- */}
-      {/*  AS DUAS CASAS: PARIDADE ESTRITA (ADR-0012)                       */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto max-w-5xl px-4 py-16">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="flex size-6 items-center justify-center rounded-selo bg-realce text-xs font-bold text-titulo"
-            >
-              ⚖
-            </span>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-titulo">
-              Escolha uma casa legislativa
+      {/*
+        Sem número de reserva. Quando a API não responde, o cartão diz que não respondeu: um
+        número escrito à mão seria o produto publicando um dado que não mediu.
+      */}
+      <section
+        aria-labelledby="titulo-base"
+        className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
+      >
+        <div className="grid content-start gap-4">
+          <div className="rounded-cartao border border-borda-suave bg-surface p-5">
+            <h2 id="titulo-base" className="font-semibold text-texto-suave">
+              Gasto da cota na base
             </h2>
+            {/* Número não quebra: "R$ 802.407.895,7" numa linha e "8" na outra é outro valor. */}
+            <p className="numeros mt-1 font-display text-[1.875rem] leading-tight font-bold whitespace-nowrap text-titulo sm:text-[2.125rem]">
+              {volume > 0 ? formatarReais(volume) : "Indisponível agora"}
+            </p>
+            {despesas > 0 ? (
+              <p className="mt-2 text-texto-suave">
+                {casasComDado(casas)}: {formatarNumero(tudo.length)} parlamentares e{" "}
+                {formatarNumero(despesas)} despesas lidas uma a uma.
+              </p>
+            ) : null}
           </div>
-          <p className="max-w-3xl text-sm sm:text-base text-texto-suave">
-            Os rankings são estritamente separados porque as cotas são diferentes. A{" "}
-            <strong className="text-texto">CEAP</strong> da Câmara e a{" "}
-            <strong className="text-texto">CEAPS</strong> do Senado têm regras, tetos e
-            especificidades próprias por estado. Compará-las no mesmo ranking misturaria dados
-            incompatíveis.
-          </p>
+
+          {/* Paridade: as duas casas lado a lado e do mesmo tamanho (ADR-0012). */}
+          <div className="grid grid-cols-2 gap-3">
+            {casas.map(({ casa, itens }) => (
+              <Link
+                key={casa.chave}
+                href={casa.caminho}
+                className="flex min-h-24 flex-col justify-end rounded-cartao bg-titulo p-4 text-sobre-titulo hover:bg-titulo-hover"
+              >
+                <span className="font-display text-xl font-bold">{casa.rotulo}</span>
+                <span className="numeros text-sm">
+                  {itens && itens.length > 0
+                    ? `${formatarNumero(itens.length)} parlamentares`
+                    : "Sem dado agora"}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Grade de 2 colunas com mesma hierarquia visual */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="grid content-start gap-6 sm:grid-cols-2 lg:grid-cols-1">
           {casas.map(({ casa, itens }) => (
-            <CartaoDaCasa key={casa.chave} casa={casa} itens={itens} />
+            <MaioresDaCasa key={casa.chave} casa={casa} itens={itens} />
           ))}
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/*  COMO O MOTOR AUDITA (PIPELINE DETERMINÍSTICO EM 3 PASSOS)        */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="border-y border-borda-suave bg-surface py-16">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="text-center sm:text-left">
-            <p className="text-xs font-bold uppercase tracking-widest text-acento">
-              Metodologia & Rigor
-            </p>
-            <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold tracking-tight text-titulo">
-              Como um indicador é produzido
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm sm:text-base text-texto-suave">
-              Nenhuma etapa envolve opinião ou julgamento moral. São três passos estritamente
-              reprodutíveis, e o terceiro é a garantia de integridade deste projeto.
-            </p>
-          </div>
+      <section aria-labelledby="titulo-matriz" className="mt-14">
+        <h2
+          id="titulo-matriz"
+          className="font-display text-2xl font-bold tracking-tight text-titulo sm:text-3xl"
+        >
+          Como ler os achados
+        </h2>
+        <p className="mt-2 max-w-2xl text-texto-suave">
+          Cada achado tem um peso, mostrado por cor, forma e nome. O vermelho fica só com a
+          gravidade alta, a menor parte da base.
+        </p>
 
-          <ol className="mt-8 grid gap-5 sm:grid-cols-3">
-            <PassoPipeline
-              numero="1"
-              tag="Fonte Primária"
-              titulo="Coleta Automatizada"
-              texto="Os dados vêm diretamente das bases abertas da Câmara, do Senado, da Receita Federal (via BrasilAPI) e do TSE. Nada é digitado à mão ou manipulado."
-              icone="coleta"
-            />
-            <PassoPipeline
-              numero="2"
-              tag="Algoritmos Fixos"
-              // Sem o número: "13" era escrito à mão e o perfil lista 12 — as 12 que olham cada
-              // parlamentar; a 13ª (REG_NET_004) olha a rede. Os dois estavam certos e pareciam
-              // se contradizer (auditoria de 25/09). A lista, com a contagem, está no perfil.
-              titulo="Cruzamento de Regras"
-              texto="Regras determinísticas verificam atividade econômica (CNAE), quadro societário, doações de campanha, datas atípicas em recessos e padrões repetidos de valores."
-              icone="cruzamento"
-            />
-            <PassoPipeline
-              numero="3"
-              tag="Sem Dado = Silêncio"
-              titulo="Abstenção Conclusiva"
-              texto="Quando a base pública não fornece elementos para verificação, a regra se cala e o site declara a ausência. Falta de dado nunca vira suspeita."
-              icone="abstencao"
-            />
-          </ol>
-        </div>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ItemDaMatriz
+            tag={<TagDeGravidade gravidade="Baixa" />}
+            parte={parte(distribuicao?.baixa)}
+            texto="Desvio pequeno, com documentação regular. Aparece para registro."
+          />
+          <ItemDaMatriz
+            tag={<TagDeGravidade gravidade="Media" />}
+            parte={parte(distribuicao?.media)}
+            texto="Algo atípico no gasto, que vale conferir no documento."
+          />
+          <ItemDaMatriz
+            tag={<TagDeGravidade gravidade="Alta" />}
+            parte={parte(distribuicao?.alta)}
+            texto="O que mais destoa das regras da cota ou de limites legais."
+          />
+          <ItemDaMatriz
+            tag={<TagDeAbstencao />}
+            parte="sem dado"
+            texto="A fonte não publicou o dado, então a regra não teve como olhar. Não é o mesmo que não ter achado."
+          />
+        </ul>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/*  TAXONOMIA VISUAL DE RISCO (ADR-0013)                            */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto max-w-5xl px-4 py-16">
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-acento">
-            A Cor é Texto · ADR-0013
-          </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-titulo">
-            Entenda a matriz de severidade
+      <section aria-labelledby="titulo-nao-e" className="mt-14 grid gap-6 lg:grid-cols-2">
+        <div>
+          <h2
+            id="titulo-nao-e"
+            className="font-display text-2xl font-bold tracking-tight text-titulo sm:text-3xl"
+          >
+            O que um indicador não é
           </h2>
-          <p className="max-w-3xl text-sm sm:text-base text-texto-suave">
-            O Explanando não pinta a tela de vermelho. A cor carrega peso estatístico real, com
-            contraste rigorosamente calculado para acessibilidade (WCAG AA/AAA).
+          <p className="mt-3 text-texto">
+            Um indicador aponta que algum dado destoa do esperado: um ramo de atividade que não
+            combina com a despesa, um valor repetido ao centavo por meses, uma empresa aberta
+            pouco antes do primeiro pagamento.{" "}
+            <strong>Nada disso é, por si, irregularidade.</strong> Gastar a cota é prerrogativa
+            do mandato, e a explicação pode ser legítima.
+          </p>
+          <p className="mt-3 text-texto">
+            Por isso cada achado vem com a regra que o produziu e, quando a fonte publica, com o
+            comprovante oficial.
           </p>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <TagDeGravidade gravidade="Baixa" />
-              <span className="numeros text-xs font-bold text-texto-suave">
-                {parte(distribuicao?.baixa)}
-              </span>
-            </div>
-            <h3 className="mt-3 text-sm font-bold text-titulo">Baixa Relevância</h3>
-            <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
-              Achados informativos e pequenos desvios com documentação regular. Aparece para registro,
-              mas sem alarde.
-            </p>
-          </div>
-
-          <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <TagDeGravidade gravidade="Media" />
-              <span className="numeros text-xs font-bold text-texto-suave">
-                {parte(distribuicao?.media)}
-              </span>
-            </div>
-            <h3 className="mt-3 text-sm font-bold text-titulo">Média Relevância</h3>
-            <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
-              Atipicidades operacionais ou estatísticas que merecem conferência técnica dos dados
-              apresentados.
-            </p>
-          </div>
-
-          <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <TagDeGravidade gravidade="Alta" />
-              <span className="numeros text-xs font-bold text-alta-texto font-semibold">
-                {parte(distribuicao?.alta)}
-              </span>
-            </div>
-            <h3 className="mt-3 text-sm font-bold text-titulo">Alta Relevância</h3>
-            <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
-              O vermelho fica estritamente com os achados mais graves contra limites legais ou
-              regras de cota.
-            </p>
-          </div>
-
-          <div className="rounded-cartao border border-borda-suave bg-fundo p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 rounded-sm border border-borda-suave bg-abstencao-fundo px-2 py-1 text-xs font-semibold text-abstencao-texto">
-                <span
-                  aria-hidden="true"
-                  className="flex size-3.5 items-center justify-center rounded-full border border-dashed border-current text-[10px] leading-none"
-                >
-                  –
-                </span>
-                <span>Não avaliado</span>
-              </span>
-              <span className="text-xs font-bold text-texto-suave">Sem base</span>
-            </div>
-            <h3 className="mt-3 text-sm font-bold text-titulo">Abstenção</h3>
-            <p className="mt-1.5 text-xs text-texto-suave leading-relaxed">
-              Ausência de dados públicos na fonte. O motor recusa-se a presumir ou opinar sem base
-              comprovada.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- */}
-      {/*  RESSALVA DE COMPLIANCE E RIGOR (ADR-0004)                        */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto max-w-5xl px-4 pb-16">
-        <div className="relative overflow-hidden rounded-cartao border-2 border-borda-suave bg-fundo p-6 sm:p-8 shadow-cartao">
-          <div className="flex items-start gap-4">
-            <span
-              aria-hidden="true"
-              className="hidden sm:flex size-10 shrink-0 items-center justify-center rounded-campo bg-realce text-titulo"
-            >
-              <svg
-                className="size-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-            </span>
-
-            <div className="flex-1">
-              <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-titulo">
-                O que um indicador não é
-              </h2>
-
-              <p className="mt-3 text-sm sm:text-base leading-relaxed text-texto">
-                Um indicador aponta que <strong>algum dado destoa do padrão estatístico esperado</strong>{" "}
-                — um ramo de atividade econômica que não combina com a despesa, um valor repetido ao
-                centavo por vários meses ou emissão fora da base eleitoral. Nada disso constitui, por
-                si só, irregularidade: gastar a cota é prerrogativa legal do mandato, e a explicação
-                pode ser perfeitamente legítima.
-              </p>
-
-              <p className="mt-3 text-sm sm:text-base leading-relaxed text-texto">
-                Por essa razão, cada achado publicado acompanha{" "}
-                <strong>a regra precisa aplicada e o comprovante oficial direto da fonte</strong>{" "}
-                quando ela o disponibiliza. O Explanando organiza a transparência pública; o juízo é
-                do cidadão e das instituições.
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-4 pt-2 border-t border-borda-suave text-xs text-texto-suave">
-                <Link
-                  href="/estado"
-                  className="font-semibold text-titulo underline underline-offset-4 hover:text-titulo-hover"
-                >
-                  Conheça o Grafo do Estado →
-                </Link>
-                <Link
-                  href="/privacidade"
-                  className="font-semibold text-titulo underline underline-offset-4 hover:text-titulo-hover"
-                >
-                  Política de Privacidade & LGPD →
-                </Link>
-              </div>
-            </div>
-          </div>
+        <div className="rounded-cartao border border-borda-suave bg-surface p-5">
+          <h2 className="font-semibold text-texto-suave">De onde vem o dado</h2>
+          {/* Lista, não sequência: as três coisas não têm ordem, então não ganham número. */}
+          <ul className="mt-3 space-y-3 text-texto">
+            <li>
+              <strong>Câmara, Senado, Receita Federal e TSE.</strong> Tudo chega das bases
+              abertas oficiais; nada é digitado à mão.
+            </li>
+            <li>
+              <strong>Regras fixas.</strong> Atividade econômica, quadro de sócios, doação de
+              campanha, datas e valores repetidos, sempre do mesmo jeito para todos.
+            </li>
+            <li>
+              <strong>Sem dado, sem suspeita.</strong> Quando a fonte não traz o que a regra
+              precisa, a regra se cala e a página diz que se calou.
+            </li>
+          </ul>
+          <p className="mt-4 flex flex-wrap gap-x-5 gap-y-1">
+            <Link href="/estado" className={LINK}>
+              Conheça o mapa do Estado
+            </Link>
+            <Link href="/privacidade" className={LINK}>
+              Privacidade e LGPD
+            </Link>
+          </p>
         </div>
       </section>
     </main>
   );
 }
 
-/* ======================================================================== */
-/*  SUBCOMPONENTES DA PÁGINA INICIAL                                        */
-/* ======================================================================== */
+const LINK =
+  "inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4 hover:decoration-titulo";
 
 /**
  * Quais casas estão por trás do número. "Câmara e Senado" fixo mentia quando só uma
  * respondeu — a base local, por exemplo, tem só a Câmara.
  */
 function casasComDado(casas: { casa: Casa; itens: ItemDoRanking[] | null }[]): string {
-  const comDado = casas.filter(({ itens }) => itens && itens.length > 0).map(({ casa }) => casa.nomeOficial);
+  const comDado = casas
+    .filter(({ itens }) => itens && itens.length > 0)
+    .map(({ casa }) => casa.rotulo);
 
-  return comDado.length === casas.length ? "Câmara dos Deputados e Senado Federal" : comDado.join(" e ");
+  return comDado.length === casas.length ? "Câmara e Senado somados" : comDado.join(" e ");
 }
 
-function CartaoMetrica({
-  rotulo,
-  valor,
-  detalhe,
-  icone,
-}: {
-  rotulo: string;
-  valor: string;
-  detalhe: string;
-  icone: "parlamentares" | "despesas" | "volume";
-}) {
-  return (
-    <div className="flex flex-col justify-between rounded-cartao border border-borda-suave bg-fundo p-5 shadow-xs transition-shadow hover:shadow-cartao">
-      <div className="flex items-center justify-between">
-        <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
-          {rotulo}
-        </dt>
-        <span
-          aria-hidden="true"
-          className="flex size-7 items-center justify-center rounded-selo bg-realce text-titulo"
-        >
-          {icone === "parlamentares" && (
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-            </svg>
-          )}
-          {icone === "despesas" && (
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-            </svg>
-          )}
-          {icone === "volume" && (
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-          )}
-        </span>
-      </div>
-
-      {/*
-        Número não quebra: "R$ 802.407.895,7" numa linha e "8" na outra é outro valor. Em três
-        colunas estreitas ele passava da borda; por isso a grade só vira três no desktop, e
-        até lá o volume ocupa a linha inteira.
-      */}
-      <dd className="numeros mt-3 font-display text-2xl font-bold tracking-tight whitespace-nowrap text-titulo lg:text-3xl">
-        {valor}
-      </dd>
-      <p className="mt-1 text-xs text-texto-suave">{detalhe}</p>
-    </div>
-  );
-}
-
-function CartaoDaCasa({ casa, itens }: { casa: Casa; itens: ItemDoRanking[] | null }) {
-  const total = itens?.reduce((soma, item) => soma + item.volumeTotalGasto, 0) ?? 0;
+function MaioresDaCasa({ casa, itens }: { casa: Casa; itens: ItemDoRanking[] | null }) {
   const primeiros = itens?.slice(0, 3) ?? [];
-  const temItens = itens !== null && itens.length > 0;
-  const ehCamara = casa.chave === "camara";
+  const maior = primeiros[0]?.volumeTotalGasto ?? 0;
 
   return (
-    <section
-      aria-labelledby={`casa-${casa.chave}`}
-      className="flex min-w-0 flex-col justify-between rounded-cartao border border-borda-suave bg-fundo p-6 sm:p-7 shadow-cartao transition-all hover:border-borda-estrutural"
-    >
-      <div>
-        {/* Topo do cartão da casa */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span
-            className={`rounded-selo px-2.5 py-1 text-xs font-bold ${
-              ehCamara ? "bg-surface text-texto border border-borda-suave" : "bg-realce text-titulo"
-            }`}
-          >
-            {ehCamara ? "513 cadeiras · Cota CEAP" : "81 cadeiras · Cota CEAPS"}
-          </span>
-
-          {temItens && (
-            <span className="numeros text-xs font-semibold text-texto-suave">
-              {formatarNumero(itens.length)} parlamentares
-            </span>
-          )}
-        </div>
-
-        <h3
-          id={`casa-${casa.chave}`}
-          className="mt-3 font-display text-2xl font-bold tracking-tight text-titulo"
-        >
-          {casa.nomeOficial}
-        </h3>
-
-        {/* Estado indisponível */}
-        {itens === null ? (
-          <p className="mt-4 rounded-campo bg-abstencao-fundo p-3 text-sm text-abstencao-texto">
-            Os números desta casa não puderam ser carregados agora. A falha é temporária de
-            comunicação com a API oficial.
-          </p>
-        ) : itens.length === 0 ? (
-          <div className="mt-4 rounded-campo border border-dashed border-borda-suave bg-surface p-4 text-sm text-texto-suave">
-            <p className="font-semibold text-titulo">Base em sincronização</p>
-            <p className="mt-1 text-xs">
-              Os dados desta casa estão em processo de consolidação no ambiente. Os rankings serão
-              disponibilizados assim que o lote for processado.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="mt-2 text-sm text-texto-suave">
-              Volume total auditado:{" "}
-              <strong className="numeros text-base font-bold text-titulo">
-                {formatarReais(total)}
-              </strong>
-            </p>
-
-            {/* Prévia dos 3 maiores volumes */}
-            <div className="mt-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-texto-suave">
-                Maiores volumes da casa
-              </p>
-              <ol className="mt-2.5 flex flex-col gap-2">
-                {primeiros.map((item, indice) => (
-                  <PreviaDoTopo key={item.id} item={item} posicao={indice + 1} />
-                ))}
-              </ol>
-            </div>
-          </>
-        )}
+    <section aria-labelledby={`maiores-${casa.chave}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id={`maiores-${casa.chave}`} className="font-semibold text-texto">
+          Quem mais gastou {casa.chave === "camara" ? "na Câmara" : "no Senado"}
+        </h2>
+        <Link href={caminhoDoRanking(casa, ORDENACOES[0])} className={LINK}>
+          Ver todos
+        </Link>
       </div>
 
-      {/* Caminhos diretos de ranking */}
-      <div className="mt-6 border-t border-borda-suave pt-5">
-        <p className="text-xs font-bold uppercase tracking-wider text-texto-suave">
-          Explorar rankings desta casa
+      {itens === null ? (
+        <p className="mt-2 rounded-cartao border border-borda-suave bg-surface p-4 text-texto-suave">
+          Os números desta casa não puderam ser carregados agora. A falha é de comunicação com a
+          nossa API, não do dado público.
         </p>
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {ORDENACOES.map((ordenacao) => {
-            const ehVolume = ordenacao.chave === "volume";
-            const ehIndice = ordenacao.chave === "indice";
-
-            return (
-              <li key={ordenacao.chave}>
-                <Link
-                  href={caminhoDoRanking(casa, ordenacao)}
-                  className="group flex items-center justify-between gap-3 rounded-campo border border-borda-suave bg-surface p-3 transition-colors hover:border-titulo hover:bg-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="flex size-7 shrink-0 items-center justify-center rounded-selo bg-realce text-xs font-bold text-titulo group-hover:bg-titulo group-hover:text-sobre-titulo transition-colors"
-                    >
-                      {ehVolume ? "R$" : ehIndice ? "%" : "!"}
-                    </span>
-                    <div>
-                      <span className="block text-sm font-semibold text-titulo group-hover:underline underline-offset-2">
-                        {ordenacao.rotulo}
-                      </span>
-                      <span className="block text-xs text-texto-suave">{ordenacao.resumo}</span>
-                    </div>
-                  </div>
-
-                  <span
-                    aria-hidden="true"
-                    className="text-sm font-bold text-titulo transition-transform group-hover:translate-x-1"
-                  >
-                    →
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      ) : itens.length === 0 ? (
+        <p className="mt-2 rounded-cartao border border-dashed border-borda-estrutural bg-surface p-4 text-texto-suave">
+          A base desta casa ainda está sendo carregada.
+        </p>
+      ) : (
+        <ol className="mt-2 grid gap-2">
+          {primeiros.map((item, indice) => (
+            <li key={item.id}>
+              <CartaoDePessoa
+                item={item}
+                posicao={indice + 1}
+                fracaoDaBarra={maior > 0 ? item.volumeTotalGasto / maior : 0}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
 
-function PreviaDoTopo({ item, posicao }: { item: ItemDoRanking; posicao: number }) {
-  const retrato = retratoSeguro(item.fotoUrl);
-
-  return (
-    <li>
-      <Link
-        href={`/parlamentares/${item.id}`}
-        className="group flex min-w-0 items-center gap-3 rounded-campo border border-transparent p-2 transition-colors hover:border-borda-suave hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-      >
-        {/* Medalha / posição */}
-        <span
-          className={`numeros flex size-6 shrink-0 items-center justify-center rounded-selo text-xs font-bold ${
-            posicao === 1
-              ? "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-300"
-              : posicao === 2
-                ? "bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200"
-                : "bg-orange-50 text-orange-800 border border-orange-200 dark:bg-orange-950 dark:text-orange-300"
-          }`}
-        >
-          {posicao}º
-        </span>
-
-        {retrato ? (
-          <Image
-            src={retrato}
-            alt=""
-            width={36}
-            height={36}
-            unoptimized
-            className="size-9 shrink-0 rounded-selo bg-surface object-cover border border-borda-suave"
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="numeros flex size-9 shrink-0 items-center justify-center rounded-selo bg-realce text-xs font-bold text-titulo"
-          >
-            {iniciais(item.nomeParlamentar)}
-          </span>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-titulo group-hover:underline underline-offset-2">
-            {item.nomeParlamentar}
-          </span>
-          <div className="flex items-center gap-1.5 text-xs text-texto-suave">
-            <span className="font-semibold text-texto">{item.siglaPartido}</span>
-            <span>·</span>
-            <span>{item.uf}</span>
-            <span>·</span>
-            <span className="numeros font-bold text-texto">
-              {formatarReais(item.volumeTotalGasto)}
-            </span>
-          </div>
-        </div>
-
-        <span aria-hidden="true" className="text-xs text-texto-suave transition-transform group-hover:translate-x-1">
-          →
-        </span>
-      </Link>
-    </li>
-  );
-}
-
-function PassoPipeline({
-  numero,
+function ItemDaMatriz({
   tag,
-  titulo,
+  parte,
   texto,
-  icone,
 }: {
-  numero: string;
-  tag: string;
-  titulo: string;
+  tag: React.ReactNode;
+  parte: string;
   texto: string;
-  icone: "coleta" | "cruzamento" | "abstencao";
 }) {
   return (
-    <li className="relative flex flex-col justify-between rounded-cartao border border-borda-suave bg-fundo p-6 shadow-xs">
-      <div>
-        <div className="flex items-center justify-between">
-          <span
-            aria-hidden="true"
-            className="numeros flex size-7 items-center justify-center rounded-selo bg-titulo text-xs font-bold text-sobre-titulo shadow-xs"
-          >
-            {numero}
-          </span>
-          <span className="rounded-selo bg-surface border border-borda-suave px-2 py-0.5 text-[10px] font-bold text-texto-suave">
-            {tag}
-          </span>
-        </div>
-
-        <h3 className="mt-4 font-display text-lg font-bold text-titulo">{titulo}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-texto-suave">{texto}</p>
+    <li className="rounded-cartao border border-borda-suave bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {tag}
+        <span className="numeros text-sm text-texto-suave">{parte}</span>
       </div>
-
-      <div className="mt-5 flex items-center gap-2 pt-3 border-t border-borda-suave text-xs font-medium text-texto-suave">
-        <span aria-hidden="true" className="text-acento">
-          {icone === "coleta" && "📥"}
-          {icone === "cruzamento" && "⚙️"}
-          {icone === "abstencao" && "🛡️"}
-        </span>
-        <span>
-          {icone === "coleta" && "Sem digitação manual"}
-          {icone === "cruzamento" && "Cruzamento determinístico"}
-          {icone === "abstencao" && "Sem acusação infundada"}
-        </span>
-      </div>
+      <p className="mt-3 text-texto">{texto}</p>
     </li>
   );
 }

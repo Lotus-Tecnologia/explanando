@@ -35,7 +35,7 @@ const PARA_O_PERFIL = (parlamentar: ItemDoRanking) => `/parlamentares/${parlamen
 export function BuscaRapidaHome({
   parlamentares,
   caminhoDe = PARA_O_PERFIL,
-  placeholder = "Buscar por nome, partido ou UF (ex: Tabata, SP, PL, Romário)...",
+  placeholder = "Digite um nome, partido ou estado",
   excluirId,
   rotulo,
   idDoCampo,
@@ -159,7 +159,7 @@ export function BuscaRapidaHome({
           onKeyDown={aoTeclar}
           placeholder={placeholder}
           aria-label={rotulo}
-          className="w-full rounded-campo border-2 border-borda-suave bg-fundo py-3.5 pr-11 pl-12 [&::-webkit-search-cancel-button]:appearance-none text-sm text-texto shadow-cartao transition-colors placeholder:text-texto-suave/70 hover:border-borda-estrutural focus:border-titulo focus:ring-2 focus:ring-acento/20 focus:outline-none"
+          className="min-h-13 w-full rounded-campo border-[1.5px] border-borda-suave bg-surface py-3 pr-12 pl-12 text-base text-texto transition-colors placeholder:text-texto-suave hover:border-borda-estrutural focus:border-acento focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
         />
 
         {consulta.length > 0 && (
@@ -167,7 +167,7 @@ export function BuscaRapidaHome({
             type="button"
             onClick={limpar}
             aria-label="Limpar busca"
-            className="absolute right-3.5 flex size-6 items-center justify-center rounded-full text-texto-suave hover:bg-surface hover:text-titulo focus-visible:outline-2 focus-visible:outline-titulo"
+            className="absolute right-1 flex size-11 items-center justify-center rounded-full text-texto-suave hover:bg-surface hover:text-titulo focus-visible:outline-2 focus-visible:outline-titulo"
           >
             <span aria-hidden="true" className="text-sm font-bold">
               ×
@@ -182,7 +182,7 @@ export function BuscaRapidaHome({
           id={listboxId}
           role="listbox"
           aria-label="Sugestões de parlamentares"
-          className="absolute top-full z-40 mt-2 w-full overflow-hidden rounded-cartao border border-borda-suave bg-fundo p-1.5 shadow-flutuante backdrop-blur"
+          className="absolute top-full z-40 mt-2 w-full overflow-hidden rounded-cartao border border-borda-estrutural bg-surface p-1.5"
         >
           {temResultados && (
             <ul className="flex flex-col gap-0.5">
