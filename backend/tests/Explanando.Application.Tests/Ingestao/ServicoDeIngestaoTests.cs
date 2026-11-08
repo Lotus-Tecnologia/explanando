@@ -219,9 +219,9 @@ public sealed class ServicoDeIngestaoTests
     [Fact]
     public async Task Nota_malformada_vira_rejeicao_contada_e_nao_derruba_o_lote()
     {
-        // Valores inconsistentes fazem o dominio recusar a despesa. Uma nota ruim nao
+        // Glosa negativa faz o dominio recusar a despesa. Uma nota ruim nao
         // pode custar as outras 1.199 do mesmo deputado.
-        var ruim = Despesa("ruim") with { ValorDocumento = 100m, ValorLiquido = 90m, ValorGlosa = 50m };
+        var ruim = Despesa("ruim") with { ValorGlosa = -10m };
         var repositorio = new RepositorioFalso();
         var servico = new ServicoDeIngestao(
             new FonteFalsa([Despesa("1"), ruim, Despesa("2")]), new CadastroFalso(), repositorio);

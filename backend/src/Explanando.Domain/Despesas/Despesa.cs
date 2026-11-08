@@ -191,12 +191,30 @@ public sealed class Despesa : Entidade
     /// </summary>
     public decimal ValorParaScore => ValorLiquido;
 
+    /// <summary>
+    /// O passo do valor como a Camara o publica: seis digitos significativos. Acima de
+    /// R$ 10 mil o centavo nao existe na origem; acima de R$ 100 mil, nem o decimo.
+    /// </summary>
+    public static decimal PrecisaoDaOrigem(decimal valor)
+    {
+        var precisao = 0.01m;
+
+        for (var limite = 10_000m; Math.Abs(valor) >= limite; limite *= 10m)
+        {
+            precisao *= 10m;
+        }
+
+        return precisao;
+    }
+
     public static Despesa Criar(NovaDespesa dados)
     {
         ArgumentNullException.ThrowIfNull(dados);
 
         // Nulo e' "a origem nao informa" e passa direto: nao ha o que validar sobre um
         // numero que ninguem publicou.
+        var glosaConfiavel = dados.ValorGlosa;
+
         if (dados.ValorGlosa is { } glosa)
         {
             // Valor negativo e' estorno e e' dado legitimo — ver EhEstorno. So' a glosa
@@ -209,14 +227,16 @@ public sealed class Despesa : Entidade
             // valores sao negativos e a aritmetica de corte nao se aplica.
             var ehLancamentoComum = dados.ValorDocumento >= 0m && dados.ValorLiquido >= 0m;
 
+            // A tolerancia segue a precisao que a origem publica (ver PrecisaoDaOrigem).
+            // Fora dela a glosa nao fecha e entra como desconhecida: rejeitar tirava a
+            // despesa inteira do volume (146 em 78 deputados, levantamento de 08/11/2026).
+            var tolerancia = (PrecisaoDaOrigem(dados.ValorDocumento)
+                + PrecisaoDaOrigem(dados.ValorLiquido)) / 2m + 0.01m;
+
             if (ehLancamentoComum && glosa != 0m
-                && Math.Abs(glosaEsperada - glosa) > 0.01m)
+                && Math.Abs(glosaEsperada - glosa) > tolerancia)
             {
-                throw new ArgumentException(
-                    $"Valor de glosa inconsistente: documento {dados.ValorDocumento} menos "
-                    + $"liquido {dados.ValorLiquido} da {glosaEsperada}, mas a origem "
-                    + $"informou {glosa}.",
-                    nameof(dados));
+                glosaConfiavel = null;
             }
         }
 
@@ -233,7 +253,7 @@ public sealed class Despesa : Entidade
             DataDocumento = dados.DataDocumento,
             ValorDocumento = dados.ValorDocumento,
             ValorLiquido = dados.ValorLiquido,
-            ValorGlosa = dados.ValorGlosa,
+            ValorGlosa = glosaConfiavel,
             CodigoLote = dados.CodigoLote,
             Parcela = dados.Parcela,
         };

@@ -70,16 +70,46 @@ public sealed class DespesaTests
     }
 
     [Fact]
-    public void Rejeita_glosa_inconsistente_com_os_valores()
+    public void Glosa_dentro_da_precisao_da_origem_e_aceita()
     {
-        var erro = Should.Throw<ArgumentException>(() => Despesa.Criar(Real(b =>
+        // A Camara publica valores com 6 digitos significativos: acima de R$ 10 mil o
+        // centavo some do documento e do liquido, mas a glosa vem com 2 casas.
+        var despesa = Despesa.Criar(Real(b =>
         {
-            b.ValorDocumento = 100m;
-            b.ValorLiquido = 90m;
-            b.ValorGlosa = 50m;   // deveria ser 10
-        })));
+            b.ValorDocumento = 10698.1m;
+            b.ValorLiquido = 10463.5m;
+            b.ValorGlosa = 234.62m;
+        }));
 
-        erro.Message.ShouldContain("glosa");
+        despesa.ValorGlosa.ShouldBe(234.62m);
+    }
+
+    [Fact]
+    public void Glosa_incoerente_alem_da_precisao_entra_como_desconhecida()
+    {
+        // Rejeitar tirava a despesa inteira do volume. A glosa que nao fecha vira
+        // "a origem nao informa de forma confiavel" (ADR-0012), e o gasto fica.
+        var despesa = Despesa.Criar(Real(b =>
+        {
+            b.ValorDocumento = 16291m;
+            b.ValorLiquido = 7028.39m;
+            b.ValorGlosa = 11m;
+        }));
+
+        despesa.ValorLiquido.ShouldBe(7028.39m);
+        despesa.ValorGlosa.ShouldBeNull();
+        despesa.GlosaConhecida.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(9999.99, 0.01)]
+    [InlineData(10000, 0.1)]
+    [InlineData(99999.9, 0.1)]
+    [InlineData(100000, 1)]
+    [InlineData(-12000, 0.1)]
+    public void Precisao_da_origem_tem_seis_digitos_significativos(decimal valor, decimal precisao)
+    {
+        Despesa.PrecisaoDaOrigem(valor).ShouldBe(precisao);
     }
 
     // ------------------------------------------------------------------
