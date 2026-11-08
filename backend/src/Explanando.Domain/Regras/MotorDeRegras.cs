@@ -92,9 +92,15 @@ public sealed class MotorDeRegras(
     /// (6462/6463) como dona do imovel alugado no Senado; as descricoes abrem com o fato, sem
     /// "Alerta de compliance" nem "Fator de risco elevado"; e a cobertura passa a declarar o
     /// documento do fornecedor e a natureza da despesa.</item>
+    /// <item><b>7</b> — a revisao de 08/11/2026 (Etapa 17): REG_KYB_001, REG_KYB_002 e
+    /// REG_GEO_002 emitem uma flag por fornecedor (KYB_001 por fornecedor e tipo), nao uma
+    /// por nota; REG_TX_003 se abstem onde a Camara nao publica centavo (acima de R$ 10 mil);
+    /// REG_GEO_002 deixa de tratar manutencao de escritorio, material de consumo e aeronave
+    /// como presencial; combustivel aceita CNAE 4520/4530/4612; REG_KYB_004 so' soma o que
+    /// foi pago enquanto o fornecedor era MEI; o texto do KYB_002 nao cita casa.</item>
     /// </list>
     /// </summary>
-    public const int VersaoAtual = 6;
+    public const int VersaoAtual = 7;
 
     /// <summary>Versao efetiva desta instancia. Testes podem fixar outra.</summary>
     public int Versao { get; } = versao;
