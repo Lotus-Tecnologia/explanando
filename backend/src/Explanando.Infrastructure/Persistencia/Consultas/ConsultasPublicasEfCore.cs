@@ -209,9 +209,12 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
 
+        // O documento vazio (passagem da Camara) nao e' fornecedor: contava +1 em 500 perfis.
+        var documentoVazio = CpfCnpj.Criar(string.Empty);
         var fornecedoresDistintos = await contexto.Despesas
             .AsNoTracking()
-            .Where(despesa => despesa.ParlamentarId == parlamentarId)
+            .Where(despesa => despesa.ParlamentarId == parlamentarId
+                && despesa.DocumentoFornecedor != documentoVazio)
             .Select(despesa => despesa.DocumentoFornecedor)
             .Distinct()
             .CountAsync(cancelamento)

@@ -524,5 +524,43 @@ public sealed class ProdutoNoBancoTests(BancoDeTestes banco)
         perfil.CoberturaSuficiente.ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task Fornecedores_distintos_nao_contam_o_documento_vazio()
+    {
+        // Levantamento de 08/11/2026: a passagem aerea da Camara vem sem documento do
+        // fornecedor, e o vazio contava como um fornecedor a mais em 500 dos 631 perfis.
+        var deputado = NovoDeputado();
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Parlamentares.Add(deputado);
+            foreach (var documento in new[] { "36826246000164", "11222333000181", "" })
+            {
+                var despesa = Despesa.Criar(new NovaDespesa
+                {
+                    ParlamentarId = deputado.Id,
+                    DocumentoFornecedor = CpfCnpj.Criar(documento),
+                    NomeFornecedor = "FORNECEDOR",
+                    Competencia = Competencia.Criar(2026, 7),
+                    TipoDespesa = "PASSAGEM AÉREA - SIGEPA",
+                    CodigoDocumento = $"forn-{ProximoIdExterno()}",
+                    NumeroDocumento = "1",
+                    DataDocumento = new DateTimeOffset(2026, 7, 6, 0, 0, 0, TimeSpan.Zero),
+                    ValorDocumento = 100m,
+                    ValorLiquido = 100m,
+                });
+                escrita.Despesas.Add(despesa);
+            }
+
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var perfil = await new Infrastructure.Persistencia.Consultas.ConsultasPublicasEfCore(leitura)
+            .ObterPerfilAsync(deputado.Id);
+
+        perfil!.FornecedoresDistintos.ShouldBe(2);
+    }
+
     private const int MotorDeRegrasVersao = 2;
 }
