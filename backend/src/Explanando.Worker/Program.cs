@@ -619,9 +619,22 @@ switch (comando)
                     continue;
                 }
 
-                var resultado = await ingestao
-                    .IngerirDeputadoAsync(deputado, legislatura, teto)
-                    .ConfigureAwait(false);
+                ResultadoDaIngestao resultado;
+
+                try
+                {
+                    resultado = await ingestao
+                        .IngerirDeputadoAsync(deputado, legislatura, teto)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception erro) when (erro is not OperationCanceledException)
+                {
+                    // Como na coleta: um deputado que falha nao derruba os outros; rodar de
+                    // novo e' seguro, o hash nao deixa duplicar.
+                    Console.Error.WriteLine($"Deputado {deputado.IdExterno}: {erro.GetBaseException().Message}");
+                    continue;
+                }
+
                 visitados++;
                 novas += resultado.DespesasNovas;
                 aindaRejeitadas += resultado.Rejeitadas.Count;
@@ -645,19 +658,38 @@ switch (comando)
 
             int comData = 0, semResposta = 0;
 
+            var vistos = 0;
+
             foreach (var fornecedor in meis)
             {
-                var empresa = await cadastro.ConsultarAsync(fornecedor.Documento.Numero).ConfigureAwait(false);
+                EmpresaDaFonte? empresa;
+
+                try
+                {
+                    empresa = await cadastro.ConsultarAsync(fornecedor.Documento.Numero).ConfigureAwait(false);
+                }
+                catch (HttpRequestException)
+                {
+                    // Falha transitoria da fonte: fica sem data e a proxima execucao tenta de novo.
+                    empresa = null;
+                }
 
                 if (empresa is null)
                 {
                     semResposta++;
-                    continue;
+                }
+                else
+                {
+                    fornecedor.RegistrarDatasDoMei(
+                        empresa.OptantePeloMei, empresa.DataOpcaoPeloMei, empresa.DataExclusaoDoMei);
+                    comData += empresa.DataOpcaoPeloMei is null ? 0 : 1;
                 }
 
-                fornecedor.RegistrarDatasDoMei(
-                    empresa.OptantePeloMei, empresa.DataOpcaoPeloMei, empresa.DataExclusaoDoMei);
-                comData += empresa.DataOpcaoPeloMei is null ? 0 : 1;
+                // Salva aos poucos: uma queda no meio nao perde o que ja foi consultado.
+                if (++vistos % 50 == 0)
+                {
+                    await contexto.SaveChangesAsync().ConfigureAwait(false);
+                }
             }
 
             await contexto.SaveChangesAsync().ConfigureAwait(false);
