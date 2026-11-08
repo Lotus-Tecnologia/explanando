@@ -159,6 +159,38 @@ public sealed class FornecedorTests
         indefinido.OpcaoPeloMeiConhecida.ShouldBeFalse();
     }
 
+    [Theory]
+    [InlineData(true, "2025-03-01", null, "2024-06-10", false)]
+    [InlineData(true, "2025-03-01", null, "2025-03-01", true)]
+    [InlineData(false, "2020-01-01", "2024-12-31", "2024-12-31", true)]
+    [InlineData(false, "2020-01-01", "2024-12-31", "2025-01-02", false)]
+    [InlineData(true, null, null, "2025-06-10", null)]
+    [InlineData(null, null, null, "2025-06-10", null)]
+    [InlineData(false, null, null, "2025-06-10", false)]
+    public void Era_mei_na_data_segue_a_opcao_e_a_exclusao(
+        bool? optante, string? opcao, string? exclusao, string data, bool? esperado)
+    {
+        var fornecedor = PostoReal(b =>
+        {
+            b.OptantePeloMei = optante;
+            b.DataOpcaoPeloMei = opcao is null ? null : DateOnly.Parse(opcao, System.Globalization.CultureInfo.InvariantCulture);
+            b.DataExclusaoDoMei = exclusao is null ? null : DateOnly.Parse(exclusao, System.Globalization.CultureInfo.InvariantCulture);
+        });
+
+        fornecedor.EraMeiEm(DateOnly.Parse(data, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(esperado);
+    }
+
+    [Fact]
+    public void Datas_do_mei_podem_ser_registradas_depois()
+    {
+        var fornecedor = PostoReal(b => b.OptantePeloMei = true);
+
+        fornecedor.RegistrarDatasDoMei(true, new DateOnly(2026, 3, 30), null);
+
+        fornecedor.DataOpcaoPeloMei.ShouldBe(new DateOnly(2026, 3, 30));
+        fornecedor.EraMeiEm(new DateOnly(2026, 4, 1)).ShouldBe(true);
+    }
+
     // ------------------------------------------------------------------
     //  REG_GEO_002 — gasto fora da base eleitoral (via UF do fornecedor)
     // ------------------------------------------------------------------
@@ -210,6 +242,8 @@ public sealed class FornecedorTests
         public DateOnly? DataSituacaoCadastral { get; set; } = new(2005, 9, 24);
         public DateOnly? DataInicioAtividade { get; set; } = new(1991, 7, 23);
         public bool? OptantePeloMei { get; set; }
+        public DateOnly? DataOpcaoPeloMei { get; set; }
+        public DateOnly? DataExclusaoDoMei { get; set; }
         public string? Porte { get; set; } = "DEMAIS";
         public string Uf { get; set; } = "GO";
         public string Municipio { get; set; } = "GOIANIA";
@@ -225,6 +259,8 @@ public sealed class FornecedorTests
             DataSituacaoCadastral = DataSituacaoCadastral,
             DataInicioAtividade = DataInicioAtividade,
             OptantePeloMei = OptantePeloMei,
+            DataOpcaoPeloMei = DataOpcaoPeloMei,
+            DataExclusaoDoMei = DataExclusaoDoMei,
             Porte = Porte,
             Endereco = new EnderecoFornecedor
             {

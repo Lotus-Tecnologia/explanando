@@ -268,8 +268,9 @@ internal static class DisponibilidadeDeDados
             disponivel |= DadoExigido.AberturaDoFornecedor;
         }
 
-        // Nulo em 65% da base real: a BrasilAPI só informa quando sabe.
-        if (fornecedor.OptantePeloMei is not null)
+        // Nulo em 65% da base real: a BrasilAPI só informa quando sabe. E optante sem a
+        // data da opção não diz se esta despesa foi paga a um MEI.
+        if (fornecedor.EraMeiEm(DateOnly.FromDateTime(despesa.DataDocumento.UtcDateTime)) is not null)
         {
             disponivel |= DadoExigido.OpcaoPeloMei;
         }

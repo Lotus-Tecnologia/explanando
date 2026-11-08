@@ -66,6 +66,8 @@ public sealed class ClienteBrasilApi(HttpClient http) : IFonteDeCadastroEmpresar
         DataSituacaoCadastral = empresa.DataSituacaoCadastral,
         DataInicioAtividade = empresa.DataInicioAtividade,
         OptantePeloMei = empresa.OpcaoPeloMei,
+        DataOpcaoPeloMei = empresa.DataOpcaoPeloMei,
+        DataExclusaoDoMei = empresa.DataExclusaoDoMei,
         Porte = empresa.Porte,
         Logradouro = empresa.Logradouro,
         Numero = empresa.Numero,
@@ -116,6 +118,12 @@ public sealed class ClienteBrasilApi(HttpClient http) : IFonteDeCadastroEmpresar
 
         [JsonPropertyName("opcao_pelo_mei")]
         public bool? OpcaoPeloMei { get; init; }
+
+        [JsonPropertyName("data_opcao_pelo_mei")]
+        public DateOnly? DataOpcaoPeloMei { get; init; }
+
+        [JsonPropertyName("data_exclusao_do_mei")]
+        public DateOnly? DataExclusaoDoMei { get; init; }
 
         [JsonPropertyName("porte")]
         public string? Porte { get; init; }

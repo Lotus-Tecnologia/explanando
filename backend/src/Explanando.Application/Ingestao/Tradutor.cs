@@ -79,6 +79,8 @@ public static class Tradutor
             DataSituacaoCadastral = empresa.DataSituacaoCadastral,
             DataInicioAtividade = empresa.DataInicioAtividade,
             OptantePeloMei = empresa.OptantePeloMei,
+            DataOpcaoPeloMei = empresa.DataOpcaoPeloMei,
+            DataExclusaoDoMei = empresa.DataExclusaoDoMei,
             Porte = empresa.Porte,
             Endereco = new EnderecoFornecedor
             {

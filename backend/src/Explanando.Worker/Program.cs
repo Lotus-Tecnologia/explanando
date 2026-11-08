@@ -588,6 +588,41 @@ switch (comando)
             return 0;
         }
 
+    case "reconsultar-mei":
+        {
+            // Uma vez, para a base que ja existia: as datas da opcao pelo MEI eram
+            // descartadas na ingestao ate 08/11/2026. Fornecedor novo ja entra com elas.
+            var cadastro = servicos.GetRequiredService<IFonteDeCadastroEmpresarial>();
+            var meis = await contexto.Fornecedores
+                .Where(fornecedor => fornecedor.OptantePeloMei == true
+                    && fornecedor.DataOpcaoPeloMei == null)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            int comData = 0, semResposta = 0;
+
+            foreach (var fornecedor in meis)
+            {
+                var empresa = await cadastro.ConsultarAsync(fornecedor.Documento.Numero).ConfigureAwait(false);
+
+                if (empresa is null)
+                {
+                    semResposta++;
+                    continue;
+                }
+
+                fornecedor.RegistrarDatasDoMei(
+                    empresa.OptantePeloMei, empresa.DataOpcaoPeloMei, empresa.DataExclusaoDoMei);
+                comData += empresa.DataOpcaoPeloMei is null ? 0 : 1;
+            }
+
+            await contexto.SaveChangesAsync().ConfigureAwait(false);
+
+            Console.WriteLine($"MEI reconsultados: {meis.Count}; com data da opcao: {comData}; "
+                + $"sem resposta da fonte: {semResposta}.");
+            return 0;
+        }
+
     case "varrer":
         {
             var varredura = servicos.GetRequiredService<ServicoDeVarredura>();
@@ -815,6 +850,7 @@ switch (comando)
               dotnet run -- coletar [--legislatura 57] [--limite N]
               dotnet run -- varrer  [--legislatura 57]
               dotnet run -- consolidar [--meses N]     sem --meses nao apaga nada
+              dotnet run -- reconsultar-mei            datas da opcao pelo MEI na BrasilAPI
               dotnet run -- ciclo-mensal [--forcar]    a passada completa do ADR-0010 §4
               dotnet run -- coletar-estado [--todas-as-esferas]   o grafo do Estado (SIORG)
               dotnet run -- coletar-cadeiras [--se-vencido]

@@ -274,7 +274,7 @@ public sealed class RegrasDeFornecedorTests
     [Fact]
     public void Mei_acima_do_teto_sinaliza_quando_um_so_parlamentar_ja_estoura()
     {
-        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true);
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true, opcaoPeloMei: new DateOnly(2020, 1, 1));
 
         for (var mes = 1; mes <= 12; mes++)
         {
@@ -291,7 +291,7 @@ public sealed class RegrasDeFornecedorTests
     [Fact]
     public void Mei_acima_do_teto_se_cala_dentro_do_limite()
     {
-        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true);
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true, opcaoPeloMei: new DateOnly(2020, 1, 1));
 
         for (var mes = 1; mes <= 6; mes++)
         {
@@ -305,7 +305,7 @@ public sealed class RegrasDeFornecedorTests
     public void Mei_acima_do_teto_nao_soma_anos_diferentes()
     {
         // O teto é anual. Somar a legislatura inteira acusaria qualquer MEI recorrente.
-        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true);
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true, opcaoPeloMei: new DateOnly(2020, 1, 1));
 
         for (var mes = 1; mes <= 6; mes++)
         {
@@ -315,6 +315,56 @@ public sealed class RegrasDeFornecedorTests
 
         cenario.Rodar(new RegraMeiAcimaDoTeto())
             .ShouldBeEmpty("54.000 em cada ano, nenhum deles acima do teto");
+    }
+
+    [Fact]
+    public void Mei_acima_do_teto_so_soma_o_que_foi_pago_enquanto_era_mei()
+    {
+        // Levantamento de 08/11/2026: a regra usava a opcao de HOJE para pagamentos de
+        // 2023 a 2025. Na BrasilAPI ha fornecedor que optou pelo MEI em marco de 2026.
+        var cenario = new CenarioDeAvaliacao()
+            .ComFornecedor(optantePeloMei: true, opcaoPeloMei: new DateOnly(2026, 3, 30));
+
+        for (var mes = 1; mes <= 12; mes++)
+        {
+            cenario.ComDespesa(8_000m, ano: 2025, mes: mes);  // 96.000, antes da opcao
+        }
+
+        cenario.Rodar(new RegraMeiAcimaDoTeto()).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Mei_acima_do_teto_nao_soma_depois_da_exclusao()
+    {
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(
+            optantePeloMei: false,
+            opcaoPeloMei: new DateOnly(2020, 1, 1),
+            exclusaoDoMei: new DateOnly(2024, 12, 31));
+
+        for (var mes = 1; mes <= 12; mes++)
+        {
+            cenario.ComDespesa(8_000m, ano: 2024, mes: mes);
+            cenario.ComDespesa(8_000m, ano: 2025, mes: mes);
+        }
+
+        var flags = cenario.Rodar(new RegraMeiAcimaDoTeto());
+
+        flags.Count.ShouldBe(1, "2024 era MEI; 2025 ja nao");
+        flags[0].Descricao.ShouldContain("2024");
+    }
+
+    [Fact]
+    public void Mei_acima_do_teto_se_cala_sem_a_data_da_opcao()
+    {
+        // Sem saber desde quando, a regra nao tem como dizer que pagamento foi a um MEI.
+        var cenario = new CenarioDeAvaliacao().ComFornecedor(optantePeloMei: true);
+
+        for (var mes = 1; mes <= 12; mes++)
+        {
+            cenario.ComDespesa(10_000m, ano: 2026, mes: mes);
+        }
+
+        cenario.Rodar(new RegraMeiAcimaDoTeto()).ShouldBeEmpty();
     }
 
     [Fact]

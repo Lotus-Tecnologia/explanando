@@ -189,6 +189,26 @@ public sealed class MapeamentoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task Datas_do_mei_sobrevivem_ao_banco()
+    {
+        var posto = NovoPosto(ProximoCnpjValido());
+        posto.RegistrarDatasDoMei(false, new DateOnly(2019, 1, 7), new DateOnly(2024, 12, 31));
+
+        await using (var escrita = banco.CriarContexto())
+        {
+            escrita.Fornecedores.Add(posto);
+            await escrita.SaveChangesAsync();
+        }
+
+        await using var leitura = banco.CriarContexto();
+        var lido = await leitura.Fornecedores.SingleAsync(f => f.Id == posto.Id);
+
+        lido.DataOpcaoPeloMei.ShouldBe(new DateOnly(2019, 1, 7));
+        lido.DataExclusaoDoMei.ShouldBe(new DateOnly(2024, 12, 31));
+        lido.EraMeiEm(new DateOnly(2024, 6, 1)).ShouldBe(true);
+    }
+
+    [Fact]
     public async Task Opcao_pelo_mei_desconhecida_continua_nula_apos_o_banco()
     {
         // Se o mapeamento colapsasse null em false, REG_KYB_004 silenciaria.

@@ -194,7 +194,8 @@ public sealed class RegraMeiAcimaDoTeto : IRegraAnomalia
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
     // A que mais sofre: 65% dos fornecedores da base real nao tem a opcao pelo MEI
-    // informada, e o silencio dela nunca significou ausencia de achado.
+    // informada, e o silencio dela nunca significou ausencia de achado. Optante sem a data
+    // da opcao tambem conta como sem dado.
     public DadoExigido Exige =>
         DadoExigido.CadastroDoFornecedor | DadoExigido.OpcaoPeloMei;
 
@@ -202,8 +203,10 @@ public sealed class RegraMeiAcimaDoTeto : IRegraAnomalia
     {
         ArgumentNullException.ThrowIfNull(contexto);
 
+        // So' o que foi pago enquanto o fornecedor era MEI (levantamento de 08/11/2026).
         var porFornecedorEAno = contexto.Despesas
-            .Where(despesa => contexto.FornecedorDe(despesa)?.EhMei == true)
+            .Where(despesa => contexto.FornecedorDe(despesa)?.EraMeiEm(
+                DateOnly.FromDateTime(despesa.DataDocumento.UtcDateTime)) == true)
             .GroupBy(despesa => (despesa.DocumentoFornecedor.Numero, despesa.Competencia.Ano));
 
         foreach (var grupo in porFornecedorEAno)

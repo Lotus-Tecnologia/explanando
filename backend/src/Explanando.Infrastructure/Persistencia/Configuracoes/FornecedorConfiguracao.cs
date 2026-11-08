@@ -40,6 +40,8 @@ internal sealed class FornecedorConfiguracao : IEntityTypeConfiguration<Forneced
         // Tres estados de proposito: sim, nao e "a fonte nao informou". No CNPJ real da
         // amostra veio nulo, e colapsar isso em `false` faria REG_KYB_004 silenciar.
         builder.Property(fornecedor => fornecedor.OptantePeloMei);
+        builder.Property(fornecedor => fornecedor.DataOpcaoPeloMei);
+        builder.Property(fornecedor => fornecedor.DataExclusaoDoMei);
         builder.Property(fornecedor => fornecedor.Porte).HasMaxLength(50);
 
         builder.Ignore(fornecedor => fornecedor.EhMei);
