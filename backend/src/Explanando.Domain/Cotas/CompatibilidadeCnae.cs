@@ -79,8 +79,9 @@ public static class CompatibilidadeCnae
         // 2 — hospedagem, alimentacao, transporte terrestre e agencias de viagem.
         ["locomocao, alimentacao e hospedagem"] = ["55", "56", "49", "79"],
 
-        // 3 — varejo e atacado de combustivel, lubrificantes e refino.
-        ["combustiveis e lubrificantes"] = ["473", "468", "192"],
+        // 3 — varejo e atacado de combustivel, lubrificantes e refino; troca de oleo em
+        // oficina (4520), autopecas (4530) e representante de combustivel (4612).
+        ["combustiveis e lubrificantes"] = ["473", "468", "192", "4520", "4530", "4612"],
 
         // 4 — servicos profissionais: juridico, contabil, gestao, engenharia, P&D,
         // pesquisa de mercado, TI e treinamento.
