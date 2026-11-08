@@ -129,7 +129,7 @@ Números medidos na base local (790.303 despesas, 631 parlamentares, 23.992 flag
 **Files:** Modify `Infrastructure/Persistencia/Consultas/ConsultasPublicasEfCore.cs:212-218`; Test em `backend/tests/Explanando.Integration.Tests` (consultas do perfil).
 
 - [ ] Teste: parlamentar com 2 fornecedores e 1 passagem sem documento → `FornecedoresDistintos == 2`.
-- [ ] Vermelho → `.Where(d => d.DocumentoFornecedor != CpfCnpj.Vazio)` (o mesmo vazio que `EhVazio` usa) → verde → commit.
+- [ ] Vermelho → excluir o documento vazio (`CpfCnpj.EhVazio`, `TipoDocumento.Vazio`) num filtro que o EF traduza → verde → commit.
 
 ### Task 9 (A8, só com aval do download): MEI pela data da opção
 
