@@ -122,14 +122,33 @@ describe("TagDeGravidade", () => {
     const media = render(<TagDeGravidade gravidade="Media" />).container.innerHTML;
     const baixa = render(<TagDeGravidade gravidade="Baixa" />).container.innerHTML;
 
-    expect(alta).toContain("clip-path");
-    expect(media).toContain("clip-path");
-    expect(baixa).toContain("rounded-full");
-    expect(alta).not.toBe(media);
+    expect(alta).toContain('data-forma="octogono"');
+    expect(media).toContain('data-forma="triangulo"');
+    expect(baixa).toContain('data-forma="circulo"');
+  });
+
+  it("mostra a contagem e a inclui no nome acessivel", () => {
+    render(<TagDeGravidade gravidade="Media" contagem={49} />);
+
+    expect(screen.getByRole("status")).toHaveAccessibleName("Gravidade média, 49 achados");
+    expect(screen.getByText("49")).toBeInTheDocument();
+    expect(screen.queryByText("Média")).not.toBeInTheDocument();
+  });
+
+  it("contagem de um achado fica no singular", () => {
+    render(<TagDeGravidade gravidade="Alta" contagem={1} />);
+
+    expect(screen.getByRole("status")).toHaveAccessibleName("Gravidade alta, 1 achado");
   });
 });
 
 describe("TagDeAbstencao", () => {
+  it("tem a forma de circulo tracejado", () => {
+    const { container } = render(<TagDeAbstencao />);
+
+    expect(container.innerHTML).toContain('data-forma="tracejado"');
+  });
+
   it("diz nao avaliado, e carrega o motivo no nome acessivel", () => {
     render(<TagDeAbstencao motivo="não há teto de cota publicado para o período" />);
 

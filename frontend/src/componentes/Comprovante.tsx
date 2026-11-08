@@ -26,10 +26,10 @@ export function Comprovante({
         href={despesa.urlDocumento}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 bg-titulo px-3 py-1.5 text-xs font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-campo bg-titulo px-4 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover"
       >
         Ver nota fiscal
-        <span aria-hidden="true">↗</span>
+        <span className="sr-only">(abre em nova aba)</span>
       </a>
     );
   }
@@ -50,11 +50,10 @@ export function Comprovante({
   // afirma que o documento sumiu.
   return (
     <span
-      className="inline-flex items-center gap-1.5 border border-borda-suave bg-abstencao-fundo px-3 py-1.5 text-xs font-semibold text-abstencao-texto"
+      className="inline-flex items-center gap-1.5 rounded-campo border border-dashed border-borda-estrutural bg-abstencao-fundo px-3 py-2 text-[0.8125rem] font-semibold text-abstencao-texto"
       role="note"
       aria-label={`${frase} — a ausência é da origem do dado, não da plataforma`}
     >
-      <span aria-hidden="true">🚫</span>
       {frase}
     </span>
   );
