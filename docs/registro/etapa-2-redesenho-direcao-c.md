@@ -54,18 +54,15 @@ https://claude.ai/artifact/45RnkoRhhXLUNZtD4AGtkD. O Gustavo escolheu a C.
 
 ## Build
 
-`npm test` (342 testes) e `npm run lint` passam. `npm run build` compila e passa no
-TypeScript, mas **não terminou a geração estática** nesta máquina, por dois motivos que esta
-branch não tocou (a rota do feed, `lib/api.ts` e `next.config.ts` são os mesmos do commit de
-partida):
+`npm test` (344 testes) e `npm run lint` passam. `npm run build` **sem API** passa: o
+`/feed.xml` quebrava com `fetch failed`, e agora responde 503 com `Retry-After` quando a API
+está fora (um feed vazio ficaria cinco minutos no cache e o leitor de RSS concluiria que os
+indicadores sumiram); nesse build ele sai como rota sob demanda.
 
-- com a API local (`dotnet run` em Development), 11 workers pré-renderizando 982 páginas
-  estouram o limite de 60s por página (`/parlamentares/...` numa rodada, `/estado/304` na
-  outra);
-- sem API nenhuma, `/feed.xml` quebra com `fetch failed` em vez de cair para lista vazia.
-
-O segundo é defeito real e pequeno (o feed deveria tolerar a API fora, como o resto do build);
-o primeiro pede a API em Release ou menos workers (`experimental.cpus`).
+**Com a API local** (`dotnet run` em Development) o build ainda não fecha: 11 workers
+pré-renderizando 982 páginas estouram o limite de 60s por página (`/parlamentares/...` numa
+rodada, `/estado/304` na outra). Isso não é desta branch; pede a API em Release ou menos
+workers (`experimental.cpus`).
 
 ## O que ficou de fora
 
