@@ -186,6 +186,29 @@ public sealed class RegrasDeTransacaoEGeografiaTests
             .ShouldBeEmpty("variacao de centavos ja descaracteriza o repasse fixo");
     }
 
+    [Fact]
+    public void Padrao_mensal_se_abstem_na_camara_acima_de_dez_mil()
+    {
+        // A Camara publica valores acima de R$ 10 mil sem centavo (seis digitos
+        // significativos): "sem variacao de centavos" ali seria afirmar o que a fonte apagou.
+        new CenarioDeAvaliacao()
+            .ComFornecedor()
+            .ComSerieMensal(18_970.4m, primeiroMes: 3, quantidadeDeMeses: 3)
+            .Rodar(new RegraPadraoMensalIdentico())
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Padrao_mensal_continua_no_senado_acima_de_dez_mil()
+    {
+        new CenarioDeAvaliacao()
+            .ParlamentarDoSenado()
+            .ComFornecedor()
+            .ComSerieMensal(18_970.4m, primeiroMes: 3, quantidadeDeMeses: 3)
+            .Rodar(new RegraPadraoMensalIdentico())
+            .Count.ShouldBe(1);
+    }
+
     // =====================================================================
     //  REG_TX_004 — pico de consumo
     // =====================================================================

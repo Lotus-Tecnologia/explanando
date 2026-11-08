@@ -953,6 +953,11 @@ public sealed class ConsultasPublicasEfCore(ExplanandoDbContext contexto) : ICon
             faltando.Add("a rubrica junta estadia com combustível e não diz qual dos dois foi");
         }
 
+        if (cobertura.DadoAusente.HasFlag(DadoExigido.CentavosDoValor))
+        {
+            faltando.Add("a Câmara publica valores acima de R$ 10 mil sem os centavos");
+        }
+
         if (faltando.Count == 0)
         {
             return cobertura.DespesasSemDado > 0

@@ -3,6 +3,8 @@ using Explanando.Domain.Cotas;
 using Explanando.Domain.Despesas;
 using Explanando.Domain.Fornecedores;
 
+using Explanando.Domain.Parlamentares;
+
 namespace Explanando.Domain.Regras;
 
 /// <summary>
@@ -65,6 +67,12 @@ public enum DadoExigido
     /// locomoção, hospedagem, alimentação e combustível: ali não se sabe se foi hotel ou posto.
     /// </summary>
     NaturezaDaDespesa = 2048,
+
+    /// <summary>
+    /// O valor traz os centavos. A Câmara publica com seis dígitos significativos: de
+    /// R$ 10 mil para cima o centavo não existe na origem (levantamento de 08/11/2026).
+    /// </summary>
+    CentavosDoValor = 4096,
 }
 
 /// <summary>O que aconteceu com uma regra numa passada.</summary>
@@ -224,6 +232,12 @@ internal static class DisponibilidadeDeDados
         if (!despesa.DocumentoFornecedor.EhVazio)
         {
             disponivel |= DadoExigido.DocumentoDoFornecedor;
+        }
+
+        if (contexto.Parlamentar.Tipo == TipoParlamentar.Senador
+            || Despesa.PrecisaoDaOrigem(despesa.ValorLiquido) == 0.01m)
+        {
+            disponivel |= DadoExigido.CentavosDoValor;
         }
 
         if (!TiposPresenciais.EhRubricaAmbigua(despesa.TipoDespesa))

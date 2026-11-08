@@ -139,6 +139,20 @@ public sealed class CoberturaTests
     }
 
     [Fact]
+    public void Valor_da_camara_sem_centavo_deixa_o_padrao_mensal_sem_dado()
+    {
+        var contexto = new CenarioDeAvaliacao()
+            .ComFornecedor()
+            .ComSerieMensal(18_970.4m, primeiroMes: 3, quantidadeDeMeses: 3)
+            .Construir();
+
+        var regra = De(MotorDeRegras.Padrao().Avaliar(contexto), "REG_TX_003");
+
+        regra.DespesasSemDado.ShouldBe(3);
+        regra.DadoAusente.HasFlag(DadoExigido.CentavosDoValor).ShouldBeTrue();
+    }
+
+    [Fact]
     public void Rubrica_do_Senado_que_junta_estadia_e_combustivel_deixa_o_recesso_sem_dado()
     {
         // REG_GEO_003 se abstém da rubrica 17 do Senado (não dá para saber se foi hotel ou

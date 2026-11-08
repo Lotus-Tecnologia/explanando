@@ -1,6 +1,7 @@
 using Explanando.Domain.Auditoria;
 using Explanando.Domain.Comum;
 using Explanando.Domain.Despesas;
+using Explanando.Domain.Parlamentares;
 
 namespace Explanando.Domain.Regras;
 
@@ -136,9 +137,9 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
 
     /// <summary>Ver IRegraAnomalia.Exige.</summary>
     // Serie historica do proprio parlamentar, por fornecedor — sem o documento do
-    // fornecedor nao ha serie a montar.
+    // fornecedor nao ha serie a montar. E "ao centavo" exige que a origem publique o centavo.
     public DadoExigido Exige =>
-        DadoExigido.DocumentoDoFornecedor;
+        DadoExigido.DocumentoDoFornecedor | DadoExigido.CentavosDoValor;
 
     public IEnumerable<FlagAnomalia> Avaliar(ContextoDeAvaliacao contexto)
     {
@@ -148,7 +149,9 @@ public sealed class RegraPadraoMensalIdentico : IRegraAnomalia
 
         var grupos = contexto.Despesas
             .Where(despesa => !despesa.DocumentoFornecedor.EhVazio
-                && despesa.ValorLiquido >= parametros.ValorMinimoParaPadraoMensal)
+                && despesa.ValorLiquido >= parametros.ValorMinimoParaPadraoMensal
+                && (contexto.Parlamentar.Tipo == TipoParlamentar.Senador
+                    || Despesa.PrecisaoDaOrigem(despesa.ValorLiquido) == 0.01m))
             .GroupBy(despesa => (despesa.DocumentoFornecedor.Numero, despesa.ValorLiquido));
 
         foreach (var grupo in grupos)
