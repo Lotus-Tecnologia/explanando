@@ -78,7 +78,7 @@ export function AlternadorDeTema() {
       type="button"
       onClick={alternar}
       aria-pressed={escuro}
-      className="inline-flex shrink-0 items-center gap-2 border border-borda-suave bg-surface px-3 py-1.5 text-xs font-semibold text-texto hover:border-borda-estrutural focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-campo border border-borda-suave bg-surface px-3 text-sm font-semibold text-texto hover:border-borda-estrutural"
     >
       <span aria-hidden="true" className="text-sm leading-none">
         {escuro ? "☀" : "☾"}

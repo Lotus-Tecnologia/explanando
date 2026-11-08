@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { classeDeBotao } from "./base/Botao";
 import { montarConsulta, type FiltrosDeDespesas } from "@/lib/filtros";
 
 /**
@@ -30,8 +31,7 @@ export function Paginacao({
     return consulta === "" ? base : `${base}?${consulta}`;
   };
 
-  const classe =
-    "inline-block border border-borda-suave px-3 py-1.5 text-sm font-semibold text-titulo hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo";
+  const classe = classeDeBotao("secundario");
 
   return (
     <nav

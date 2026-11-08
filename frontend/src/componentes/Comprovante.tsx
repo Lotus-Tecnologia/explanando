@@ -29,7 +29,7 @@ export function Comprovante({
         className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-campo bg-titulo px-4 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover"
       >
         Ver nota fiscal
-        <span className="sr-only">(abre em nova aba)</span>
+        {" "}<span className="sr-only">(abre em nova aba)</span>
       </a>
     );
   }

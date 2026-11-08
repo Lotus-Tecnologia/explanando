@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { classeDeBotao } from "./base/Botao";
 import type { FiltrosDeDespesas } from "@/lib/filtros";
 
 /**
@@ -30,14 +31,14 @@ export function BarraDeFiltros({
     filtros.ano !== null || filtros.tipo !== null || filtros.indicador !== "todas";
 
   const classeDoCampo =
-    "mt-1 w-full border border-borda-suave bg-fundo px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-titulo";
+    "mt-1.5 min-h-11 w-full rounded-campo border-[1.5px] border-borda-suave bg-surface px-3 text-[0.9375rem] text-texto";
 
   return (
-    <form method="get" action={base} className="border border-borda-suave p-4">
+    <form method="get" action={base} className="rounded-cartao border border-borda-suave bg-surface p-4">
       <h2 className="text-sm font-bold text-titulo">Filtrar</h2>
 
       <div className="mt-3">
-        <label htmlFor="filtro-ano" className="block text-xs font-semibold text-texto-suave">
+        <label htmlFor="filtro-ano" className="block text-sm font-semibold text-texto">
           Ano
         </label>
         <select
@@ -56,7 +57,7 @@ export function BarraDeFiltros({
       </div>
 
       <div className="mt-3">
-        <label htmlFor="filtro-tipo" className="block text-xs font-semibold text-texto-suave">
+        <label htmlFor="filtro-tipo" className="block text-sm font-semibold text-texto">
           Tipo de despesa
         </label>
         <select
@@ -77,7 +78,7 @@ export function BarraDeFiltros({
       <div className="mt-3">
         <label
           htmlFor="filtro-indicador"
-          className="block text-xs font-semibold text-texto-suave"
+          className="block text-sm font-semibold text-texto"
         >
           Indicadores
         </label>
@@ -98,17 +99,14 @@ export function BarraDeFiltros({
         tenha achado nada, e pode ser que as regras não tenham tido dado para avaliar. Quem
         escolhe "só as que não receberam" precisa ler isso antes do resultado, não depois.
       */}
-      <p className="mt-2 text-xs text-texto-suave">
+      <p className="mt-2 text-sm text-texto-suave">
         Despesa sem indicador não é despesa aprovada — parte das regras não pôde ser aplicada
         por ausência de dado público. O bloco <strong>“O que foi analisado”</strong>, no
         perfil, diz quais.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          className="bg-titulo px-3 py-1.5 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-        >
+        <button type="submit" className={classeDeBotao("primario")}>
           Aplicar
         </button>
 
