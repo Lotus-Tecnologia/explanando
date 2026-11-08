@@ -423,7 +423,10 @@ describe("TabelaDoRanking", () => {
 
     await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 59");
 
-    expect(screen.getByRole("status")).toHaveTextContent("1 parlamentar de 60");
+    // As tags de achado também são `status`; a contagem é a região viva com "de 60".
+    expect(
+      screen.getAllByRole("status").find((s) => s.getAttribute("aria-live") === "polite"),
+    ).toHaveTextContent("1 parlamentar de 60");
   });
 
   it("buscar de novo volta para a primeira pagina", async () => {
@@ -966,5 +969,38 @@ describe("Rodape", () => {
     expect(
       screen.getByRole("link", { name: "privacidade@explanando.com.br" }),
     ).toHaveAttribute("href", "mailto:privacidade@explanando.com.br");
+  });
+});
+
+describe("TabelaDoRanking no celular", () => {
+  it("a mesma linha vira cartão abaixo de md, sem rolar de lado", () => {
+    // O jsdom não aplica media query: o teste confere a estrutura, e a largura real em 375px
+    // é medida no navegador.
+    render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
+
+    const linha = screen.getByText("ANA PAULA").closest("tr")!;
+    expect(linha.className).toContain("max-md:grid");
+    expect(screen.getByRole("table").closest("div")!.className).not.toMatch(/(^| )overflow-x-auto/);
+  });
+
+  it("zero achados não vira tag", () => {
+    render(
+      <TabelaDoRanking
+        itens={[doRanking({ flagsAltas: 0, flagsMedias: 0, flagsBaixas: 0 })]}
+        rotulo="Volume gasto"
+      />,
+    );
+
+    expect(screen.getByText("Nenhum achado")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Gravidade/)).not.toBeInTheDocument();
+  });
+
+  it("nome longo recebe title e trunca, sem empurrar o valor", () => {
+    const nome = "MARIA APARECIDA DOS SANTOS FERREIRA DE ALBUQUERQUE CAVALCANTI NETA";
+    render(<TabelaDoRanking itens={[doRanking({ nomeParlamentar: nome })]} rotulo="Volume gasto" />);
+
+    const link = screen.getByRole("link", { name: nome });
+    expect(link).toHaveAttribute("title", nome);
+    expect(link.className).toContain("truncate");
   });
 });
