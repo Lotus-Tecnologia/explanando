@@ -14,7 +14,7 @@ namespace Explanando.Domain.Tests.Comum;
 /// </summary>
 public sealed class CpfParcialTests
 {
-    // Socio ficticio do CNPJ 36826246000164 (FULANO DE TAL PRIMEIRO SOCIO).
+    // Socio ficticio: nome e mascara trocados para nao versionar dado pessoal.
     private const string MascaraDoSocio = "***456789**";
 
     // CPF completo cujos indices 3..8 sao exatamente "456789":
