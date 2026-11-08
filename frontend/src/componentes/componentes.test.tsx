@@ -122,14 +122,33 @@ describe("TagDeGravidade", () => {
     const media = render(<TagDeGravidade gravidade="Media" />).container.innerHTML;
     const baixa = render(<TagDeGravidade gravidade="Baixa" />).container.innerHTML;
 
-    expect(alta).toContain("clip-path");
-    expect(media).toContain("clip-path");
-    expect(baixa).toContain("rounded-full");
-    expect(alta).not.toBe(media);
+    expect(alta).toContain('data-forma="octogono"');
+    expect(media).toContain('data-forma="triangulo"');
+    expect(baixa).toContain('data-forma="circulo"');
+  });
+
+  it("mostra a contagem e a inclui no nome acessivel", () => {
+    render(<TagDeGravidade gravidade="Media" contagem={49} />);
+
+    expect(screen.getByRole("status")).toHaveAccessibleName("Gravidade média, 49 achados");
+    expect(screen.getByText("49")).toBeInTheDocument();
+    expect(screen.queryByText("Média")).not.toBeInTheDocument();
+  });
+
+  it("contagem de um achado fica no singular", () => {
+    render(<TagDeGravidade gravidade="Alta" contagem={1} />);
+
+    expect(screen.getByRole("status")).toHaveAccessibleName("Gravidade alta, 1 achado");
   });
 });
 
 describe("TagDeAbstencao", () => {
+  it("tem a forma de circulo tracejado", () => {
+    const { container } = render(<TagDeAbstencao />);
+
+    expect(container.innerHTML).toContain('data-forma="tracejado"');
+  });
+
   it("diz nao avaliado, e carrega o motivo no nome acessivel", () => {
     render(<TagDeAbstencao motivo="não há teto de cota publicado para o período" />);
 
@@ -404,7 +423,10 @@ describe("TabelaDoRanking", () => {
 
     await usuario.type(screen.getByRole("searchbox"), "PARLAMENTAR 59");
 
-    expect(screen.getByRole("status")).toHaveTextContent("1 parlamentar de 60");
+    // As tags de achado também são `status`; a contagem é a região viva com "de 60".
+    expect(
+      screen.getAllByRole("status").find((s) => s.getAttribute("aria-live") === "polite"),
+    ).toHaveTextContent("1 parlamentar de 60");
   });
 
   it("buscar de novo volta para a primeira pagina", async () => {
@@ -644,7 +666,8 @@ describe("BarraDeFiltros", () => {
 
     const seletor = screen.getByLabelText(/tipo de despesa/i);
 
-    expect(within(seletor).getByRole("option", { name: "TELEFONIA" })).toBeInTheDocument();
+    expect(within(seletor).getByRole("option", { name: "Telefonia" })).toHaveValue("TELEFONIA");
+    expect(within(seletor).getByRole("option", { name: "Telefonia" })).toBeInTheDocument();
     expect(within(seletor).getAllByRole("option")).toHaveLength(tipos.length + 1);
   });
 
@@ -758,7 +781,8 @@ describe("ListaDeDespesas", () => {
 
     // A tag carrega o nível; a frase ao lado carrega o achado, com o dado concreto. Juntas
     // dizem tudo o que a sigla dizia, e dizem para quem não conhece a sigla.
-    expect(screen.getByLabelText(/alta relevância/i)).toBeInTheDocument();
+    // Duas vezes: na linha fechada (o mais grave) e na aberta (cada achado).
+    expect(screen.getAllByLabelText(/alta relevância/i).length).toBeGreaterThan(0);
     expect(screen.getByText("Empresa com 43 dias de atividade.")).toBeInTheDocument();
 
     expect(document.body.textContent).not.toContain("REG_");
@@ -947,5 +971,38 @@ describe("Rodape", () => {
     expect(
       screen.getByRole("link", { name: "privacidade@explanando.com.br" }),
     ).toHaveAttribute("href", "mailto:privacidade@explanando.com.br");
+  });
+});
+
+describe("TabelaDoRanking no celular", () => {
+  it("a mesma linha vira cartão abaixo de md, sem rolar de lado", () => {
+    // O jsdom não aplica media query: o teste confere a estrutura, e a largura real em 375px
+    // é medida no navegador.
+    render(<TabelaDoRanking itens={TRES} rotulo="Volume gasto" />);
+
+    const linha = screen.getByText("ANA PAULA").closest("tr")!;
+    expect(linha.className).toContain("max-md:grid");
+    expect(screen.getByRole("table").closest("div")!.className).not.toMatch(/(^| )overflow-x-auto/);
+  });
+
+  it("zero achados não vira tag", () => {
+    render(
+      <TabelaDoRanking
+        itens={[doRanking({ flagsAltas: 0, flagsMedias: 0, flagsBaixas: 0 })]}
+        rotulo="Volume gasto"
+      />,
+    );
+
+    expect(screen.getByText("Nenhum achado")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Gravidade/)).not.toBeInTheDocument();
+  });
+
+  it("nome longo recebe title e trunca, sem empurrar o valor", () => {
+    const nome = "MARIA APARECIDA DOS SANTOS FERREIRA DE ALBUQUERQUE CAVALCANTI NETA";
+    render(<TabelaDoRanking itens={[doRanking({ nomeParlamentar: nome })]} rotulo="Volume gasto" />);
+
+    const link = screen.getByRole("link", { name: nome });
+    expect(link).toHaveAttribute("title", nome);
+    expect(link.className).toContain("truncate");
   });
 });

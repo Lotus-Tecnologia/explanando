@@ -1,27 +1,26 @@
 import type { Metadata } from "next";
-import { Familjen_Grotesk, Inter } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import "./globals.css";
 import { Cabecalho } from "@/componentes/Cabecalho";
 import { Rodape } from "@/componentes/Rodape";
 import { URL_BASE, ehIndexavel } from "@/lib/site";
 import { SCRIPT_DE_TEMA } from "@/componentes/AlternadorDeTema";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--fonte-inter",
+/*
+  `latin-ext` além de `latin`: sem ele, "ã", "õ" e "ç" caem no fallback e a linha aparece com
+  duas fontes misturadas — num produto em português isso acontece já no primeiro título.
+*/
+const corpo = Figtree({
+  subsets: ["latin", "latin-ext"],
+  variable: "--fonte-corpo",
   display: "swap",
 });
 
-/*
-  Display, só para título e número grande.
-
-  `latin-ext` e não `latin`: sem ele, "ã", "õ" e "ç" caem no fallback e a linha aparece com
-  duas fontes misturadas — num produto em português isso acontece já no primeiro título.
-*/
-const familjen = Familjen_Grotesk({
+/* Destaque, só para título e número grande. */
+const destaque = Bricolage_Grotesque({
   subsets: ["latin", "latin-ext"],
-  weight: ["500", "700"],
-  variable: "--fonte-familjen",
+  weight: ["600", "700"],
+  variable: "--fonte-destaque",
   display: "swap",
 });
 
@@ -58,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${familjen.variable}`}
+      className={`${corpo.variable} ${destaque.variable}`}
       /*
         O script abaixo mexe no `<html>` antes da hidratação, de propósito. Sem isto o React
         acusa divergência entre o que o servidor mandou e o que o navegador tem.

@@ -1,6 +1,7 @@
 "use client";
 
 import { Aviso } from "@/componentes/Aviso";
+import { Botao } from "@/componentes/base/Botao";
 
 /**
  * O limite de erro da aplicação (Arquitetura §2.2).
@@ -21,13 +22,9 @@ export default function Erro({
     <Aviso
       titulo="Não conseguimos carregar esta página"
       acao={
-        <button
-          type="button"
-          onClick={reset}
-          className="inline-block border border-borda-suave px-3 py-1.5 text-sm font-semibold text-titulo hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-        >
+        <Botao variante="secundario" onClick={reset}>
           Tentar de novo
-        </button>
+        </Botao>
       }
     >
       <p>
@@ -41,7 +38,7 @@ export default function Erro({
         nada com ela.
       */}
       {error.digest ? (
-        <p className="numeros mt-2 text-xs text-texto-suave">
+        <p className="numeros mt-2 text-sm text-texto-suave">
           Código da ocorrência: {error.digest}
         </p>
       ) : null}

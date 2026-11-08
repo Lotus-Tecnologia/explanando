@@ -337,7 +337,7 @@ export function GrafoDoEstado({
               </defs>
 
               {grafo.setores.map((setor) => {
-                const texto = setor.rotulo.toUpperCase();
+                const texto = setor.rotulo;
                 const medida = fonteDoRotuloDoSetor(
                   texto,
                   setor.inicio,
@@ -540,7 +540,7 @@ function ControlesDeZoom({
   aoEnquadrar: () => void;
 }) {
   return (
-    <div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-selo border border-borda-suave bg-surface/90 p-1 backdrop-blur">
+    <div className="absolute top-0 right-0 z-10 flex items-center gap-1 rounded-selo border border-borda-suave bg-surface/90 p-1">
       <Botao rotulo="Afastar" simbolo="−" aoClicar={aoAfastar} inativo={zoom <= 1} />
 
       <span className="numeros w-10 text-center text-xs text-texto-suave">
@@ -681,12 +681,12 @@ function RotuloDoAnel({ raio, texto }: { raio: number; texto: string }) {
       <text
         y={y}
         textAnchor="middle"
-        fontSize={9.5}
+        fontSize={11}
         fontWeight={700}
-        letterSpacing={1.1}
+        letterSpacing={0.2}
         fill="var(--color-texto-suave)"
       >
-        {texto.toUpperCase()}
+        {texto}
       </text>
     </g>
   );

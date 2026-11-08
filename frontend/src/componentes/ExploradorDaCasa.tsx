@@ -46,7 +46,7 @@ export function ExploradorDaCasa({
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {/* 1. Dashboards analíticos no topo */}
       <DashboardDaCasa
         casa={casa}
@@ -70,21 +70,14 @@ export function ExploradorDaCasa({
         <section
           id="listagem-tabela"
           aria-labelledby="titulo-listagem"
-          className="border-t border-borda-suave pt-8 scroll-mt-20"
+          className="scroll-mt-32"
         >
-          <div className="flex flex-col gap-1">
-            <h2
-              id="titulo-listagem"
-              className="font-display text-xl sm:text-2xl font-bold tracking-tight text-titulo"
-            >
-              Listagem e Auditoria Individual
-            </h2>
-            <p className="text-sm text-texto-suave max-w-3xl">
-              Explore cada parlamentar da base, filtre por partido ou unidade da
-              federação, reordene as colunas e consulte as notas fiscais
-              associadas.
-            </p>
-          </div>
+          <h2
+            id="titulo-listagem"
+            className="font-display text-2xl font-bold tracking-tight text-titulo"
+          >
+            Todos os {casa.integrantes}
+          </h2>
 
           <TabelaDoRanking
             itens={itens}

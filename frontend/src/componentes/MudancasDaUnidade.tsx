@@ -65,7 +65,7 @@ export function MudancasDaUnidade({
 
   return (
     <section>
-      <h3 className="text-xs font-bold tracking-widest text-texto-suave uppercase">
+      <h3 className="text-xs font-bold text-texto-suave">
         O que mudou aqui
       </h3>
 

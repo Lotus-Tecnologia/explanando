@@ -77,7 +77,7 @@ describe("BuscaRapidaHome", () => {
 
     const input = screen.getByRole("combobox");
     expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute("placeholder", expect.stringContaining("Buscar por nome"));
+    expect(input).toHaveAttribute("placeholder", expect.stringContaining("Digite um nome"));
   });
 
   it("filtra parlamentares por nome mesmo com acentos dobrados", async () => {

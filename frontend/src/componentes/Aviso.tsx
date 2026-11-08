@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Botao } from "./base/Botao";
 
 /**
  * A tela de um caminho que não deu certo.
@@ -20,17 +20,12 @@ export function Aviso({
 }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-2xl font-bold text-titulo">{titulo}</h1>
+      <h1 className="font-display text-3xl font-bold text-titulo">{titulo}</h1>
 
-      <div className="mt-3 text-sm text-texto">{children}</div>
+      <div className="mt-3 text-texto">{children}</div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Link
-          href="/"
-          className="inline-block bg-titulo px-3 py-1.5 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
-        >
-          Ir para o ranking
-        </Link>
+        <Botao href="/">Ir para o ranking</Botao>
 
         {acao}
       </div>

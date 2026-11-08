@@ -233,7 +233,7 @@ export function SerieDePessoal({
       </p>
 
       <details className="mt-3">
-        <summary className="cursor-pointer text-xs font-semibold text-titulo">
+        <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-titulo">
           Ver a série em números
         </summary>
 

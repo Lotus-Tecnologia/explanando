@@ -26,10 +26,10 @@ export function Comprovante({
         href={despesa.urlDocumento}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 bg-titulo px-3 py-1.5 text-xs font-semibold text-sobre-titulo hover:bg-titulo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-titulo"
+        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-campo bg-titulo px-4 text-sm font-semibold text-sobre-titulo hover:bg-titulo-hover"
       >
         Ver nota fiscal
-        <span aria-hidden="true">↗</span>
+        {" "}<span className="sr-only">(abre em nova aba)</span>
       </a>
     );
   }
@@ -50,11 +50,10 @@ export function Comprovante({
   // afirma que o documento sumiu.
   return (
     <span
-      className="inline-flex items-center gap-1.5 border border-borda-suave bg-abstencao-fundo px-3 py-1.5 text-xs font-semibold text-abstencao-texto"
+      className="inline-flex items-center gap-1.5 rounded-campo border border-dashed border-borda-estrutural bg-abstencao-fundo px-3 py-2 text-[0.8125rem] font-semibold text-abstencao-texto"
       role="note"
       aria-label={`${frase} — a ausência é da origem do dado, não da plataforma`}
     >
-      <span aria-hidden="true">🚫</span>
       {frase}
     </span>
   );
@@ -67,22 +66,35 @@ export function Comprovante({
  * Exibir `R$ 0,00` diria que a despesa passou por conferência e foi integralmente aprovada —
  * afirmação que ninguém fez, produzida por um valor que parece inocente (ADR-0012 §2).
  */
-export function ValoresDaDespesa({ despesa }: { despesa: ItemDeDespesa }) {
+export function ValoresDaDespesa({
+  despesa,
+  grande = false,
+}: {
+  despesa: ItemDeDespesa;
+  /** Na página da despesa o valor é o número principal: alinhado à esquerda e grande. */
+  grande?: boolean;
+}) {
   const glosaConhecida = despesa.valorGlosa !== null;
   const houveCorte = glosaConhecida && despesa.valorGlosa! > 0;
 
   return (
-    <div className="numeros text-right">
-      <div className="font-semibold text-titulo">
+    <div className={grande ? "numeros" : "numeros text-right"}>
+      <div
+        className={
+          grande
+            ? "font-display text-[2rem] leading-tight font-bold text-titulo"
+            : "font-semibold whitespace-nowrap text-titulo"
+        }
+      >
         {formatarReais(despesa.valorLiquido)}
         {despesa.ehEstorno ? (
-          <span className="ml-2 text-xs font-normal text-texto-suave">estorno</span>
+          <span className="ml-2 font-sans text-sm font-normal text-texto-suave">estorno</span>
         ) : null}
       </div>
 
       {houveCorte ? (
-        <div className="text-xs text-texto-suave">
-          declarado {formatarReais(despesa.valorDocumento)} · glosa{" "}
+        <div className="text-sm text-texto-suave">
+          declarado {formatarReais(despesa.valorDocumento)}, glosa{" "}
           {formatarReais(despesa.valorGlosa!)}
         </div>
       ) : null}

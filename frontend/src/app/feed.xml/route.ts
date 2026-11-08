@@ -9,7 +9,23 @@ export const revalidate = 300;
  * parlamentares. Para quem acompanha a cota como assunto, e não um nome.
  */
 export async function GET() {
-  const achados = await listarAchadosRecentes(undefined, 50);
+  let achados;
+
+  try {
+    achados = await listarAchadosRecentes(undefined, 50);
+  } catch (erro) {
+    // A API fora não pode virar um feed vazio: ele ficaria cinco minutos no cache, e o leitor
+    // de RSS concluiria que os indicadores sumiram. 503 diz "volte depois", e também deixa o
+    // build passar sem backend, como as páginas já passam.
+    console.warn(
+      `[explanando] Feed geral indisponível: ${erro instanceof Error ? erro.message : String(erro)}`,
+    );
+
+    return new Response("Feed temporariamente indisponível.", {
+      status: 503,
+      headers: { "Retry-After": "300", "Cache-Control": "no-store" },
+    });
+  }
 
   return respostaDoFeed(
     montarFeed(

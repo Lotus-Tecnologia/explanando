@@ -72,83 +72,70 @@ export default async function Despesas({ params, searchParams }: Parametros & Co
   const base = `/parlamentares/${id}/despesas`;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
+    <main className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
       <Link
         href={`/parlamentares/${id}`}
-        className="text-sm text-titulo underline-offset-2 hover:underline"
+        className="inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
       >
         ← {perfil.nomeParlamentar}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-titulo">
+      <h1 className="mt-2 font-display text-[1.75rem] leading-tight font-bold tracking-tight text-titulo sm:text-4xl">
         Despesas de {perfil.nomeParlamentar}
       </h1>
-      <p className="mt-1 text-sm text-texto-suave">
-        {perfil.siglaPartido} · {perfil.uf} · {perfil.casa}
+      <p className="mt-2 text-texto-suave">
+        {perfil.siglaPartido}, {perfil.uf}. {perfil.casa}.
       </p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[16rem_1fr]">
-        <aside>
-          <BarraDeFiltros
-            base={base}
-            anos={anos}
-            tipos={perfil.tiposDeDespesa}
-            filtros={filtros}
-          />
-        </aside>
-
-        <section aria-label="Despesas">
-          {pagina === null ? (
-            <p className="border border-borda-suave bg-abstencao-fundo p-4 text-sm text-abstencao-texto">
-              As despesas não puderam ser carregadas agora. A falha é da plataforma, não do
-              dado público.
-            </p>
-          ) : (
-            <>
-              <p className="text-sm text-texto-suave">
-                <strong className="numeros text-titulo">
-                  {formatarNumero(pagina.total)}
-                </strong>{" "}
-                {pagina.total === 1 ? "despesa" : "despesas"}
-                {filtros.ano !== null || filtros.tipo !== null || filtros.indicador !== "todas"
-                  ? " com este filtro"
-                  : " no total"}
-                .
-              </p>
-
-              <ListaDeDespesas
-                despesas={pagina.itens}
-                casa={perfil.casa}
-                mensagemVazia={
-                  // Página fora da faixa não é filtro sem resultado: o filtro casa
-                  // centenas, e só o número da página é que não existe. Dizer a mesma
-                  // frase nos dois casos seria mentir num deles.
-                  pagina.total > 0 ? (
-                    <>
-                      Esta página não existe para o filtro atual — ele tem{" "}
-                      {formatarNumero(pagina.totalDePaginas)}{" "}
-                      {pagina.totalDePaginas === 1 ? "página" : "páginas"}.{" "}
-                      <Link
-                        href={base}
-                        className="font-semibold text-titulo underline underline-offset-2"
-                      >
-                        Voltar ao começo
-                      </Link>
-                      .
-                    </>
-                  ) : undefined
-                }
-              />
-
-              <Paginacao
-                base={base}
-                filtros={filtros}
-                totalDePaginas={pagina.totalDePaginas}
-              />
-            </>
-          )}
-        </section>
+      <div className="mt-6">
+        <BarraDeFiltros base={base} anos={anos} tipos={perfil.tiposDeDespesa} filtros={filtros} />
       </div>
+
+      <section aria-label="Despesas" className="mt-4">
+        {pagina === null ? (
+          <p className="rounded-cartao border border-borda-suave bg-surface p-4 text-texto-suave">
+            As despesas não puderam ser carregadas agora. A falha é da plataforma, não do dado
+            público.
+          </p>
+        ) : (
+          <>
+            <p className="text-texto-suave">
+              <strong className="numeros text-texto">{formatarNumero(pagina.total)}</strong>{" "}
+              {pagina.total === 1 ? "despesa" : "despesas"}
+              {filtros.ano !== null || filtros.tipo !== null || filtros.indicador !== "todas"
+                ? " com este filtro"
+                : " no total"}
+              . Toque numa linha para ver os achados e a nota fiscal.
+            </p>
+
+            <ListaDeDespesas
+              despesas={pagina.itens}
+              casa={perfil.casa}
+              mensagemVazia={
+                // Página fora da faixa não é filtro sem resultado: o filtro casa centenas, e
+                // só o número da página é que não existe. Dizer a mesma frase nos dois casos
+                // seria mentir num deles.
+                pagina.total > 0 ? (
+                  <>
+                    Esta página não existe para o filtro atual — ele tem{" "}
+                    {formatarNumero(pagina.totalDePaginas)}{" "}
+                    {pagina.totalDePaginas === 1 ? "página" : "páginas"}.{" "}
+                    <Link
+                      href={base}
+                      className="font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
+                    >
+                      Voltar ao começo
+                    </Link>
+                    .
+                  </>
+                ) : undefined
+              }
+            />
+
+            <Paginacao base={base} filtros={filtros} totalDePaginas={pagina.totalDePaginas} />
+          </>
+        )}
+      </section>
     </main>
   );
 }

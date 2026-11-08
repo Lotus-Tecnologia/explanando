@@ -19,8 +19,8 @@ import {
 export function VotacaoDoParlamentar({ votacao }: { votacao: Votacao }) {
   if (!votacao.temCandidatura) {
     return (
-      <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-fundo p-4 sm:p-5">
-        <h2 id="titulo-votacao" className="text-base font-bold text-titulo">
+      <section aria-labelledby="titulo-votacao" className="rounded-cartao border border-borda-suave bg-surface p-5">
+        <h2 id="titulo-votacao" className="font-display text-xl font-bold text-titulo">
           De onde vieram os votos
         </h2>
         <p className="mt-1 text-sm text-texto-suave">
@@ -39,8 +39,8 @@ export function VotacaoDoParlamentar({ votacao }: { votacao: Votacao }) {
       : null;
 
   return (
-    <section aria-labelledby="titulo-votacao" className="border border-borda-suave bg-fundo p-4 sm:p-5">
-      <h2 id="titulo-votacao" className="text-base font-bold text-titulo">
+    <section aria-labelledby="titulo-votacao" className="rounded-cartao border border-borda-suave bg-surface p-5">
+      <h2 id="titulo-votacao" className="font-display text-xl font-bold text-titulo">
         De onde vieram os votos
       </h2>
       <p className="mt-1 text-sm text-texto-suave">

@@ -1,6 +1,7 @@
 import type { AchadoRecente, Gravidade } from "./contrato";
 import { formatarDataDoDocumento, formatarReais } from "./formato";
 import { URL_BASE } from "./site";
+import { documentoPublicavel } from "./frases";
 
 /**
  * O feed RSS de alertas — a Fase 3 do plano de execução.
@@ -66,7 +67,7 @@ export function descricaoDoItem(achado: AchadoRecente): string {
   const data = formatarDataDoDocumento(achado.dataDocumento);
 
   const linhas = [
-    `${fornecedor} (${achado.documentoFornecedor}), documento de ${data}, ` +
+    `${fornecedor} (${documentoPublicavel(achado.documentoFornecedor)}), documento de ${data}, ` +
       `competência ${String(achado.mes).padStart(2, "0")}/${achado.ano}.`,
     ...achado.regras.map(
       (regra) =>

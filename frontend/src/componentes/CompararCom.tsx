@@ -25,8 +25,8 @@ export function CompararCom({
   const idDoCampo = useId();
 
   return (
-    <div className="flex flex-col gap-2 border border-borda-suave bg-surface p-3 sm:flex-row sm:items-center sm:gap-4">
-      <label htmlFor={idDoCampo} className="shrink-0 text-sm font-semibold text-titulo">
+    <div className="flex flex-col gap-2 rounded-cartao border border-borda-suave bg-surface p-4 sm:flex-row sm:items-center sm:gap-4">
+      <label htmlFor={idDoCampo} className="shrink-0 font-semibold text-texto">
         Comparar {nome} com outro {integrante}
       </label>
       <BuscaRapidaHome

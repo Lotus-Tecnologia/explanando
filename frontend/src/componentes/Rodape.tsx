@@ -16,46 +16,39 @@ import { ENCARREGADO } from "@/lib/site";
  * responsável nomeado é condição para operar, não item de backlog.
  */
 export function Rodape() {
+  const link = "inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4 hover:decoration-titulo";
+
   return (
-    <footer className="mx-auto max-w-7xl border-t border-borda-suave px-4 py-6 text-xs text-texto-suave">
-      <p>
-        Dados obtidos das APIs de dados abertos da Câmara dos Deputados, do Senado Federal,
-        da Receita Federal (via BrasilAPI), do TSE e do SIORG, a estrutura organizacional do
-        Estado.
-        Os indicadores são produzidos por um motor de regras determinístico, que diz o que
-        procurou em cada achado, e{" "}
-        <strong>não caracterizam, por si, irregularidade</strong>. A conclusão é de quem lê.
-      </p>
-
-      <p className="mt-2">
-        Parte das regras depende de dado que nem toda fonte publica. Quando faltou dado, a
-        página diz que faltou — <strong>ausência de indicador não é atestado de
-        regularidade</strong>.
-      </p>
-
-      <p className="mt-3">
+    <footer className="mt-12 border-t border-borda-suave">
+      <div className="mx-auto max-w-6xl space-y-2 px-4 py-8 text-sm text-texto-suave">
+        <p>
+          Dados abertos da Câmara, do Senado, da Receita Federal (via BrasilAPI), do TSE e do
+          SIORG.
+        </p>
+        <p>
+          Os indicadores vêm de um motor de regras que diz o que procurou em cada achado, e{" "}
+          <strong className="text-texto">não caracterizam, por si, irregularidade</strong>.
+          Ausência de indicador também não é atestado de regularidade.
+        </p>
         {/*
           Aponta para a política, não para um `mailto`. O ADR-0010 §2 pedia o canal; a LGPD
           pede a política publicada, e um `mailto` sozinho não é política.
         */}
-        <Link
-          href="/privacidade"
-          className="font-semibold text-titulo underline underline-offset-2"
-        >
-          Privacidade e Direitos LGPD
-        </Link>{" "}
-        · Encarregado de Dados: {ENCARREGADO.nome} —{" "}
-        <a
-          href={`mailto:${ENCARREGADO.email}`}
-          className="numeros text-titulo underline underline-offset-2"
-        >
-          {ENCARREGADO.email}
-        </a>{" "}
-        ·{" "}
-        <a href="/feed.xml" className="font-semibold text-titulo underline underline-offset-2">
-          Novos indicadores por RSS
-        </a>
-      </p>
+        <p className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/privacidade" className={link}>
+            Privacidade e Direitos LGPD
+          </Link>
+          <span>
+            Encarregado de Dados: {ENCARREGADO.nome},{" "}
+            <a href={`mailto:${ENCARREGADO.email}`} className={link}>
+              {ENCARREGADO.email}
+            </a>
+          </span>
+          <a href="/feed.xml" className={link}>
+            Novos indicadores por RSS
+          </a>
+        </p>
+      </div>
     </footer>
   );
 }

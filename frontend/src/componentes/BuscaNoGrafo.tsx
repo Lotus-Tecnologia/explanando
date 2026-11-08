@@ -105,7 +105,7 @@ export function BuscaNoGrafo({
   }
 
   return (
-    <div className="rounded-cartao border border-borda-estrutural bg-surface p-3 shadow-flutuante">
+    <div className="rounded-cartao border border-borda-estrutural bg-surface p-3">
       <div className="flex items-center gap-2">
         <span aria-hidden="true" className="text-texto-suave">
           ⌕

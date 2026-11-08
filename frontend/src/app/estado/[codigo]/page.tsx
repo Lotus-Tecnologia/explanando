@@ -148,7 +148,7 @@ export default async function Pagina({ params }: Parametros) {
       <dl className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-cartao border border-borda-suave sm:grid-cols-2">
         {fichas.map((ficha) => (
           <div key={ficha.termo} className="bg-surface px-5 py-4">
-            <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+            <dt className="text-xs font-bold text-texto-suave">
               {ficha.termo}
             </dt>
             <dd className="mt-1 text-sm text-texto">
@@ -165,7 +165,7 @@ export default async function Pagina({ params }: Parametros) {
         ))}
 
         <div className="bg-surface px-5 py-4">
-          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+          <dt className="text-xs font-bold text-texto-suave">
             Unidades subordinadas
           </dt>
           <dd className="mt-1 font-display text-2xl font-bold text-titulo">
@@ -174,7 +174,7 @@ export default async function Pagina({ params }: Parametros) {
         </div>
 
         <div className="bg-surface px-5 py-4">
-          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+          <dt className="text-xs font-bold text-texto-suave">
             Servidores no ramo
           </dt>
           <dd className="mt-1 font-display text-2xl font-bold text-titulo">
@@ -222,7 +222,7 @@ export default async function Pagina({ params }: Parametros) {
         </div>
 
         <div className="bg-surface px-5 py-4">
-          <dt className="text-xs font-bold tracking-wider text-texto-suave uppercase">
+          <dt className="text-xs font-bold text-texto-suave">
             Código no SIORG
           </dt>
           <dd className="numeros mt-1 text-sm text-texto">{unidade.codigo}</dd>

@@ -14,16 +14,14 @@ import type { CoberturaDeRegra } from "@/lib/contrato";
 export function TagDeAbstencao({ motivo }: { motivo?: string | null }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 border border-borda-suave bg-abstencao-fundo px-2 py-1 text-xs font-semibold text-abstencao-texto"
+      className="inline-flex items-center gap-1.5 rounded-md border border-borda-suave bg-abstencao-fundo px-2 py-1 text-[0.8125rem] leading-none font-semibold whitespace-nowrap text-abstencao-texto"
       role="status"
       aria-label={motivo ? `Não avaliado: ${motivo}` : "Não avaliado"}
     >
-      <span
-        aria-hidden="true"
-        className="flex size-3.5 shrink-0 items-center justify-center rounded-full border border-dashed border-current text-[9px] leading-none"
-      >
-        –
-      </span>
+      <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5 shrink-0" data-forma="tracejado">
+        <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeDasharray="2.4 2" />
+        <rect x="5" y="7.3" width="6" height="1.5" fill="currentColor" />
+      </svg>
       Não avaliado
     </span>
   );
@@ -104,9 +102,9 @@ export function BlocoDeCobertura({
   return (
     <section
       aria-labelledby="titulo-cobertura"
-      className="border border-borda-suave bg-fundo p-4"
+      className="rounded-cartao border border-borda-suave bg-surface p-5"
     >
-      <h2 id="titulo-cobertura" className="text-base font-bold text-titulo">
+      <h2 id="titulo-cobertura" className="font-display text-xl font-bold text-titulo">
         O que foi analisado
       </h2>
 

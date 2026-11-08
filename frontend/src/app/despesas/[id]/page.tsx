@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { obterDespesa } from "@/lib/api";
 import { formatarDataDoDocumento, formatarReais } from "@/lib/formato";
 import { tituloDaDespesa } from "@/lib/metadados";
+import { caixaDeFrase, documentoPublicavel } from "@/lib/frases";
 import { Comprovante, ValoresDaDespesa } from "@/componentes/Comprovante";
 import { RespostasDoGabinete, SemRespostaDoGabinete } from "@/componentes/RespostasDoGabinete";
 import { TagDeGravidade } from "@/componentes/TagDeGravidade";
@@ -67,88 +68,92 @@ export default async function Despesa({ params }: Parametros) {
   const { despesa, parlamentar } = detalhe;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
       <Link
         href={`/parlamentares/${parlamentar.id}`}
-        className="text-sm text-titulo underline-offset-2 hover:underline"
+        className="inline-flex min-h-11 items-center font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
       >
         ← {parlamentar.nomeParlamentar}
       </Link>
 
-      <header className="mt-4">
-        <h1 className="text-2xl font-bold text-titulo">{despesa.tipoDespesa}</h1>
-        <p className="mt-1 text-sm text-texto-suave">
-          {parlamentar.nomeParlamentar} · {parlamentar.siglaPartido} · {parlamentar.uf} ·{" "}
-          {parlamentar.casa}
+      <header className="mt-2">
+        <h1 className="font-display text-[1.75rem] leading-tight font-bold tracking-tight text-titulo sm:text-4xl">
+          {caixaDeFrase(despesa.tipoDespesa)}
+        </h1>
+        <p className="mt-2 text-texto-suave">
+          {parlamentar.nomeParlamentar}, {parlamentar.siglaPartido}, {parlamentar.uf}.{" "}
+          {parlamentar.casa}.
         </p>
       </header>
 
-      <dl className="mt-6 grid gap-3 sm:grid-cols-2">
-        <div className="border border-borda-suave p-4">
-          <dt className="text-xs font-semibold text-texto-suave">Fornecedor</dt>
-          <dd className="mt-1 text-sm font-semibold text-titulo">
-            {despesa.nomeFornecedor ?? "Não identificado"}
-          </dd>
-          {/* CNPJ inteiro porque é dado de pessoa jurídica e público; CPF a API já entrega
-              mascarado, e a borda não tem como contornar isso. */}
-          <dd className="numeros mt-0.5 text-xs text-texto-suave">
-            {despesa.documentoFornecedor}
-          </dd>
-        </div>
-
-        <div className="border border-borda-suave p-4">
-          <dt className="text-xs font-semibold text-texto-suave">Data e competência</dt>
-          <dd className="numeros mt-1 text-sm font-semibold text-titulo">
-            {formatarDataDoDocumento(despesa.dataDocumento)}
-          </dd>
-          <dd className="numeros mt-0.5 text-xs text-texto-suave">
-            competência {String(despesa.mes).padStart(2, "0")}/{despesa.ano}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="mt-3 border border-borda-suave p-4">
-        <ValoresDaDespesa despesa={despesa} />
+      <div className="mt-6 rounded-cartao border border-borda-suave bg-surface p-5">
+        <ValoresDaDespesa despesa={despesa} grande />
         {despesa.ehEstorno ? (
-          <p className="mt-2 text-xs text-texto-suave">
+          <p className="mt-2 text-texto-suave">
             É um estorno: uma devolução à cota. O valor entra negativo porque abate o gasto —
             escondê-lo inflaria o total do parlamentar.
           </p>
         ) : null}
+
+        <dl className="mt-4 grid gap-4 border-t border-borda-suave pt-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm font-semibold text-texto-suave">Fornecedor</dt>
+            <dd className="mt-0.5 font-semibold break-words text-texto">
+              {despesa.nomeFornecedor ?? "Não identificado"}
+            </dd>
+            {/* CNPJ inteiro porque é dado de pessoa jurídica e público; CPF a API já entrega
+                mascarado, e a borda não tem como contornar isso. */}
+            <dd className="numeros text-sm text-texto-suave">{documentoPublicavel(despesa.documentoFornecedor)}</dd>
+          </div>
+
+          <div>
+            <dt className="text-sm font-semibold text-texto-suave">Data e competência</dt>
+            <dd className="numeros mt-0.5 font-semibold text-texto">
+              {formatarDataDoDocumento(despesa.dataDocumento)}
+            </dd>
+            <dd className="numeros text-sm text-texto-suave">
+              competência {String(despesa.mes).padStart(2, "0")}/{despesa.ano}
+            </dd>
+          </div>
+        </dl>
+
+        <div className="mt-4">
+          <Comprovante despesa={despesa} casa={parlamentar.casa} />
+        </div>
       </div>
 
       <section aria-labelledby="titulo-achados" className="mt-8">
-        <h2 id="titulo-achados" className="text-base font-bold text-titulo">
+        <h2 id="titulo-achados" className="font-display text-xl font-bold text-titulo">
           O que o motor de regras apontou
         </h2>
 
         {despesa.flags.length === 0 ? (
-          <p className="mt-2 text-sm text-texto-suave">
+          <p className="mt-2 text-texto-suave">
             Nenhuma regra emitiu indicador sobre esta despesa.{" "}
-            <strong>Isso não é atestado de regularidade:</strong> parte das regras pode não
-            ter tido dado público para avaliá-la. O bloco “O que foi analisado”, no perfil de{" "}
+            <strong className="text-texto">Isso não é atestado de regularidade:</strong> parte das
+            regras pode não ter tido dado público para avaliá-la. O bloco “O que foi analisado”, no
+            perfil de{" "}
             <Link
               href={`/parlamentares/${parlamentar.id}`}
-              className="text-titulo underline underline-offset-2"
+              className="font-semibold text-titulo underline decoration-borda-estrutural underline-offset-4"
             >
               {parlamentar.nomeParlamentar}
             </Link>
             , diz quais regras puderam ser aplicadas.
           </p>
         ) : (
-          <ul className="mt-3 space-y-3 border border-borda-suave p-4">
+          <ul className="mt-3 grid gap-2">
             {despesa.flags.map((flag) => (
-              <li key={flag.codigoRegra}>
+              <li key={flag.codigoRegra} className="rounded-cartao border border-borda-suave bg-surface p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <TagDeGravidade gravidade={flag.gravidade} />
                   {/* O grau de confiança viaja com o achado porque nem todo indicador é um
                       fato: REG_NET_004 cruza pessoas e sai com 0,7, não com 1,0. */}
-                  <span className="numeros text-xs text-texto-suave">
-                    confiança {(flag.grauDeConfianca * 100).toFixed(0)}% · regra{" "}
-                    {flag.codigoRegra}
+                  <span className="numeros text-sm text-texto-suave">
+                    confiança {(flag.grauDeConfianca * 100).toFixed(0)}%, regra {flag.codigoRegra}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-texto">{flag.descricao}</p>
+                <p className="mt-2 text-texto">{flag.descricao}</p>
               </li>
             ))}
           </ul>
@@ -161,7 +166,7 @@ export default async function Despesa({ params }: Parametros) {
       */}
       {despesa.flags.length > 0 || (despesa.respostas?.length ?? 0) > 0 ? (
         <section aria-labelledby="titulo-resposta" className="mt-8">
-          <h2 id="titulo-resposta" className="text-base font-bold text-titulo">
+          <h2 id="titulo-resposta" className="font-display text-xl font-bold text-titulo">
             O que o gabinete diz
           </h2>
           <div className="mt-3">
@@ -174,14 +179,10 @@ export default async function Despesa({ params }: Parametros) {
         </section>
       ) : null}
 
-      <div className="mt-6">
-        <Comprovante despesa={despesa} casa={parlamentar.casa} />
-      </div>
-
-      <p className="mt-6 border-t border-borda-suave pt-4 text-xs text-texto-suave">
+      <p className="mt-8 border-t border-borda-suave pt-4 text-sm text-texto-suave">
         Os indicadores acima descrevem inconsistências entre registros públicos e{" "}
-        <strong>não caracterizam, por si, irregularidade</strong>. Cada um é identificado pelo
-        código da regra determinística que o produziu.
+        <strong className="text-texto">não caracterizam, por si, irregularidade</strong>. Cada um
+        é identificado pelo código da regra que o produziu.
       </p>
     </main>
   );

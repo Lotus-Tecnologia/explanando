@@ -9,38 +9,39 @@
   `border-x` como utilitários.
 */
 @theme {
-  /* Superfícies */
-  --color-fundo: #ffffff;
-  --color-surface: #f8fafc;
-
   /*
-    Duas bordas, e a diferença importa. A estrutural cumpre 4,76:1 porque separa cabeçalho
-    de dado — informação necessária à compreensão. A suave fica em 1,48 de propósito: o
-    separador entre linhas é redundante, já que a zebra carrega a separação.
-  */
-  --color-borda-estrutural: #64748b;
-  --color-borda-suave: #cbd5e1;
+    Direção C, "cidadão" (Etapa 2, 08/11/2026). Fundo menta-acinzentado com cartões brancos:
+    a página inteira é o "fundo" e cada assunto é uma superfície própria, sem sombra.
+    Contrastes calculados (luminância WCAG), contra o fundo e contra o cartão:
 
-  /* Tipografia — 9,72 e 10,35 contra branco */
-  --color-titulo: #064e3b;
-  --color-titulo-hover: #053e2f;
-  /*
-    Texto SOBRE o fundo --color-titulo (botão, aba ativa, número em selo). Não é `text-white`
-    fixo porque no escuro o título vira menta clara: branco sobre #6ee7b7 mediu 1,52:1 na
-    auditoria de 25/09, e o AA pede 4,5. Aqui: branco sobre #064e3b, 9,72.
+      texto        #13241C   15,01 no fundo   16,19 no cartão
+      texto-suave  #4D5F56    6,31             6,80     (5,84 sobre o realce)
+      titulo       #12372A   12,13            13,08     (branco sobre ele: 13,08)
+      acento       #2E9A5E    3,30             3,56     só barra e ícone, nunca texto
+      borda-estrut #4D5F56    6,31             6,80
   */
+  --color-fundo: #f4f7f5;
+  --color-surface: #ffffff;
+
+  /* A estrutural separa cabeçalho de dado; a suave é contorno de cartão, redundante com o
+     contraste fundo/cartão, e por isso pode ficar abaixo de 3:1. */
+  --color-borda-estrutural: #4d5f56;
+  --color-borda-suave: #d9e3dd;
+
+  --color-titulo: #12372a;
+  /* 14,26 contra o fundo; branco sobre ele, 15,38. */
+  --color-titulo-hover: #0b2a1f;
+  /* Texto SOBRE o fundo --color-titulo (botão, aba ativa). No escuro o título clareia, e
+     branco sobre menta clara reprova; por isso não é `text-white` fixo. */
   --color-sobre-titulo: #ffffff;
-  --color-texto: #334155;
-  --color-texto-suave: #475569;
+  --color-texto: #13241c;
+  --color-texto-suave: #4d5f56;
 
-  /*
-    Só elemento NÃO textual: barra de gráfico, ícone, borda de destaque. Branco sobre este
-    verde dá 3,77 e reprova para texto — foi por isso que o botão de ação usa --color-titulo.
-  */
-  --color-acento: #059669;
-  --color-realce: #d1fae5;
+  /* Só elemento NÃO textual: barra, ícone, contorno de foco. 3,30 no fundo, 3,56 no cartão. */
+  --color-acento: #2e9a5e;
+  --color-realce: #ddf3e6;
 
-  /* A matriz de risco. Vermelho fica estritamente com os 3,3% de gravidade alta. */
+  /* A matriz de risco do ADR-0013. Não muda com a direção visual. */
   --color-baixa-fundo: #f8fafc;
   --color-baixa-texto: #334155;
   --color-media-fundo: #fef3c7;
@@ -50,46 +51,29 @@
   --color-abstencao-fundo: #f1f5f9;
   --color-abstencao-texto: #475569;
 
-  /*
-    Cantos arredondados, e não é enfeite: canto vivo é vocabulário de planilha e de sistema
-    interno. O produto é lido por quem não navega com naturalidade, e forma macia sinaliza
-    "isto é para você" antes de qualquer palavra ser lida. As seis referências arredondam
-    tudo — é a única escolha visual unânime entre elas.
-  */
-  --radius-cartao: 0.875rem;
-  --radius-campo: 0.625rem;
+  /* Canto macio, que diz "isto é para você" antes de qualquer palavra: 18px no cartão, 14px
+     em campo e botão. O selo continua redondo só onde é forma (avatar, contagem). */
+  --radius-cartao: 1.125rem;
+  --radius-campo: 0.875rem;
   --radius-selo: 999px;
 
-  /*
-    Sombra em duas camadas: um contorno de 1px que define a borda e um halo largo e fraco
-    que dá profundidade. Uma sombra só, difusa, borra em vez de levantar.
-  */
-  --shadow-cartao: 0 1px 2px rgb(15 23 42 / 0.05), 0 12px 32px -20px rgb(15 23 42 / 0.28);
-  --shadow-flutuante: 0 2px 4px rgb(15 23 42 / 0.06), 0 18px 40px -24px rgb(15 23 42 / 0.4);
-
+  /* A direção não usa sombra: borda de 1px e o contraste fundo/cartão bastam. Os tokens
+     ficam como `none` para que as classes antigas não desenhem nada. */
+  --shadow-cartao: none;
+  --shadow-flutuante: none;
 
   /*
-    Os quatro poderes do grafo do Estado, mais o nao classificado.
+    Os quatro poderes do grafo do Estado, mais o não classificado. Preenchimento de área,
+    piso 3:1 (WCAG 1.4.11), medidos contra o fundo de cada tema:
 
-    **Sao preenchimentos de area, nao texto**, entao o piso e' 3:1 (WCAG 1.4.11). Todos
-    foram calculados contra o fundo de cada tema e todos passam com folga:
+      Executivo   #1D4ED8 sobre #F4F7F5   6,21      #60A5FA sobre #0D1914   7,08
+      Legislativo #7E22CE                 6,47      #C084FC                 6,81
+      Judiciário  #0F766E                 5,07      #2DD4BF                 9,67
+      Essenciais  #BE185D                 5,60      #F472B6                 6,80
+      Indefinido  #64748B                 4,41      #94A3B8                 7,02
 
-      Executivo   #1D4ED8 sobre #FFFFFF   6,70      #60A5FA sobre #0F172A   7,02
-      Legislativo #7E22CE sobre #FFFFFF   6,98      #C084FC sobre #0F172A   6,76
-      Judiciario  #0F766E sobre #FFFFFF   5,47      #2DD4BF sobre #0F172A   9,59
-      Essenciais  #BE185D sobre #FFFFFF   6,04      #F472B6 sobre #0F172A   6,74
-      Indefinido  #64748B sobre #FFFFFF   4,76      #94A3B8 sobre #0F172A   6,96
-
-    **Nenhum deles e' o vermelho de gravidade alta**, e isso e' regra do ADR-0013, nao
-    coincidencia: #991B1B e' tijolo escuro sobre #FEE2E2, sempre num selo pequeno com forma
-    e rotulo. O das Funcoes Essenciais e' magenta (#BE185D), matiz distinta, em area grande,
-    noutra pagina e com legenda propria.
-
-    **A cor nunca carrega o significado sozinha**: cada fatia tem `<title>`, a legenda
-    nomeia os poderes e a lista abaixo do desenho repete o poder por extenso em texto.
-
-    O nao classificado tem cor propria porque a raiz e os entes chegam sem poder — pinta-los
-    de Executivo inventaria uma classificacao que o Estado nao fez sobre si mesmo.
+    Nenhum deles é o vermelho de gravidade alta (regra do ADR-0013). A cor nunca carrega o
+    poder sozinha: cada fatia tem `<title>`, legenda e o nome por extenso na lista.
   */
   --color-poder-executivo: #1d4ed8;
   --color-poder-legislativo: #7e22ce;
@@ -97,14 +81,10 @@
   --color-poder-essenciais: #be185d;
   --color-poder-indefinido: #64748b;
 
-  --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
-
-  /*
-    Display só para título e número grande. A Inter continua no corpo e nas tabelas, onde as
-    figuras tabulares importam — a queixa que abriu o redesenho foi o site parecer painel
-    genérico, e é nos títulos que um rosto próprio resolve isso sem custar legibilidade.
-  */
-  --font-display: var(--fonte-familjen), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Figtree no corpo: aberta, legível em 15px no celular. Bricolage Grotesque só em título e
+     número grande, onde a personalidade cabe sem custar leitura. */
+  --font-sans: var(--fonte-corpo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--fonte-destaque), var(--fonte-corpo), ui-sans-serif, system-ui, sans-serif;
 }
 
 /*
@@ -122,17 +102,17 @@
 
   Todos os valores abaixo foram CALCULADOS, e todos passam:
 
-    titulo      #6EE7B7 sobre #0F172A   11,71  AAA
-    texto       #E2E8F0 sobre #0F172A   14,48  AAA
-    texto-suave #ADBCD0 sobre #1E293B    7,58  AAA
-    acento      #34D399 sobre #0F172A    9,29  AAA
+    texto       #E6F0EA sobre #0D1914   15,45   no cartão #14241D 13,86
+    texto-suave #A2B8AC sobre #0D1914    8,56   no cartão 7,68
+    titulo      #9BE3BC sobre #0D1914   12,10   no cartão 10,85
+    acento      #3BB273 sobre #0D1914    6,69   no cartão 6,00
     baixa       #CBD5E1 sobre #1E293B    9,85  AAA
     média       #FCD34D sobre #422006   10,11  AAA
     alta        #FCA5A5 sobre #450A0A    8,51  AAA
     abstenção   #ADBCD0 sobre #1E293B    7,58  AAA
 
-  Uma assimetria que só o cálculo revela: no escuro o acento alcança 9,29 e PODE ser texto.
-  No claro, #059669 dá 3,77 e não pode. A regra troca de lado conforme o tema.
+  No escuro o acento passa de 4,5 e poderia ser texto; no claro (3,30) não pode. Para não
+  depender do tema, ele nunca é texto.
 
   A estrutura tem três estados de propósito. O `:root` acima define o tema claro completo;
   o bloco de mídia atende quem nunca escolheu e tem o sistema no escuro; o seletor de
@@ -142,25 +122,18 @@
 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-fundo: #0f172a;
-
-    /* Sombra sobre fundo escuro precisa ser preta de verdade; o cinza-azulado some. */
-    --shadow-cartao: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 32px -20px rgb(0 0 0 / 0.9);
-    --shadow-flutuante: 0 2px 4px rgb(0 0 0 / 0.55), 0 18px 40px -24px rgb(0 0 0 / 0.95);
-    --color-surface: #1e293b;
-
-    --color-borda-estrutural: #64748b;
-    --color-borda-suave: #334155;
-
-    --color-titulo: #6ee7b7;
-    --color-titulo-hover: #a7f3d0;
-    /* #0f172a sobre #6ee7b7 dá 11,5; sobre o hover #a7f3d0, 14,2. */
-    --color-sobre-titulo: #0f172a;
-    --color-texto: #e2e8f0;
-    --color-texto-suave: #adbcd0;
-
-    --color-acento: #34d399;
-    --color-realce: #064e3b;
+    --color-fundo: #0d1914;
+    --color-surface: #14241d;
+    --color-borda-estrutural: #a2b8ac;
+    --color-borda-suave: #253a30;
+    --color-titulo: #9be3bc;
+    --color-titulo-hover: #c2f0d6;
+    /* #0d1914 sobre #9be3bc dá 12,10; sobre o hover, 14,34. */
+    --color-sobre-titulo: #0d1914;
+    --color-texto: #e6f0ea;
+    --color-texto-suave: #a2b8ac;
+    --color-acento: #3bb273;
+    --color-realce: #1c3a2c;
 
     --color-baixa-fundo: #1e293b;
     --color-baixa-texto: #cbd5e1;
@@ -180,24 +153,18 @@
 }
 
 :root[data-theme="dark"] {
-  --color-fundo: #0f172a;
-
-    /* Sombra sobre fundo escuro precisa ser preta de verdade; o cinza-azulado some. */
-    --shadow-cartao: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 32px -20px rgb(0 0 0 / 0.9);
-    --shadow-flutuante: 0 2px 4px rgb(0 0 0 / 0.55), 0 18px 40px -24px rgb(0 0 0 / 0.95);
-  --color-surface: #1e293b;
-
-  --color-borda-estrutural: #64748b;
-  --color-borda-suave: #334155;
-
-  --color-titulo: #6ee7b7;
-  --color-titulo-hover: #a7f3d0;
-  --color-sobre-titulo: #0f172a;
-  --color-texto: #e2e8f0;
-  --color-texto-suave: #adbcd0;
-
-  --color-acento: #34d399;
-  --color-realce: #064e3b;
+  --color-fundo: #0d1914;
+  --color-surface: #14241d;
+  --color-borda-estrutural: #a2b8ac;
+  --color-borda-suave: #253a30;
+  --color-titulo: #9be3bc;
+  --color-titulo-hover: #c2f0d6;
+  /* #0d1914 sobre #9be3bc dá 12,10; sobre o hover, 14,34. */
+  --color-sobre-titulo: #0d1914;
+  --color-texto: #e6f0ea;
+  --color-texto-suave: #a2b8ac;
+  --color-acento: #3bb273;
+  --color-realce: #1c3a2c;
 
   --color-baixa-fundo: #1e293b;
   --color-baixa-texto: #cbd5e1;
@@ -235,6 +202,36 @@ body {
   background: var(--color-fundo);
   color: var(--color-texto);
   font-family: var(--font-sans);
+  /* 15px é o piso de leitura no celular; no computador o corpo continua em 15. */
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+/* Foco sempre visível e no acento, que passa 3:1 contra fundo e cartão nos dois temas. */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+/* Abrir e fechar com `<details>` só anima opacidade e posição, e some com movimento reduzido. */
+details[open] > :not(summary) {
+  animation: revelar 160ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /*

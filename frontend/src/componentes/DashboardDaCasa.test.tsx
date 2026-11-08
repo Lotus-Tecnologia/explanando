@@ -89,7 +89,7 @@ describe("DashboardDaCasa", () => {
     expect(screen.getAllByText(/1\.500\.000/i).length).toBeGreaterThan(0);
   });
 
-  it("renderiza o pódio com os líderes do ranking", () => {
+  it("nao repete o pódio, que a lista logo abaixo ja mostra", () => {
     render(
       <DashboardDaCasa
         casa={CASA_CAMARA}
@@ -98,9 +98,9 @@ describe("DashboardDaCasa", () => {
       />,
     );
 
-    expect(screen.getByText("Deputado Alfa")).toBeInTheDocument();
-    expect(screen.getByText("Deputada Beta")).toBeInTheDocument();
-    expect(screen.getByText("Deputado Gama")).toBeInTheDocument();
+    expect(screen.queryByText("Deputado Alfa")).not.toBeInTheDocument();
+    // 10 altas de 75 achados: a parte da alta é calculada, não escrita.
+    expect(screen.getByText(/deles são de gravidade alta/)).toBeInTheDocument();
   });
 
   it("permite filtrar por bancada ao clicar na barra do partido", async () => {
