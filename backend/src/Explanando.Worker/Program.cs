@@ -595,11 +595,9 @@ switch (comando)
             // origem (08/11/2026) e as rejeitadas agora entram, sem dar a esses deputados
             // meses que o resto da base congelada nao tem.
             //
-            // CUIDADO (08/11/2026): a Camara passou a publicar o CNPJ da companhia nas
-            // passagens SIGEPA, que entraram sem documento. O documento esta no hash, entao
-            // qualquer recoleta (esta ou `coletar`) duplica as passagens ja na base. Rodada
-            // em 08/11, as 28.630 duplicadas foram removidas a mao e ficaram so' as 151 que a
-            // glosa recuperou — ver docs/registro/etapa-17-revisao-das-regras.md, A15.
+            // A primeira rodada (08/11/2026) duplicou 28.630 passagens SIGEPA: a Camara passou
+            // a publicar o CNPJ nelas e o documento estava no hash. Corrigido no hash (A15,
+            // ver docs/registro/etapa-17-revisao-das-regras.md).
             var ate = LerInteiro("--ate")
                 ?? throw new InvalidOperationException("Informe --ate AAAAMM.");
             var teto = Competencia.Criar(ate / 100, ate % 100);

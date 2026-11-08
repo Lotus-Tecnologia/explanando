@@ -37,6 +37,7 @@ rankings. Só `fornecedoresDistintos` divergiu (A10).
 | A11 | Uma despesa do Senado sem `fornecedor_id` com o fornecedor cadastrado. Causa: a consulta do CNPJ falhou numa passada e, na seguinte, a despesa era pulada pelo hash | Ao fim de cada ingestão, as despesas do parlamentar sem fornecedor são ligadas ao fornecedor já cadastrado |
 | A12 | O card mostra índice para deputados abaixo do piso de 50% de cobertura | **Para a sessão do frontend** |
 | A13 | Bordas exatas sem teste | `BordasDasRegrasTests`: passaram de primeira, nenhum achado novo |
+| A15 | **Achado na recoleta:** a Câmara passou a publicar o CNPJ da companhia nas passagens SIGEPA, e o documento estava no hash — toda coleta nova duplicaria as 184.280 passagens da base | Hash da SIGEPA sem o documento (§3) |
 | A14 | A Etapa 16 registrou 23.977 flags; a base tinha 23.992 — a diferença são as 15 do `REG_NET_004` | Corrigido aqui |
 
 ## 3. Recoleta, reconsulta e re-varredura
@@ -54,8 +55,12 @@ Tudo contra a base local (Postgres 17 em Docker), pelo worker.
    de agosto. **Removidas todas as linhas inseridas pela recoleta, menos as 151 cuja glosa
    não fechava na tolerância antiga** (as recuperadas pelo A1), e os 110 fornecedores que a
    recoleta criou e que ficaram sem despesa. Nenhuma flag nem contestação apontava para elas.
-   **Consequência:** qualquer coleta nova da Câmara (`coletar` inclusive) vai duplicar as
-   ~184 mil passagens até a deduplicação deixar de depender do documento — fica em aberto.
+   **Corrigido no mesmo dia:** o hash da passagem SIGEPA deixa de incluir o documento do
+   fornecedor. As 184.280 da base foram gravadas com documento vazio, então o hash delas não
+   muda e não há migração. **Prova na fonte real:** a mesma recoleta rodada de novo trouxe
+   3.412 despesas (as lançadas depois de agosto, 1.520 delas passagens novas) e só 2 com
+   par na base — as mesmas 2 de antes, que mudaram de competência na origem. Essas 3.412
+   também foram removidas: a base fica no recorte de 21/08 mais as 151 da glosa.
 3. **`reconsultar-mei`** — 1.411 optantes na BrasilAPI; 1.410 voltaram com a data da opção
    (1 sem resposta). 33 deixaram de ser MEI desde a coleta. A primeira tentativa caiu num 503
    e não salvou nada; o comando passou a salvar a cada 50 e a pular a falha.
@@ -122,9 +127,11 @@ O enum `DadoExigido` ganhou o bit `CentavosDoValor` (4096); ele só aparece no b
 - `REG_TX_002` redesenhada sobre o acumulado anual da CEAP.
 - Fornecedores que **deixaram** de ser MEI antes da coleta (`opcao_pelo_mei = false` com data
   de exclusão) não foram reconsultados: só os 1.411 optantes. Fornecedor novo já entra com as datas.
-- **A15:** a deduplicação da ingestão depende do documento do fornecedor, e a Câmara passou a
-  preenchê-lo nas passagens. Antes de qualquer coleta nova da Câmara, isso precisa ser
-  resolvido (chave sem o documento para SIGEPA, ou migração do documento nas existentes).
+- As passagens SIGEPA já na base continuam **sem** o CNPJ da companhia que a Câmara agora
+  publica (o A15 só impede a duplicata; não atualiza a despesa conhecida).
+- Despesas de um deputado cuja coleta falha no meio são gravadas junto com as do deputado
+  seguinte, porque o contexto do EF é compartilhado no laço (vale para `coletar` e para
+  `recoletar-rejeitadas`). Na prova do A15, 10 despesas do deputado 160527 entraram assim.
 - A despesa órfã do Senado só se religa na próxima coleta do Senado, que não foi feita aqui.
 - O checkpoint dos 78 deputados continua registrando as rejeições antigas: a recoleta não
   passa pelo serviço de coleta, que é quem grava checkpoint.
