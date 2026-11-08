@@ -666,7 +666,8 @@ describe("BarraDeFiltros", () => {
 
     const seletor = screen.getByLabelText(/tipo de despesa/i);
 
-    expect(within(seletor).getByRole("option", { name: "TELEFONIA" })).toBeInTheDocument();
+    expect(within(seletor).getByRole("option", { name: "Telefonia" })).toHaveValue("TELEFONIA");
+    expect(within(seletor).getByRole("option", { name: "Telefonia" })).toBeInTheDocument();
     expect(within(seletor).getAllByRole("option")).toHaveLength(tipos.length + 1);
   });
 
@@ -780,7 +781,8 @@ describe("ListaDeDespesas", () => {
 
     // A tag carrega o nível; a frase ao lado carrega o achado, com o dado concreto. Juntas
     // dizem tudo o que a sigla dizia, e dizem para quem não conhece a sigla.
-    expect(screen.getByLabelText(/alta relevância/i)).toBeInTheDocument();
+    // Duas vezes: na linha fechada (o mais grave) e na aberta (cada achado).
+    expect(screen.getAllByLabelText(/alta relevância/i).length).toBeGreaterThan(0);
     expect(screen.getByText("Empresa com 43 dias de atividade.")).toBeInTheDocument();
 
     expect(document.body.textContent).not.toContain("REG_");
