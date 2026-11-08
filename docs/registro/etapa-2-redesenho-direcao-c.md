@@ -54,25 +54,18 @@ https://claude.ai/artifact/45RnkoRhhXLUNZtD4AGtkD. O Gustavo escolheu a C.
 
 ## Build
 
-Unknown command: "test"
+`npm test` (342 testes) e `npm run lint` passam. `npm run build` compila e passa no
+TypeScript, mas **não terminou a geração estática** nesta máquina, por dois motivos que esta
+branch não tocou (a rota do feed, `lib/api.ts` e `next.config.ts` são os mesmos do commit de
+partida):
 
-
-Did you mean this?
-  npm test # Test a package
-To see a list of supported npm commands, run:
-  npm help (342 testes) e  passam.  compila e passa no TypeScript,
-mas **não terminou a geração estática** nesta máquina, por dois motivos que esta branch não
-tocou (a rota do feed,  e  são os mesmos do commit de partida):
-
-- com a API local (Os possíveis motivos para isso incluem:
-  * Você digitou incorretamente um comando dotnet interno.
-  * Você pretendia executar um programa .NET, mas dotnet-run não existe.
-  * Você pretendia executar uma ferramenta global, mas não foi possível encontrar um executável com prefixo dotnet com esse nome no PATH. em Development), 11 workers pré-renderizando 982 páginas
-  estouram o limite de 60s por página ( numa rodada,  na outra);
-- sem API nenhuma,  quebra com  em vez de cair para lista vazia.
+- com a API local (`dotnet run` em Development), 11 workers pré-renderizando 982 páginas
+  estouram o limite de 60s por página (`/parlamentares/...` numa rodada, `/estado/304` na
+  outra);
+- sem API nenhuma, `/feed.xml` quebra com `fetch failed` em vez de cair para lista vazia.
 
 O segundo é defeito real e pequeno (o feed deveria tolerar a API fora, como o resto do build);
-o primeiro pede a API em Release ou menos workers ().
+o primeiro pede a API em Release ou menos workers (`experimental.cpus`).
 
 ## O que ficou de fora
 
