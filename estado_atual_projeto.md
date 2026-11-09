@@ -1,5 +1,9 @@
 # Estado atual do projeto — handoff
 
+> **Projeto encerrado em 07/11/2026.** Este arquivo ficou como estava no fim do trabalho e não
+> é mais atualizado. O que vale hoje está no [README](README.md) e no [post-mortem](docs/post-mortem.md).
+
+
 **Atualizado em:** 2026-09-26 · **Branch:** `main` · **Etapa mais recente:** [16](docs/registro/etapa-16-empacotamento-e-auditoria.md)
 
 Este documento existe para que outra sessão retome sem reler o histórico. O que está aqui foi

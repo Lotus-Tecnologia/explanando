@@ -1,6 +1,6 @@
 # ADR-0008 — O repositório permanece privado
 
-**Data:** 2026-08-19 · **Situação:** Aceita
+**Data:** 2026-08-19 · **Situação:** Superada pelo [ADR-0022](ADR-0022-encerramento.md)
 
 ## Contexto
 

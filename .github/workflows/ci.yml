@@ -29,26 +29,6 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  #  Trava de visibilidade
-  # ---------------------------------------------------------------------------
-  #  O repositorio precisa permanecer privado. O codigo expoe a logica de deteccao
-  #  de inconsistencias e as fixtures com dado real de fornecedores — abri-lo por
-  #  engano seria dificil de desfazer, porque forks e caches sobrevivem ao fechamento.
-  #
-  #  Este job falha o pipeline se a visibilidade mudar, servindo de alarme.
-  visibilidade:
-    name: Repositório continua privado
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verificar visibilidade
-        run: |
-          if [ "${{ github.event.repository.private }}" != "true" ]; then
-            echo "::error::O repositório está PÚBLICO. Ele deve permanecer privado."
-            exit 1
-          fi
-          echo "Repositório privado, como esperado."
-
-  # ---------------------------------------------------------------------------
   #  Frontend
   # ---------------------------------------------------------------------------
   #  Ate aqui o CI nao tocava no frontend: 106 testes, o lint e o tsc cresceram

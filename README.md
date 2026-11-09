@@ -1,248 +1,144 @@
 # Explanando
 
-Plataforma de utilidade pública que audita, simplifica e expõe os gastos de deputados e senadores
-a partir de dados de transparência pública. Um motor de regras determinísticas cruza despesas da
-cota parlamentar com dados cadastrais de fornecedores e sinaliza **inconsistências financeiras**
-para leitura do cidadão.
+Explanando lê cada despesa da cota parlamentar de deputados e senadores e cruza o gasto com o
+cadastro da Receita Federal. Um motor de regras determinísticas aponta o que destoa: empresa
+cuja atividade não bate com o que vendeu, CNPJ irregular na data da nota, MEI acima do teto,
+o mesmo valor repetido mês após mês. Ele descreve o que encontrou e não imputa conduta a
+ninguém. A conclusão fica com quem lê.
 
-Desde a Etapa 11 o produto responde a **duas perguntas**, não uma: além de "quanto se gastou", o
-[**mapa do Estado**](docs/registro/etapa-11-grafo-do-estado.md) responde "que órgãos existem, de
-quem cada um depende e sob que norma" — 96.658 unidades da administração federal.
+> **Projeto encerrado em novembro de 2026.** O site não está no ar e não vai voltar. Este
+> repositório é a versão final, aberta como portfólio da [Lotus Tecnologia](https://github.com/Lotus-Tecnologia).
+> Os dados são de agosto de 2026 e não são atualizados. A história do projeto, inclusive o
+> porquê do fim, está no [post-mortem](docs/post-mortem.md).
 
-> **Postura do produto:** o sistema nunca acusa ninguém de crime. Ele reporta achados sistêmicos
-> de um motor de regras e deixa a conclusão para o leitor ou para a autoridade competente.
-> Ver [ADR-0004](docs/decisoes/ADR-0004-nomenclatura-tecnica.md).
+![Busca, perfil e achados](docs/imagens/navegacao.gif)
 
----
+| | |
+|---|---|
+| ![Home](docs/imagens/home-desktop-claro.png) | ![Perfil](docs/imagens/perfil-desktop-escuro.png) |
+| ![Ranking da Câmara](docs/imagens/camara-desktop-claro.png) | ![Mapa do Estado](docs/imagens/estado-desktop-escuro.png) |
 
-## Estado atual
+Mais telas, em claro, escuro e celular, em [`docs/imagens`](docs/imagens).
 
-**Etapas 00 a 06 e 08 a 12 concluídas; a 07 — observabilidade e deploy — quase.** Fundação,
-contratos reais das APIs, domínio, persistência, ingestão das duas casas, motor de regras,
-calibragem, API pública de leitura, interface em Next.js, o grafo do Estado e o quadro de
-pessoal.
+## Os números da base final
 
-**843 testes no backend** (503 de domínio, 75 de aplicação, 195 de integração, 60 de ponta a
-ponta e 10 de arquitetura) e **157 no frontend**, build com 0 avisos. CI verde nos quatro jobs.
+- 631 parlamentares: 513 deputados e 118 senadores, mandatos de 2023 a 2026.
+- 790 mil despesas, R$ 925 milhões em cota.
+- 14.650 achados no motor versão 7.
+- O grafo do Poder Executivo federal (SIORG), com mais de cem mil ligações, e o quadro de
+  pessoal mês a mês (Portal da Transparência).
 
-### O que já está no ar
+## O motor
 
-| | Onde | Situação |
-|---|---|---|
-| **Banco** | Neon (PostgreSQL) | ✅ as duas casas — 631 parlamentares, 791.515 despesas, 25.047 indicadores |
-| **Grafo do Estado** | Postgres local | ✅ 96.658 unidades, 22 MB — **ainda não subiu para a Neon** |
-| **Quadro de pessoal** | Postgres local | ✅ 11 competências, de 2025-01 a 2026-07 — agregadas, sem um nome |
-| **Frontend** | Cloudflare Workers | ⚠️ publicado, e **degradado de propósito** |
-| **API** | — | ❌ ainda só local |
-| **Domínio** | `explanando.com.br` | comprado; ainda não aponta para nada |
+São 12 regras. Cada uma declara de qual dado externo depende. Quando esse dado falta, a
+regra se abstém e a interface diz isso, em vez de mostrar zero
+([ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md)).
 
-A base de produção está verificada: **R$ 924.487.309,77** em despesas. A Câmara sinaliza
-**2,955%** — contra 2,96% da calibragem da Etapa 04b, sobre outra amostra e outro banco.
+| Regra | O que aponta |
+|---|---|
+| `REG_KYB_001` | Atividade registrada da empresa incompatível com o tipo do gasto |
+| `REG_KYB_002` | Nota emitida com a empresa já em situação irregular na Receita |
+| `REG_KYB_003` | Empresa recém-aberta recebendo valor alto |
+| `REG_KYB_004` | MEI acima do teto anual da categoria |
+| `REG_KYB_005` | Numeração inicial de nota: o parlamentar entre os primeiros clientes |
+| `REG_TX_001` | Várias notas do mesmo fornecedor no mesmo mês |
+| `REG_TX_002` | Gasto do mês perto do limite da cota do estado |
+| `REG_TX_003` | O mesmo valor, até os centavos, por meses seguidos |
+| `REG_TX_004` | Valor muito acima da média do próprio parlamentar naquele tipo de despesa |
+| `REG_GEO_002` | Gasto presencial fora do estado do parlamentar e fora de Brasília |
+| `REG_GEO_003` | Alimentação ou hospedagem expressiva durante o recesso |
+| `REG_NET_001` | Sócio da empresa paga com nome e CPF compatíveis com doador da campanha |
+| `REG_NET_004` | Empresa recém-aberta concentrando pagamentos de vários parlamentares do mesmo partido |
 
-O frontend está degradado porque `api.explanando.com.br` ainda não existe: o build caiu no
-caminho medido e publicou **9 páginas em vez de 522**. É o comportamento correto — o código
-preferiu degradar a quebrar — e a **indexação está trancada** (`NEXT_PUBLIC_INDEXAVEL` ausente
-⇒ `Disallow: /`) para o buscador não conhecer o site nesse estado. Os passos que faltam, na
-ordem que importa, estão em [docs/desdobramento.md](docs/desdobramento.md).
+Há dois números por parlamentar, e eles não se misturam
+([ADR-0009](docs/decisoes/ADR-0009-dois-numeros-nao-um.md)): o volume gasto, em reais, e o
+índice, que é o peso dos achados a cada 100 despesas, com piso amostral. O vermelho fica
+reservado para gravidade alta, e a forma do selo acompanha a cor
+([ADR-0013](docs/decisoes/ADR-0013-identidade-visual-e-taxonomia-de-risco.md)).
 
-### O motor
-
-**12 regras determinísticas implementadas** — 11 que avaliam um parlamentar e 1 de rede, que
-cruza parlamentares entre si. Quatro ficaram de fora **por falta de fonte, não por escolha**:
-`REG_NET_001` (depende do TSE), `REG_NET_002` (a fonte responde 405), `REG_NET_003` (só o
-Senado publica endereço de escritório) e `REG_GEO_001` (a despesa não traz local nem hora).
-
-A postura é permissiva ([ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md)): na
-dúvida, o motor se cala. E **zero por falta de dado nunca é apresentado como zero por nada
-encontrado** — cada regra declara de qual dado externo depende, e a interface consulta a
-cobertura **antes de desenhar**, nunca a contagem de indicadores.
-
-São **dois rankings independentes**
-([ADR-0009](docs/decisoes/ADR-0009-dois-numeros-nao-um.md)): volume de gastos em reais para o
-público, e densidade de indicadores por 100 despesas para compliance — esta com piso amostral
-de 100 despesas, abaixo do qual o índice vem **nulo, não zero**. Uma terceira ordenação, por
-gravidade, olha só os achados de peso alto: pelo total, quem tem 14 achados graves aparece
-abaixo de quem tem zero.
-
-> **Cobertura da V1:** a base cobre as **duas casas** na janela 2023–2026 — 513 deputados e
-> 118 senadores. A assimetria entre elas está decidida no
-> [ADR-0012](docs/decisoes/ADR-0012-assimetria-camara-senado.md): o Senado não publica
-> comprovante e não publica glosa, e a interface diz isso em vez de preencher com zero.
->
-> **Os dois rankings são separados, e a casa é obrigatória na API.** As cotas são distintas —
-> a CEAP e a CEAPS têm regras e valores próprios por UF —, então o mesmo eixo poria lado a
-> lado números que não medem a mesma coisa. O piso amostral do ADR-0009 vale dentro da casa.
-> A [Etapa 10](docs/registro/etapa-10-calibragem-e-rankings-por-casa.md) calibrou o motor
-> para as rubricas da CEAPS: o Senado saiu de 19,8% para **5,080%**, contra 2,957% da Câmara,
-> e em gravidade alta ficou **abaixo** dela.
-
-### O mapa do Estado
-
-Outra pergunta, outro contexto ([ADR-0016](docs/decisoes/ADR-0016-grafo-do-estado.md)): **não há
-parlamentar, não há cota e não há indicador de risco**. A fonte é o
-[SIORG](docs/contratos/siorg.md), e a base tem **96.658 unidades** — 99,0% no Executivo, 97,6%
-unidades administrativas e **95,4% criadas por ato interno, não por lei ou decreto**.
-
-O SIORG **não publica histórico**: os campos existem no esquema e chegam vazios. A mudança
-estrutural é deduzida comparando coletas, e por isso a primeira coleta é **linha de base** e não
-anuncia nada. Coleta incompleta nunca conclui desaparecimento — é o
-[ADR-0007](docs/decisoes/ADR-0007-postura-permissiva-do-motor.md) num grafo.
-
-**O grafo também diz quanta gente trabalha em cada órgão.** A
-[Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md) trouxe **759.351 vínculos** do Portal
-da Transparência, com **95,5%** deles ligados a um nó do mapa. Os dois cadastros do Estado não
-compartilham chave, e a ponte é por nome com regra explícita: o que não casa com exatidão fica
-sem par, em vez de ser adivinhado.
-
-> **Contagens, nunca pessoas.** A fonte é nominal — 778 mil linhas com nome e CPF mascarado —
-> e a agregação acontece durante a leitura. Ao banco chegam ~350 contagens por mês, e a
-> entidade não tem onde guardar uma pessoa: há um teste que quebra o build se alguém tentar.
-
-### Quem comanda
-
-Ao lado do mapa de instituições existe um **mapa de poder**, na mesma tela: um alternador
-ao pé do desenho troca *Instituições* por *Quem comanda*, e clicar na cunha de um poder no
-grafo abre quem o comanda. São **138 cadeiras**, de três fontes independentes:
+## Arquitetura
 
 ```
-planalto      39   Presidente da República + 38 ministros de Estado
-camara        52   Mesa Diretora + 30 presidências de comissão
-liderancas    47   líderes das duas Casas e do Congresso Nacional
+ Câmara · Senado · BrasilAPI · TSE · SIORG · Portal da Transparência
+                              │
+                        Worker (.NET)  ── coleta, motor de regras, consolidação
+                              │
+                        PostgreSQL 17
+                              │
+                        API (.NET, só leitura, cache e limite de taxa)
+                              │
+                        Next.js 16 (React 19, Tailwind 4)
 ```
 
-**É a única tabela do sistema com nome de pessoa, e a exceção está declarada** no
-[ADR-0018](docs/decisoes/ADR-0018-cadeiras-de-comando.md). A regra de não guardar nome
-vale para os 778 mil vínculos do quadro de pessoal, que seguem agregados na leitura; aqui
-são cargos de comando cujo ocupante o próprio governo publica. **Sem a URL de origem e a
-data em que foi vista, a linha nem é criada** — e o rodapé mostra a verificação mais
-*antiga* do conjunto, que é o pior caso.
+O backend segue Clean Architecture em cinco projetos (Domain, Application, Infrastructure,
+Api, Worker). A regra de dependência entre as camadas é verificada por teste, não por revisão
+([ADR-0006](docs/decisoes/ADR-0006-arquitetura-verificada-por-teste.md)). As 21 decisões de
+arquitetura estão em [`docs/decisoes`](docs/decisoes/README.md), e o diário de cada etapa em
+[`docs/registro`](docs/registro/README.md).
 
-> **O Judiciário aparece vazio, e diz por quê.** O portal do STF é uma aplicação de página
-> única e a lista que ele renderiza traz todos os ministros desde 1891; o Wikidata tem a
-> estrutura mas está sujo — a consulta por "ministro sem data de saída" devolve gente
-> aposentada em 2011 e morta em 1985. Omitir o poder faria parecer que ele não tem
-> comando.
+## Testes
 
-## Como rodar
-
-Pré-requisitos: .NET SDK 10, Docker Desktop, Node 22+.
-
-**Banco local e suíte do backend.** Os três contêineres precisam estar de pé: os testes de
-integração usam Postgres, Redis e LocalStack de verdade, não dublês.
-
-```bash
-docker compose up -d
-```
+O projeto foi escrito com TDD ([ADR-0005](docs/decisoes/ADR-0005-tdd-e-niveis-de-teste.md)).
+São 1.112 testes no backend (domínio, aplicação, integração com Postgres real via
+Testcontainers, ponta a ponta e arquitetura) e 344 no frontend (Vitest e Testing Library).
+Um dos testes de arquitetura percorre todos os arquivos versionados e falha se encontrar um
+CPF válido fora de uma lista de CPFs sintéticos.
 
 ```bash
 dotnet test backend/Explanando.slnx
 ```
 
-**Frontend.**
-
 ```bash
 cd frontend && npm ci && npm test
 ```
 
-**Contra a base de produção na Neon.** A string de conexão fica em `backend/.env.neon`, que não
-vai para o git. A API sobe na 5000 e o worker aceita `coletar`, `varrer`, `consolidar` e
-`ciclo-mensal` — mais `coletar-senado`, que traz a CEAPS, e `coletar-estado`, que traz o grafo.
+Os testes de integração precisam do Docker de pé.
 
-```bash
-cd backend && EXPLANANDO_CONEXAO="$(tr -d '\r\n' < .env.neon)" dotnet run --project src/Explanando.Api
-```
+## Como rodar localmente
 
-```bash
-cd backend && dotnet run --project src/Explanando.Worker -- coletar-pessoal --ano 2026 --mes 7
-```
+Pré-requisitos: .NET SDK 10, Node 22 ou mais novo e Docker.
 
-> **A coleta do Estado é sequencial por natureza da fonte.** O SIORG aceita **uma requisição
-> por IP de cada vez** e recusa as demais com `HTTP 200` e `codigoErro 119`. São ~9 minutos para
-> as 330 subárvores, e não adianta paralelizar em camada nenhuma.
+1. Suba o banco:
 
-```bash
-cd backend && dotnet run --project src/Explanando.Worker -- coletar-estado
-```
+   ```bash
+   docker compose up -d
+   ```
 
-> **A API não aplica migrations, de propósito** — API de leitura não mexe em esquema. Quem cria
-> as tabelas é o worker, em qualquer comando. Subir a API contra banco vazio dá HTTP 500.
+2. Crie o esquema e colete os dados. A coleta completa leva horas, porque as fontes públicas
+   têm limite de taxa; dá para começar por um mês só:
 
-> **O bundle do Cloudflare não sai do Windows.** `npm run cf:build` completa na primeira
-> execução e pendura nas seguintes. Use WSL, ou deixe o CI publicar.
+   ```bash
+   cd backend && dotnet run --project src/Explanando.Worker -- coletar
+   ```
 
-## Layout do repositório
+   ```bash
+   cd backend && dotnet run --project src/Explanando.Worker -- varrer
+   ```
 
-```
-explanando/
-├─ backend/                      solution .NET 10
-│  ├─ src/
-│  │  ├─ Explanando.Domain           entidades e motor de regras (C# puro)
-│  │  ├─ Explanando.Application      casos de uso, CQRS
-│  │  ├─ Explanando.Infrastructure   EF Core, clientes HTTP, cache, fila
-│  │  ├─ Explanando.Api              API pública
-│  │  └─ Explanando.Worker           ingestão e varredura assíncrona
-│  └─ tests/
-│     ├─ Explanando.Domain.Tests        unitários do domínio
-│     ├─ Explanando.Application.Tests   unitários dos casos de uso
-│     ├─ Explanando.Integration.Tests   banco, HTTP e fila reais
-│     ├─ Explanando.E2E.Tests           fluxo ponta a ponta
-│     └─ Explanando.Architecture.Tests  direção das dependências
-├─ frontend/                     Next.js (Etapa 6)
-├─ docs/
-│  ├─ especificacao/             documentos originais de visão, negócio e regras
-│  ├─ decisoes/                  ADRs — o que foi decidido e por quê
-│  ├─ contratos/                 respostas reais das APIs externas, congeladas
-│  └─ registro/                  o que foi planejado e executado, por etapa
-└─ docker-compose.yml            Postgres + Redis + LocalStack (SQS)
-```
+   O worker também aceita `coletar-senado`, `coletar-estado`, `coletar-pessoal` e
+   `ciclo-mensal`.
 
-## Arquitetura
+3. Suba a API na porta 5199:
 
-Clean Architecture com a direção das dependências **verificada por teste**, não por revisão
-de código: `Explanando.Architecture.Tests` lê os `.csproj` e quebra o build se alguém apontar
-uma seta para o lado errado.
+   ```bash
+   cd backend && ASPNETCORE_URLS=http://localhost:5199 RateLimit__ChaveInterna=local dotnet run --project src/Explanando.Api
+   ```
 
-```
-Domain  ←  Application  ←  Infrastructure
-              ↑                  ↑
-              └───── Api ────────┤
-              └──── Worker ──────┘
-```
+4. Suba o site:
 
-O `Domain` não referencia projeto nenhum e não usa pacote nenhum além da BCL.
-Ver [ADR-0006](docs/decisoes/ADR-0006-arquitetura-verificada-por-teste.md).
+   ```bash
+   cd frontend && EXPLANANDO_CHAVE_INTERNA=local npm run dev
+   ```
 
-## Testes
+O pacote de produção numa VPS só (Postgres, API, site e túnel da Cloudflare em Docker
+Compose) está em [`deploy/`](deploy), com o roteiro em [`docs/desdobramento.md`](docs/desdobramento.md).
 
-TDD é obrigatório: o teste vem antes da implementação, em todas as etapas.
-Ver [ADR-0005](docs/decisoes/ADR-0005-tdd-e-niveis-de-teste.md).
+## Dados pessoais
 
-| Nível | Projeto | Prova que |
-|---|---|---|
-| Unitário | `Domain.Tests`, `Application.Tests` | a regra de negócio está correta |
-| Integração | `Integration.Tests` | banco, HTTP e fila realmente funcionam |
-| E2E | `E2E.Tests` | o fluxo completo entrega o resultado |
-| Arquitetura | `Architecture.Tests` | as camadas continuam separadas |
+Tudo o que o Explanando mostra vem de fonte pública. Mesmo assim, o CPF de fornecedor pessoa
+física é mascarado na ingestão, e as fixtures do repositório usam CPFs sintéticos e nomes
+fictícios.
 
-## Documentos
+## Licença
 
-> **Quando um ADR contradiz `docs/especificacao/`, o ADR vence.** Os documentos de
-> especificação são o ponto de partida do projeto e foram deliberadamente mantidos como
-> estavam: valem como registro da intenção original, não como descrição do que existe. O
-> documento de visão, por exemplo, ainda descreve Blazor, gRPC e RabbitMQ — a stack foi
-> decidida de outro jeito no [ADR-0001](docs/decisoes/ADR-0001-frontend-nextjs.md) e no
-> [ADR-0015](docs/decisoes/ADR-0015-frontend-no-cloudflare.md).
-
-- [Visão e escopo](docs/especificacao/Explanando_Visao_Escopo_V1.md)
-- [Regras de negócio e proteção jurídica](docs/especificacao/Explanando_Negocios_V1_Complementar.md)
-- [Motor de regras determinísticas](docs/especificacao/Explanando_Motor_Regras_V1.md)
-- [Integrações e endpoints](docs/especificacao/integracoes.md)
-- [Decisões arquiteturais (ADRs)](docs/decisoes/README.md)
-- [O grafo do Estado — Etapa 11](docs/registro/etapa-11-grafo-do-estado.md)
-- [Quem trabalha no Estado — Etapa 12](docs/registro/etapa-12-quadro-de-pessoal.md)
-- [Quem contrata com quem — Etapa 13](docs/registro/etapa-13-mapa-de-fornecedores.md)
-- [O mapa de poder — Etapa 14](docs/registro/etapa-14-mapa-de-poder.md)
-- [Registro de execução](docs/registro/README.md)
-- [Desdobramento — contas, segredos e a ordem do deploy](docs/desdobramento.md)
-- [Estado atual, para quem está retomando](estado_atual_projeto.md)
-- [Pendências — o que está pausado e por quê](docs/pendencias.md)
+[MIT](LICENSE).

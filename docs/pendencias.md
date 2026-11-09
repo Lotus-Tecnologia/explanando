@@ -1,5 +1,9 @@
 # Pendências — o que está esperando
 
+> **Projeto encerrado em 07/11/2026.** Este arquivo ficou como estava no fim do trabalho e não
+> é mais atualizado. O que vale hoje está no [README](../README.md) e no [post-mortem](post-mortem.md).
+
+
 *Aberto em 2026-09-18; a seção 5 foi acrescentada em 2026-09-19, quando a Etapa 11 fechou.*
 
 Em 18/09/2026 o foco mudou para o **grafo do Estado** (a adaptação do

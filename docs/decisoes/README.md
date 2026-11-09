@@ -15,7 +15,7 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0005](ADR-0005-tdd-e-niveis-de-teste.md) | TDD obrigatório, quatro níveis de teste | 2026-08-18 | Aceita |
 | [0006](ADR-0006-arquitetura-verificada-por-teste.md) | Camadas verificadas por teste, não por revisão | 2026-08-18 | Aceita |
 | [0007](ADR-0007-postura-permissiva-do-motor.md) | Motor permissivo: na dúvida, silêncio | 2026-08-19 | Aceita |
-| [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Aceita |
+| [0008](ADR-0008-repositorio-privado.md) | O repositório permanece privado | 2026-08-19 | Superada (0022) |
 | [0009](ADR-0009-dois-numeros-nao-um.md) | Dois números: volume para o B2C, densidade para o B2B | 2026-08-20 | Aceita |
 | [0010](ADR-0010-resolucoes-produto-infraestrutura.md) | Resoluções de produto e infraestrutura | 2026-08-20 | Aceita — **§2 e §4 atualizados pela [0014](ADR-0014-lacuna-camada-2-e-base-legal.md)** |
 | [0011](ADR-0011-v1-e-o-plano-inteiro.md) | O V1 é o plano de execução inteiro | 2026-08-20 | Aceita |
@@ -29,14 +29,12 @@ especificações são o material de partida; os ADRs são as decisões tomadas e
 | [0019](ADR-0019-tudo-numa-vps.md) | Tudo numa VPS, e o banco deixa de caber em 512 MB | 2026-09-24 | Aceita |
 | [0020](ADR-0020-participacao-publica-adiada.md) | Discussão pública e notas da comunidade esperam audiência e parecer jurídico | 2026-09-24 | **Adiada** |
 | [0021](ADR-0021-ia-espera-receita.md) | A narrativa por IA espera a receita pagar por ela | 2026-09-24 | **Adiada** |
+| [0022](ADR-0022-encerramento.md) | Encerramento: repositório aberto, sem hospedagem | 2026-11-08 | Aceita |
 
 ## Questões abertas
 
-[**questoes-abertas-de-negocio.md**](questoes-abertas-de-negocio.md) — fila de decisões de
-produto que a implementação e a calibragem real levantaram e que ainda não têm ADR.
-
-[**analise-das-respostas-parte-1.md**](analise-das-respostas-parte-1.md) — avaliação das
-respostas dadas às oito questões, com medição da base real.
+As questões de negócio e as respostas a elas saíram do repositório público no encerramento
+([ADR-0022](ADR-0022-encerramento.md)).
 
 [**analise-do-adr-de-resolucoes.md**](analise-do-adr-de-resolucoes.md) — avaliação do
 ADR-0010. Aponta que o escopo do V1 se desfez e propõe recorte em três marcos, e desmente com
